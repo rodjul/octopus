@@ -1014,7 +1014,7 @@ output "c2sn80_account_id" {
 }
 
 
-resource "aws_organizations_account" "totvs_payer" {
+resource "aws_organizations_account" "totvspayer" {
   provider = "aws.payer"
   name  = "TOTVS SA"
   email = "aws@totvs.com.br"

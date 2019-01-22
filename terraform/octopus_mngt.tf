@@ -16,7 +16,7 @@ variable "mngt_account_id" {}
 data "aws_iam_policy_document" "trust_cross_account" {
   provider = "aws.linked_account"
   statement {
-    sid     = "assume-${var.octopusmngt}"
+    sid     = "assume${var.octopusmngt}"
     actions = ["sts:AssumeRole"]
 
     principals {
