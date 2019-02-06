@@ -1020,8 +1020,8 @@ resource "aws_organizations_account" "totvspayer" {
   email = "aws@totvs.com.br"
 }
 
-output "totvs_payer_account_id" {
-    value = "${aws_organizations_account.totvs_payer.id}"
+output "totvspayer_account_id" {
+    value = "${aws_organizations_account.totvspayer.id}"
 }
 
 

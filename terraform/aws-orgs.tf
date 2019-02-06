@@ -38,5 +38,16 @@ output "servicecustomersnapshots_account_id" {
     value = "${aws_organizations_account.servicecustomersnapshots.id}"
 }
 
+resource "aws_organizations_account" "tkssupplychain" {
+  provider = "aws.payer"
+  name  = "tks.supplychain.aws"
+  email = "tks.supplychain.aws@cloudtotvs.com.br"
+  iam_user_access_to_billing = "ALLOW"
+  role_name = "security"
+}
+
+output "tkssupplychain_account_id" {
+    value = "${aws_organizations_account.tkssupplychain.id}"
+}
 
 #
