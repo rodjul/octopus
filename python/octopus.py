@@ -253,3 +253,28 @@ def validate_event_data(payload):
         return False
 
     return True
+
+# List resources on AWS that needs pagination
+def list_resources(
+    client,
+    resource,
+    resource_action,
+    **kwargs):
+
+    page = 1
+    func = getattr(client,resource_action) # Impersonates selected method
+    resource_list = func(**kwargs) # runs method with its necessary arguments
+    print('Page 1: %s' % resource_list)
+    resources = resource_list[resource]
+    print(resources)
+    # Validates if there is more data to be retrivied and put it on a loop
+    if 'IsTruncated' in resource_list and resource_list['IsTruncated']:
+        print('More than one page to display data. Paginating...')
+        while resource_list['IsTruncated']:
+            kwargs['Marker']=resource_list['Marker']
+            page += 1
+            resource_list = func(**kwargs)
+            print('Page %s: %s' % (page,resource_list))
+            resources.extend(resource_list[resource])
+
+    return resources

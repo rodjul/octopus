@@ -1,28 +1,5 @@
 import boto3
-import octopus
-
-def list_resources(
-    iam_client,
-    resource,
-    resource_action,
-    **kwargs):
-
-    page = 1
-    func = getattr(iam_client,resource_action)
-    resource_list = func(**kwargs)
-    print('Page 1: %s' % resource_list)
-    resources = resource_list[resource]
-    print(resources)
-    if 'IsTruncated' in resource_list and resource_list['IsTruncated']:
-        print('More than one page to display data. Paginating...')
-        while resource_list['IsTruncated']:
-            kwargs['Marker']=resource_list['Marker']
-            page += 1
-            resource_list = func(**kwargs)
-            print('Page %s: %s' % (page,resource_list))
-            resources.extend(resource_list[resource])
-
-    return resources
+from octopus import list_resources,assume_role
 
 def lambda_handler(event, context):
 
@@ -41,7 +18,7 @@ def lambda_handler(event, context):
         # Assumes linked account role with IAM service
         print('Setting up IAM Service...')
         try:
-            iam_client = octopus.assume_role(
+            iam_client = assume_role(
                 account['Id'],
                 'octopusmngt',
                 session_name,
@@ -68,11 +45,16 @@ def lambda_handler(event, context):
             print(item)
             item['Policies'] = []
             try:
+                # Dict with parameters to list resource's inline policies
+                parameters = {
+                    resource_name_tag:item[resource_name_tag]
+                }
+
                 inline_policies = list_resources(
                     iam_client,
                     'PolicyNames',
                     action_list_resource_policies,
-                    resource_name_tag=item[resource_name_tag]
+                    **parameters
                 )
             except Exception as e:
                 print('Could not list inline policies for %s %s: %s' % (
@@ -83,12 +65,17 @@ def lambda_handler(event, context):
 
             for policy in inline_policies:
                 try:
+                    # Creates dict with parameters used to get policy
+                    parameters = {
+                        resource_name_tag:item[resource_name_tag],
+                        'PolicyName':policy
+                    }
+
                     inline_doc = list_resources(
                         iam_client,
                         'PolicyDocument',
                         action_get_resource_policy,
-                        resource_name_tag=item[resource_name_tag],
-                        PolicyName=policy
+                        **parameters
                     )
 
                     item['Policies'].extend(
@@ -104,11 +91,16 @@ def lambda_handler(event, context):
                     )
 
             try:
+                # Dict with parameters to list resource's attached policies
+                parameters = {
+                    resource_name_tag:item[resource_name_tag]
+                }
+
                 attached_polices = list_resources(
                     iam_client,
                     'AttachedPolicies',
                     action_list_attached_policies,
-                    resource_name_tag=item[resource_name_tag]
+                    **parameters
                 )
             except Exception as e:
                 print('Could not list attached policies for %s %s: %s ' % (
@@ -118,7 +110,8 @@ def lambda_handler(event, context):
                 )
 
             for i in attached_polices:
-                try:                
+                try:
+                    # Creates dict with parameters used to get policy versions
                     policy_details = list_resources(
                         iam_client,
                         'Versions',
@@ -132,6 +125,7 @@ def lambda_handler(event, context):
                         str(e))
                     )
                 try:    
+                    # Select default policy and save the data about it
                     for sub in policy_details:
                         if sub['IsDefaultVersion']:
                             document = iam_client.get_policy_version(
