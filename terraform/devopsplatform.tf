@@ -9,9 +9,6 @@ variable "desc_devopsplatform" {
   default = "This role is used to provide access to the Devops Platform team responsible for Kubernetes Cluster. It provides full access to most resources on AWS."
 }
 
-variable "intranetIP" {}
-
-
 ### Devops Platform Role
 
 resource "aws_iam_role" "devopsplatform" {
@@ -25,19 +22,19 @@ resource "aws_iam_role" "devopsplatform" {
 data "aws_iam_policy_document" "devopsplatform" {
   provider = "aws.linked_account"
   statement {
-    sid = "${var.devopsplatform}-Deny-STOP_DELETE-Cloudtrail"
+    sid = "${var.devopsplatform}DenyStopDeleteCloudtrail"
     effect = "Deny"
     actions = ["cloudtrail:CreateTrail","cloudtrail:DeleteTrail","cloudtrail:StopLogging","cloudtrail:UpdateTrail"]
     resources = ["*"]
   },
   statement {
-    sid = "${var.devopsplatform}-Deny-WRITE-Portal"
+    sid = "${var.devopsplatform}DenyWRITEPortal"
     effect = "Deny"
     actions = ["aws-portal:ModifyAccount","aws-portal:ModifyBilling","aws-portal:ModifyPaymentMethods"]
     resources = ["*"]
   },
   statement {
-    sid = "${var.devopsplatform}-Allow-from-Intranet"
+    sid = "${var.devopsplatform}AllowFromIntranet"
     effect = "Allow"
     actions = ["*"]
     resources = ["*"]

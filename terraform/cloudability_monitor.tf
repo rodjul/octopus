@@ -2,7 +2,7 @@
 ## Creates Cross Account Role
 ### Variables
 variable "cloudability" {
-  default = "cloudability"
+  default = "Cloudability"
 }
 
 variable "desc_cloudability" {
@@ -39,7 +39,7 @@ data "aws_iam_policy_document" "trust_cloudability" {
 ### Mngt Cross Account
 resource "aws_iam_role" "cloudability" {
   provider = "aws.linked_account"
-  name               = "${var.cloudability}"
+  name               = "${var.cloudability}Role"
   description        = "${var.desc_cloudability}"
   assume_role_policy = "${data.aws_iam_policy_document.trust_cloudability.json}"
 }
