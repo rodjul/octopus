@@ -2,6 +2,9 @@ import boto3
 from os import popen
 import re
 from json import dumps
+import logging
+
+logger = logging.Logger('catch_all')
 
 def init_terraform(
     bucket,
@@ -69,12 +72,20 @@ def setup_terraform(
             Please see the command output: %s' % (environment,workspace))
             return False
 
-def assume_role(Id,role,session_name,aws_service,region):
+# assumes a role with the service and region necessaries
+def assume_role(Id,role,session_name,aws_service,region='us-east-2'):
     sts_client = boto3.client('sts')
-    assume_role = sts_client.assume_role(
-        RoleArn='arn:aws:iam::%s:role/%s' % (Id,role),
-        RoleSessionName=session_name
-    )
+    try:
+        assume_role = sts_client.assume_role(
+            RoleArn='arn:aws:iam::%s:role/%s' % (Id,role),
+            RoleSessionName=session_name
+        )
+    except Exception as e:
+        logger.error(e, exc_info=True)
+        print('Could not assume IAM on account %s. Error: %s' % (
+            str(Id),
+            str(e))
+        )
     credentials = assume_role['Credentials']
     client = boto3.client(
         aws_service,
@@ -259,6 +270,7 @@ def list_resources(
     client,
     resource,
     resource_action,
+    token_name,
     **kwargs):
 
     page = 1
@@ -267,14 +279,11 @@ def list_resources(
     print('Page 1: %s' % resource_list)
     resources = resource_list[resource]
     print(resources)
-    # Validates if there is more data to be retrivied and put it on a loop
-    if 'IsTruncated' in resource_list and resource_list['IsTruncated']:
-        print('More than one page to display data. Paginating...')
-        while resource_list['IsTruncated']:
-            kwargs['Marker']=resource_list['Marker']
-            page += 1
-            resource_list = func(**kwargs)
-            print('Page %s: %s' % (page,resource_list))
-            resources.extend(resource_list[resource])
+    while token_name in resource_list:
+        kwargs[token_name]=resource_list[token_name]
+        page += 1
+        resource_list = func(**kwargs)
+        print('Page %s: %s' % (page,resource_list))
+        resources.extend(resource_list[resource])
 
     return resources
