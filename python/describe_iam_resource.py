@@ -2,6 +2,7 @@ import boto3
 from os import environ
 from octopus import list_resources,assume_role
 from json import loads,dumps
+from ast import literal_eval
 
 
 # Records items on dynamodb table
@@ -24,19 +25,20 @@ def update_item(client,Id,expression,values):
 
 # Main function
 def lambda_handler(event, context):
+    print("Event received: {}".format(str(event)))
 
-    # Variables
-    resource = event["resource"]#"Roles"
-    resource_name_tag = event["resource_name_tag"]#"RoleName"
-    action_list_resource = event["action_list_resource"]#"list_roles"
-    action_list_resource_policies = event["action_list_resource_policies"]#"list_role_policies"
-    action_get_resource_policy = event["action_get_resource_policy"]#"get_role_policy"
-    action_list_attached_policies = event["action_list_attached_policies"]#"list_attached_role_policies"
-    token_name = event["token_name"]#"Marker"
-    session_name = event["session_name"]
-    accounts = event["accounts"]
+    for record in event["Records"]:
+        # Variables
+        resource = literal_eval(record["body"])["resource"]
+        resource_name_tag = literal_eval(record["body"])["resource_name_tag"]
+        action_list_resource = literal_eval(record["body"])["action_list_resource"]
+        action_list_resource_policies = literal_eval(record["body"])["action_list_resource_policies"]
+        action_get_resource_policy = literal_eval(record["body"])["action_get_resource_policy"]
+        action_list_attached_policies = literal_eval(record["body"])["action_list_attached_policies"]
+        token_name = literal_eval(record["body"])["token_name"]
+        session_name = literal_eval(record["body"])["session_name"]
+        account = literal_eval(record["body"])["account"]
 
-    for account in accounts:
         print(account)
         # Assumes linked account role with IAM service
         print("Setting up IAM Service...")
@@ -206,4 +208,7 @@ def lambda_handler(event, context):
                 )
             )
 
-        return print("List of {} extracted: {}".format(resource,resource_list))
+        return print("List of {} extracted: {}".format(
+            resource,
+            resource_list)
+        )
