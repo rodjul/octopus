@@ -206,4 +206,4 @@ def lambda_handler(event, context):
                 )
             )
 
-        print("List of {} extracted: {}".format(resource,resource_list))
+        return print("List of {} extracted: {}".format(resource,resource_list))
