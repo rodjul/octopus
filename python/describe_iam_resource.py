@@ -1,7 +1,28 @@
 import boto3
 from os import environ
 from octopus import list_resources,assume_role
+from json import loads,dumps
 
+
+# Records items on dynamodb table
+def update_item(client,Id,expression,values):
+    response = client.update_item(
+        TableName=environ["accounts_table"],
+        Key={
+            "Id": {
+                "S": Id
+            }
+        },
+        ReturnValues="ALL_NEW",
+        ReturnConsumedCapacity="TOTAL",
+        ReturnItemCollectionMetrics="SIZE",
+        UpdateExpression=expression,
+        ExpressionAttributeValues={":v":values}
+    )
+    return response
+        
+
+# Main function
 def lambda_handler(event, context):
 
     # Variables
@@ -53,20 +74,14 @@ def lambda_handler(event, context):
 
         # Loop to create structure on table where resources will be saved
         for expression,values in update_parameters.items():
-            response = dynamodb_client.update_item(
-                TableName=environ["accounts_table"],
-                Key={
-                    "Id": {
-                        "S": account["Id"]
-                    }
-                },
-                ReturnValues="ALL_NEW",
-                ReturnConsumedCapacity="TOTAL",
-                ReturnItemCollectionMetrics="SIZE",
-                UpdateExpression=expression,
-                ExpressionAttributeValues={":v":values}
+            print(
+                update_item(
+                    dynamodb_client,
+                    account["Id"],
+                    expression,
+                    values
+                )
             )
-            print(response)
 
         # Iterates through resource listing policies
         print("Analysing %s one by one..." % resource)
@@ -178,4 +193,17 @@ def lambda_handler(event, context):
                         str(item[resource_name_tag]),
                         str(e))
                     )
+
+            print(
+                update_item(
+                    dynamodb_client,
+                    account["Id"],
+                    "SET Services.IAM.{}_list = list_append(Services.IAM.{}_list,:v)".format(
+                        resource,
+                        resource
+                    ),
+                    {"L":[{"S":str(item)}]}
+                )
+            )
+
         print("List of {} extracted: {}".format(resource,resource_list))
