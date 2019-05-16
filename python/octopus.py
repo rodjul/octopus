@@ -1,8 +1,9 @@
 import boto3
-from os import popen
+from os import popen,environ
 import re
 from json import dumps
 import logging
+import botocore
 
 logger = logging.Logger('catch_all')
 
@@ -287,3 +288,94 @@ def list_resources(
         resources.extend(resource_list[resource])
 
     return resources
+
+# Logs events and sends them to the right place
+def my_logging(msg,type="info"):
+    print(msg)
+    return msg
+
+
+# Get credentials for AWS Service
+def get_creds(aws_service,**kwargs):
+    if "Id" not in kwargs:
+        return boto3.client(aws_service)
+    else:
+        try:
+            sts = boto3.client("sts")
+        except botocore.exceptions.ClientError as e:
+            return my_logging(e,"error") 
+
+        if "role" in kwargs:
+            role = kwargs["role"]
+        else:
+            role = "octopusmngt"
+
+        if "session_name" in kwargs:
+            session_name = kwargs["session_name"]
+        else:
+            session_name = "octopusroleassumed"
+        
+        try:
+            role = sts.assume_role(
+                RoleArn="arn:aws:iam::{}:role/{}".format(kwargs["Id"],role),
+                RoleSessionName=session_name
+            )
+        except botocore.exceptions.ClientError as e:
+            return my_logging(e,"error")
+
+        if "region" in kwargs:
+            region = kwargs["region"]
+        else:
+            region = "us-east-2"       
+
+        try:    
+            client = boto3.client(
+                aws_service,
+                region_name=region,
+                aws_access_key_id=role['Credentials']['AccessKeyId'],
+                aws_secret_access_key=role['Credentials']['SecretAccessKey'],
+                aws_session_token=role['Credentials']['SessionToken']
+            )
+            return client
+        except botocore.exceptions.ClientError as e:
+            return my_logging(e,"error")
+
+# Send message to sqs queue specified
+def send_sqs(msg,sqs_url):
+    sqs_client = get_creds("sqs")
+    try:
+        response = sqs_client.send_message(
+            QueueUrl=sqs_url,
+            MessageBody=dumps(msg)
+        )
+        return my_logging("{} - {}".format(msg,response))
+    except botocore.exceptions.ClientError as e:
+        return my_logging(e,"error")
+
+def send_sns(subject,msg,topic_arn):
+    sns_client = get_creds("sns")
+    try:
+        response = sns_client.publish(
+            TopicArn=topic_arn,
+            Message=str(msg),
+            Subject=subject,
+        )
+        return response
+    except botocore.exceptions.ClientError as e:
+        return my_logging(e,"error")        
+
+# Verifies if policy is too permissive allowing full access
+def is_full_access(action,Id,Email,Resource,Resource_name,Policy,sqs_url):
+    if action in ["*","*:*"]:
+        msg = {
+            "Alert":"Policy Too Permissive - Full Access found",
+            "Id":Id,
+            "Email":Email,
+            Resource:Resource_name,
+            "Policy": Policy
+        }
+        
+        return send_sqs(str(msg),sqs_url)
+
+    else:
+        return False
