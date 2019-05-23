@@ -1,0 +1,454 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description":"Template que possui todas as regras e policies associadas. Permite escolher na criação da stack a policy que será criada",
+	"Parameters":{
+		"RoleType":{
+			"Type":"String",
+			"Description":"Selecionar a Role com base nos valores para criar nessa conta",
+			"AllowedValues":["devopsplatform","appdynamicsadmin","customersnapshotadmin","octopusmngt"]		
+		},
+		"NomeConta":{
+			"Type":"String",
+			"Description":"Nome da conta que esta sendo criada"
+		},
+		"ArnIdentityProvider":{
+			"Type":"String",
+			"Description":"ARN do Identity Provider",
+			"Default":"arn:aws:iam::247383794525:saml-provider/ADFS"
+		},
+		"CrossAccountID":{
+			"Type":"String",
+			"Default":"NOT_INFORMED",
+			"Description":"Deixar NOT_INFORMED se nao for utilizar Cross Account"
+		}
+	},
+	"Conditions":{
+		"CreateDevopsplatform": { "Fn::Equals": [{"Ref":"RoleType"}, "devopsplatform"]},
+		"CreateAppdynamicsadmin": { "Fn::Equals": [{"Ref":"RoleType"}, "appdynamicsadmin"]},
+		"CreateCustomersnapshotadmin": { "Fn::Equals": [{"Ref":"RoleType"}, "customersnapshotadmin"]},
+		"CreateOctopusmngt": { "Fn::And": [
+									{ "Fn::Equals": [{"Ref":"RoleType"}, "octopusmngt"]},
+									{ "Fn::Not":[ {"Fn::Equals":[{"Ref":"CrossAccountID"},"NOT_INFORMED "]} ] }
+								]
+							}
+	},
+	
+	"Resources": {
+	   
+		"CreatePolicyAccessmngt" : {
+		  "Type" : "AWS::IAM::ManagedPolicy",
+		  "Properties" : {
+			"Description" : "This role is used to provide access to the Security team responsible for IDM. It provides full access to AWS IAM and ReadOnly access to other resources",
+			"Path" : "/",
+			"PolicyDocument" :   {
+				"Version": "2012-10-17",
+				"Statement": [
+						{
+							"Sid": "accessmngt",
+							"Effect": "Allow",
+							"Action": [
+								"iam:*",
+								"cloudtrail:*",
+								"support:*"
+							],
+							"Resource": "*",
+							"Condition": {
+								"IpAddress": {
+									"aws:SourceIp": "187.94.52.20/32"
+								}
+							}
+						}]
+			},
+			"ManagedPolicyName":"policy-accessmngt"
+		  }
+		},
+		"CreateRoleAccessmngt": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+				   "Version": "2012-10-17",
+					"Statement": [	{
+						"Effect": "Allow",
+						"Principal": {
+							"Federated": {"Ref":"ArnIdentityProvider" }
+						},
+						"Action": "sts:AssumeRoleWithSAML",
+						"Condition": {
+							"StringEquals": {
+							  "SAML:aud": "https://signin.aws.amazon.com/saml"
+							}
+						}
+					} ]
+				},
+				"Path": "/",
+				"ManagedPolicyArns": [ { "Ref" : "CreatePolicyAccessmngt" } ],
+				"RoleName":{ "Fn::Join":[ "", [ { "Ref" : "NomeConta" }, "-accessmngt" ]]}
+			}
+		},
+		  
+		"CreatePolicyBusinessops" : {
+		  "Type" : "AWS::IAM::ManagedPolicy",
+		  "Properties" : {
+			"Description" : "This role is used to provide access to the Business Ops team responsible for Cost Management. It provides full access to AWS Billing and Portal and ReadOnly access to other resources.",
+			"Path" : "/",
+			"PolicyDocument" :   {
+				"Version": "2012-10-17",
+				"Statement": [
+						{
+							"Sid": "businessops",
+							"Effect": "Allow",
+							"Action": [
+								"aws-portal:*",
+								"awsbillingconsole:*",
+								"budgets:*",
+								"cur:*",
+								"support:*"
+							],
+							"Resource": "*",
+							"Condition": {
+								"IpAddress": {
+									"aws:SourceIp": "187.94.52.20/32"
+								}
+							}
+						}]
+			},
+			"ManagedPolicyName":"policy-businessops"
+		  }
+		},
+		"CreateRoleBusinessops": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+				   "Version": "2012-10-17",
+					"Statement": [	{
+						"Effect": "Allow",
+						"Principal": {
+							"Federated": {"Ref":"ArnIdentityProvider" }
+						},
+						"Action": "sts:AssumeRoleWithSAML",
+						"Condition": {
+							"StringEquals": {
+							  "SAML:aud": "https://signin.aws.amazon.com/saml"
+							}
+						}
+					} ]
+				},
+				"Path": "/",
+				"ManagedPolicyArns": [ { "Ref" : "CreatePolicyBusinessops" } ],
+				"RoleName":{ "Fn::Join":[ "", [ { "Ref" : "NomeConta" }, "-businessops" ]]}
+			}
+		},
+		  
+		"CreatePolicyDevopsplatform" : {
+		  "Type" : "AWS::IAM::ManagedPolicy",
+		  "Condition":"CreateDevopsplatform",
+		  "Properties" : {
+			"Description" : "This role is used to provide access to the Devops Platform team responsible for Kubernetes Cluster. It provides full access to most resources on AWS.",
+			"Path" : "/",
+			"PolicyDocument" :   {
+				"Version": "2012-10-17",
+				"Statement": [
+						{
+							"Sid": "devopsplatform-Deny-STOP_DELETE-Cloudtrail",
+							"Effect": "Deny",
+							"Action": [
+								"cloudtrail:CreateTrail",
+								"cloudtrail:DeleteTrail",
+								"cloudtrail:StopLogging",
+								"cloudtrail:UpdateTrail"
+							],
+							"Resource": "*"
+						},
+						{
+							"Sid": "devopsplatform-Deny-WRITE-Portal",
+							"Effect": "Deny",
+							"Action": [
+								"aws-portal:ModifyAccount",
+								"aws-portal:ModifyBilling",
+								"aws-portal:ModifyPaymentMethods"
+							],
+							"Resource": "*"
+						},
+						{
+							"Sid": "devopsplatform-Allow-from-Intranet",
+							"Effect": "Allow",
+							"Action": [
+								"*"
+							],
+							"Resource": "*",
+							"Condition":{
+								"IpAddress": {
+									"aws:SourceIp": "187.94.52.20/32"
+								}
+							}
+						}]
+			},
+			"ManagedPolicyName":"policy-devopsplatform"
+		  }
+		},
+		"CreateRoleDevopsplatform": {
+			"Type": "AWS::IAM::Role",
+			"Condition":"CreateDevopsplatform",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+				   "Version": "2012-10-17",
+					"Statement": [	{
+						"Effect": "Allow",
+						"Principal": {
+							"Federated": {"Ref":"ArnIdentityProvider" }
+						},
+						"Action": "sts:AssumeRoleWithSAML",
+						"Condition": {
+							"StringEquals": {
+							  "SAML:aud": "https://signin.aws.amazon.com/saml"
+							}
+						}
+					} ]
+				},
+				"Path": "/",
+				"ManagedPolicyArns": [ { "Ref" : "CreatePolicyDevopsplatform" } ],
+				"RoleName":{ "Fn::Join":[ "", [ { "Ref" : "NomeConta" }, "-devopsplatform" ]]}
+			}
+		},
+		  
+		"CreatePolicyAppdynamicsadmin" : {
+		  "Type" : "AWS::IAM::ManagedPolicy",
+		  "Condition":"CreateAppdynamicsadmin",
+		  "Properties" : {
+			"Description" : "This role is used to provide access to the appdynamicsadmin team.",
+			"Path" : "/",
+			"PolicyDocument" :   {
+				"Version": "2012-10-17",
+				"Statement": [
+						{
+							"Sid": "appdynamicsadmin",
+							"Effect": "Allow",
+							"Action": [
+								"s3:*",
+								"glacier:*"
+							],
+							"Resource": "*",
+							"Condition":{
+								"IpAddress": {
+									"aws:SourceIp": "187.94.52.20/32"
+								}
+							}
+						}]
+			},
+			"ManagedPolicyName":"policy-appdynamicsadmin"
+		  }
+		},
+		"CreateRoleAppdynamicsadmin": {
+			"Type": "AWS::IAM::Role",
+			"Condition":"CreateAppdynamicsadmin",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+				   "Version": "2012-10-17",
+					"Statement": [	{
+						"Effect": "Allow",
+						"Principal": {
+							"Federated": {"Ref":"ArnIdentityProvider" }
+						},
+						"Action": "sts:AssumeRoleWithSAML",
+						"Condition": {
+							"StringEquals": {
+							  "SAML:aud": "https://signin.aws.amazon.com/saml"
+							}
+						}
+					} ]
+				},
+				"Path": "/",
+				"ManagedPolicyArns": [ { "Ref" : "CreatePolicyAppdynamicsadmin" } ],
+				"RoleName":{ "Fn::Join":[ "", [ { "Ref" : "NomeConta" }, "-appdynamicsadmin" ]]}
+			}
+		},
+		  
+		"CreatePolicyCustomersnapshotadmin" : {
+		  "Type" : "AWS::IAM::ManagedPolicy",
+		  "Condition":"CreateCustomersnapshotadmin",
+		  "Properties" : {
+			"Description" : "This role is used to provide access to the customer snapshot team.",
+			"Path" : "/",
+			"PolicyDocument" :   {
+				"Version": "2012-10-17",
+				"Statement": [
+						{
+							"Sid": "customersnapshotadmin",
+							"Effect": "Allow",
+							"Action": [
+								"s3:*",
+								"glacier:*",
+								"ec2:*",
+								"rds:*",
+								"kms:*"
+							],
+							"Resource": "*",
+							"Condition":{
+								"IpAddress": {
+									"aws:SourceIp": "187.94.52.20/32"
+								}
+							}
+						}]
+			},
+			"ManagedPolicyName":"policy-customersnapshotadmin"
+		  }
+		},
+		"CreateRoleCustomersnapshotadmin": {
+			"Type": "AWS::IAM::Role",
+			"Condition":"CreateCustomersnapshotadmin",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+				   "Version": "2012-10-17",
+					"Statement": [	{
+						"Effect": "Allow",
+						"Principal": {
+							"Federated": {"Ref":"ArnIdentityProvider" }
+						},
+						"Action": "sts:AssumeRoleWithSAML",
+						"Condition": {
+							"StringEquals": {
+							  "SAML:aud": "https://signin.aws.amazon.com/saml"
+							}
+						}
+					} ]
+				},
+				"Path": "/",
+				"ManagedPolicyArns": [ { "Ref" : "CreatePolicyCustomersnapshotadmin" } ],
+				"RoleName":{ "Fn::Join":[ "", [ { "Ref" : "NomeConta" }, "-customersnapshotadmin" ]]}
+			}
+		},
+		  
+		"CreatePolicySupportportal" : {
+		  "Type" : "AWS::IAM::ManagedPolicy",
+		  "Properties" : {
+			"Description" : "This role is used to provide access to the Support Portal on AWS. It provides full access to Support Portal.",
+			"Path" : "/",
+			"PolicyDocument" :   {
+				"Version": "2012-10-17",
+				"Statement": [
+						{
+							"Sid": "supportportal",
+							"Effect": "Allow",
+							"Action": [
+								"support:*"
+							],
+							"Resource": "*",
+							"Condition":{
+								"IpAddress": {
+									"aws:SourceIp": "187.94.52.20/32"
+								}
+							}
+						}]
+			},
+			"ManagedPolicyName":"policy-supportportal"
+		  }
+		},
+		"CreateRoleSupportportal": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+				   "Version": "2012-10-17",
+					"Statement": [	{
+						"Effect": "Allow",
+						"Principal": {
+							"Federated": {"Ref":"ArnIdentityProvider" }
+						},
+						"Action": "sts:AssumeRoleWithSAML",
+						"Condition": {
+							"StringEquals": {
+							  "SAML:aud": "https://signin.aws.amazon.com/saml"
+							}
+						}
+					} ]
+				},
+				"Path": "/",
+				"ManagedPolicyArns": [ { "Ref" : "CreatePolicySupportportal" } ],
+				"RoleName":{ "Fn::Join":[ "", [ { "Ref" : "NomeConta" }, "-customersnapshotadmin" ]]}
+			}
+		},
+		  
+		"CreatePolicyOctopusmngt" : {
+		  "Type" : "AWS::IAM::ManagedPolicy",
+		  "Condition":"CreateOctopusmngt",
+		  "Properties" : {
+			"Description" : "This role is used to provide access to Octopus from the management account.",
+			"Path" : "/",
+			"PolicyDocument" :   {
+				"Version": "2012-10-17",
+				"Statement": [
+						{
+							"Sid": "octopusmngt",
+							"Effect": "Allow",
+							"Action": [
+								"iam:*",
+								"cloudtrail:*",
+								"sns:AddPermission",
+								"sns:CreateTopic",
+								"sns:DeleteTopic",
+								"sns:ListTopics",
+								"sns:SetTopicAttributes",
+								"sns:GetTopicAttributes",
+								"s3:CreateBucket",
+								"s3:DeleteBucket",
+								"s3:ListAllMyBuckets",
+								"s3:PutBucketPolicy",
+								"s3:ListBucket",
+								"s3:GetObject",
+								"s3:GetBucketLocation",
+								"s3:GetBucketPolicy",
+								"logs:CreateLogGroup",
+								"kms:ListKeys",
+								"kms:ListAliases",
+								"lambda:ListFunctions"
+							],
+							"Resource": "*"
+						}]
+			},
+			"ManagedPolicyName":"policy-octopusmngt"
+		  }
+		},
+		"CreateRoleOctopusmngtl": {
+			"Type": "AWS::IAM::Role",
+			"Condition":"CreateOctopusmngt",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+					{
+					  "Sid": "assumeoctopusmngt",
+					  "Effect": "Allow",
+					  "Principal": {
+							"AWS": { "Fn::Join":[ "", ["arn:aws:iam::", { "Ref" : "CrossAccountID" }, ":root" ]]}
+					  },
+					  "Action": "sts:AssumeRole"
+					}	]
+				},
+				"Path": "/",
+				"ManagedPolicyArns": [ { "Ref" : "CreatePolicyOctopusmngt" } ],
+				"RoleName":"octopusmngt"
+			}
+		}
+		  
+		  
+		
+		
+		
+		
+
+	},
+	
+	
+	"Outputs":{
+		"RoleAccessmngt":{ "Description":"ARN output of role created", "Value": {"Ref":"CreateRoleAccessmngt"}},
+		"RoleBusinessops":{ "Description":"ARN output of role created", "Value": {"Ref":"CreateRoleBusinessops"}},
+		"RoleDevopsplatform":{ "Description":"ARN output of role created", "Value": {"Ref":"CreateRoleDevopsplatform"}, "Condition": "CreateDevopsplatform"},
+		"RoleAppdynamicsadmin":{ "Description":"ARN output of role created", "Value": {"Ref":"CreateRoleAppdynamicsadmin"}, "Condition": "CreateAppdynamicsadmin"},
+		"RoleCustomersnapshotadmin":{ "Description":"ARN output of role created", "Value": {"Ref":"CreateRoleCustomersnapshotadmin"}, "Condition": "CreateCustomersnapshotadmin"},
+		"RoleSupportportal":{ "Description":"ARN output of role created", "Value": {"Ref":"CreateRoleSupportportal"}},
+		"RoleOctopusmngtl":{ "Description":"ARN output of role created", "Value": {"Ref":"CreateRoleOctopusmngtl"}, "Condition": "CreateOctopusmngt"}
+
+	}
+	
+	
+	
+}
