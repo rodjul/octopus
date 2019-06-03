@@ -266,24 +266,28 @@ def validate_event_data(payload):
 
     return True
 
+# Executes boto3 methods
+# This should only be used in cases where too many similar methods are called
+def my_aws_methods(client,resource_action,**kwargs):
+    try:
+        func = getattr(client,resource_action) # Impersonates selected method
+        resources = func(**kwargs) # runs method with its necessary arguments
+        return print(resources)
+    except botocore.exceptions.ClientError as e:
+        return my_logging(e,"error")  
+
 # List resources on AWS that needs pagination
-def list_resources(
-    client,
-    resource,
-    resource_action,
-    token_name,
-    **kwargs):
+def list_resources(client,resource,resource_action,token_name,**kwargs):
 
     page = 1
-    func = getattr(client,resource_action) # Impersonates selected method
-    resource_list = func(**kwargs) # runs method with its necessary arguments
+    resource_list = my_aws_methods(client,resource_action,**kwargs)
     print('Page 1: %s' % resource_list)
     resources = resource_list[resource]
     print(resources)
     while token_name in resource_list:
         kwargs[token_name]=resource_list[token_name]
         page += 1
-        resource_list = func(**kwargs)
+        resource_list = my_aws_methods(client,resource_action,**kwargs)
         print('Page %s: %s' % (page,resource_list))
         resources.extend(resource_list[resource])
 
@@ -379,3 +383,54 @@ def is_full_access(action,Id,Email,Resource,Resource_name,Policy,sqs_url):
 
     else:
         return False
+
+# Query items from dynamodb table paginating until all items are retrived
+def query_items(tableName,indexName,columns,expression,attrNames,attrValues):
+    
+    dynamodb_client = get_creds("dynamodb")
+
+    page = 1
+    items = [] # creates an empty list to add items retrieved with query
+    # Sets parameters that will be passed to 'query' method
+    params = {
+        "TableName":tableName,
+        "IndexName":indexName,
+        "ReturnConsumedCapacity":"INDEXES",
+        "ProjectionExpression":columns,
+        "KeyConditionExpression":expression,
+        "ExpressionAttributeNames":attrNames,
+        "ExpressionAttributeValues":attrValues
+    }
+
+    # Get the first set of items with query method
+    response = dynamodb_client.query(**params)
+    items.extend(response["Items"]) # Adds items to list
+    print("Query - page {}: {}".format(page,response))
+
+    # Verifies if there are more items to be retrieved
+    while "LastEvaluatedKey" in response:
+        # Adds the parameter that will paginate the query to retrieve aditional items
+        params["ExclusiveStartKey"] = {
+            params["ExpressionAttributeNames"]["#key"]:response["LastEvaluatedKey"]
+        }
+        page += 1
+
+        # Get remained items
+        response = dynamodb_client.query(**params)
+        items.extend(response["Items"]) # Adds items to list
+        print("Query - page {}: {}".format(page,response))
+
+    print("Query completed: {}".format(items))
+    return items
+
+# Sorts a list nested in an object in ascending order
+def sort_multilevel_obj(items):
+    if isinstance(items, dict):
+        for v in items.values():
+            v = sort_multilevel_obj(v)
+    if isinstance(items, list):
+        items.sort()
+        for i in items:
+            i = sort_multilevel_obj(i)
+
+    return items
