@@ -10,7 +10,6 @@ kwargs = {
 }
 
 # Verifies if resource does not exist yet and creates it
-
 get_resource = my_aws_methods(
     iam_client,
     "get_{}".format(my_event["IamResourceType"].lower()),
