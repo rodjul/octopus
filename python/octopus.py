@@ -272,9 +272,12 @@ def my_aws_methods(client,resource_action,**kwargs):
     try:
         func = getattr(client,resource_action) # Impersonates selected method
         resources = func(**kwargs) # runs method with its necessary arguments
-        return print(resources)
+        return my_logging(resources)
     except botocore.exceptions.ClientError as e:
-        return my_logging(e,"error")  
+        if e.response["Error"]["Code"] == "NoSuchEntity":
+            return my_logging("NoSuchEntity","warning")
+        else:
+            return my_logging(e.response["Error"],"error")  
 
 # List resources on AWS that needs pagination
 def list_resources(client,resource,resource_action,token_name,**kwargs):
