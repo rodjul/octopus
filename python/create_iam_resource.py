@@ -126,6 +126,70 @@ def get_attached_policies(**kwargs):
     return attached_policies
 
 # ============================================================================#
+#                          UPDATES EXISTENT POLICY                            #
+# ============================================================================#
+def update_policy_ver(policy,policy_data,versions):
+
+    for ver in versions:
+        # Find the version in use (default)
+        # and compares it with the template
+        # If it is different, updates it
+        if ver["IsDefaultVersion"]:
+
+            # Get policy default version details
+            ver_detail = iam_client.get_policy_version(
+                PolicyArn=policy["Arn"],
+                VersionId=ver["VersionId"]
+            )["PolicyVersion"]
+
+            # Sets documents in variables to comparison
+            # (It could done be directly on if statement but
+            # this way is easier to read)
+            ver_doc = sort_multilevel_obj(ver_detail["Document"])
+            my_logging("Document Version: {}".format(ver_doc))
+            templ_doc = sort_multilevel_obj(loads(policy_data["Document"]["S"]))
+            my_logging("Document Template: {}".format(templ_doc))
+            
+            # Compares current policy with the one should exist
+            # If different, updates it
+            if ver_doc != templ_doc:
+            
+                # If there are 5 versions already
+                # deletes de oldest one
+                if len(versions) >= 5:
+                    ver_id = "v1" # default version to delete
+                    from datetime import datetime
+                    from datetime import timezone
+                    
+                    comp_date = datetime.now(timezone.utc) # comparison date
+                    # Finds the oldest version
+                    for v in versions:
+                        if v["CreateDate"] < comp_date:
+                            comp_date = v["CreateDate"]
+                            ver_id = v["VersionId"]
+
+                    # Deletes the oldest version        
+                    iam_client.delete_policy_version(
+                        PolicyArn=policy["Arn"],
+                        VersionId=str(ver_id)
+                    )
+                
+                # Updates policy with new version
+                # Sets new version as default
+                new_version = iam_client.create_policy_version(
+                    PolicyArn=policy["Arn"],
+                    PolicyDocument=str(policy_data["Document"]["S"]),
+                    SetAsDefault=True
+                )
+                my_logging(
+                    "Policy {} Updated: {}".format(
+                        policy["PolicyName"],
+                        new_version
+                    )
+                )
+    return True
+
+# ============================================================================#
 #                    APPLY POLICIES AS SHOULD BE ON RESOURCE                  #
 # ============================================================================#
 def apply_policies(**resource):
@@ -300,7 +364,7 @@ def apply_policies(**resource):
                     PolicyName=policy_data["PolicyName"]["S"],
                     PolicyDocument=policy_data["Document"]["S"],
                     Description=policy_data["Description"]["S"]
-                )
+                )["Policy"]
                 my_logging(
                     "Policy {} Created on account: {}".format(
                         policy_data["PolicyName"]["S"],
@@ -334,63 +398,9 @@ def apply_policies(**resource):
                                 versions
                             )
                         )
-                        for ver in versions:
-                            # Find the version in use (default)
-                            # and compares it with the template
-                            # If it is different, updates it
-                            if ver["IsDefaultVersion"]:
 
-                                # Get policy default version details
-                                ver_detail = iam_client.get_policy_version(
-                                    PolicyArn=i["Arn"],
-                                    VersionId=ver["VersionId"]
-                                )["PolicyVersion"]
-
-                                # Sets documents in variables to comparison
-                                # (It could done be directly on if statement but
-                                # this way is easier to read)
-                                ver_doc = sort_multilevel_obj(ver_detail["Document"])
-                                my_logging("Document Version: {}".format(ver_doc))
-                                templ_doc = sort_multilevel_obj(loads(policy_data["Document"]["S"]))
-                                my_logging("Document Template: {}".format(templ_doc))
-                                
-                                # Compares current policy with the one should exist
-                                # If different, updates it
-                                if ver_doc != templ_doc:
-                                
-                                    # If there are 5 versions already
-                                    # deletes de oldest one
-                                    if len(versions) >= 5:
-                                        ver_id = "v1" # default version to delete
-                                        from datetime import datetime
-                                        from datetime import timezone
-                                        
-                                        comp_date = datetime.now(timezone.utc) # comparison date
-                                        # Finds the oldest version
-                                        for v in versions:
-                                            if v["CreateDate"] < comp_date:
-                                                comp_date = v["CreateDate"]
-                                                ver_id = v["VersionId"]
-
-                                        # Deletes the oldest version        
-                                        iam_client.delete_policy_version(
-                                            PolicyArn=i["Arn"],
-                                            VersionId=str(ver_id)
-                                        )
-                                    
-                                    # Updates policy with new version
-                                    # Sets new version as default
-                                    new_version = iam_client.create_policy_version(
-                                        PolicyArn=i["Arn"],
-                                        PolicyDocument=str(policy_data["Document"]["S"]),
-                                        SetAsDefault=True
-                                    )
-                                    my_logging(
-                                        "Policy {} Updated: {}".format(
-                                            i["PolicyName"],
-                                            new_version
-                                        )
-                                    )
+                        # Verifies if policy needs to be updated
+                        update_policy_ver(i,policy_data,versions)
 
         # Verifies if managed policy (AWS or local) is attached to resource
         already_attached = False
