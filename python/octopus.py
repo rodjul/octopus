@@ -397,13 +397,14 @@ def query_items(tableName,indexName,columns,expression,attrNames,attrValues):
     # Sets parameters that will be passed to 'query' method
     params = {
         "TableName":tableName,
-        "IndexName":indexName,
         "ReturnConsumedCapacity":"INDEXES",
         "ProjectionExpression":columns,
         "KeyConditionExpression":expression,
         "ExpressionAttributeNames":attrNames,
         "ExpressionAttributeValues":attrValues
     }
+    if indexName != None:
+        params["IndexName"] = indexName
 
     # Get the first set of items with query method
     response = dynamodb_client.query(**params)
@@ -412,7 +413,8 @@ def query_items(tableName,indexName,columns,expression,attrNames,attrValues):
 
     # Verifies if there are more items to be retrieved
     while "LastEvaluatedKey" in response:
-        # Adds the parameter that will paginate the query to retrieve aditional items
+        # Adds the parameter that will paginate the query
+        # To retrieve aditional items
         params["ExclusiveStartKey"] = {
             params["ExpressionAttributeNames"]["#key"]:response["LastEvaluatedKey"]
         }
