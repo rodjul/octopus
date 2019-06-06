@@ -219,24 +219,28 @@ def apply_policies(**resource):
     my_logging("ManagedPoliciesNames: {}".format(managed_policy_names))
 
     # Get the names of the inline policies that shoud exist on resource
+    templ_inline_policies = []
     templ_inline_policy_names = []
-    for i in resource["InlinePolicies"]["L"]:
-        templ_inline_policy_names.append(i["M"]["Name"]["S"])
-    my_logging(
-        "TemplateInlineNames: {}".format(
-            templ_inline_policy_names
+    if "InlinePolicies" in resource:
+        templ_inline_policies.extend(resource["InlinePolicies"]["L"])
+        for i in templ_inline_policies:
+            templ_inline_policy_names.append(i["M"]["Name"]["S"])
+        my_logging(
+            "TemplateInlineNames: {}".format(
+                templ_inline_policy_names
+            )
         )
-    )
 
     # Get the names of the managed policies that shoud be attached on resource
     templ_attach_policy_names = []
-    for i in resource["ManagedPolicies"]["L"]:
-        templ_attach_policy_names.append(i["S"])
-    my_logging(
-        "TemplateAttachedNames: {}".format(
-            templ_attach_policy_names
+    if "ManagedPolicies" in resource:
+        for i in resource["ManagedPolicies"]["L"]:
+            templ_attach_policy_names.append(i["S"])
+        my_logging(
+            "TemplateAttachedNames: {}".format(
+                templ_attach_policy_names
+            )
         )
-    )
 
 
     ### Compares inline policies with the ones should exist ###
@@ -254,7 +258,7 @@ def apply_policies(**resource):
             my_logging("Delete Inline Policy: {}".format(delete_inline))
 
     # if inline policy does not exists, creates it
-    for item in resource["InlinePolicies"]["L"]:
+    for item in templ_inline_policies:
         if item["M"]["Name"]["S"].lower() not in map(str.lower,inline_policies):
             create_params = my_kwargs()
             create_params["PolicyName"] = item["M"]["Name"]["S"]
