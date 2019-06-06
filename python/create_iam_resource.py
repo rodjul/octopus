@@ -4,6 +4,7 @@ from octopus import my_aws_methods
 from octopus import my_logging
 from octopus import sort_multilevel_obj
 from octopus import query_items
+from octopus import send_sqs
 from json import loads,dumps
 from os import environ
 
@@ -29,21 +30,21 @@ def create_iam_resource(**resource):
     # Verifies if resource was retrivied or did not exist
     if get_resource == "NoSuchEntity":
         
+        resource_params = my_kwargs()
         # If the resource is a Role
         # adds more parameters to kwargs
         if resource_key == "Role":
-            role_params = my_kwargs()
-            role_params["AssumeRolePolicyDocument"] = str(resource["AssumeRolePolicy"]["S"])
-            role_params["Description"] = resource["Description"]["S"]
+            resource_params["AssumeRolePolicyDocument"] = str(resource["AssumeRolePolicy"]["S"])
+            resource_params["Description"] = resource["Description"]["S"]
             if "MaxSession" in resource:
-                role_params["MaxSessionDuration"] = int(resource["MaxSession"]["N"])
-                my_logging("role_params updated: {}".format(role_params))    
+                resource_params["MaxSessionDuration"] = int(resource["MaxSession"]["N"])
+                my_logging("resource_params updated: {}".format(resource_params))    
 
         # Creates resource
         create_resource = my_aws_methods(
             iam_client,
             "create_{}".format(resource_key.lower()),
-            **role_params
+            **resource_params
         )
         return my_logging({
             "status":"new",
@@ -438,7 +439,6 @@ def apply_policies(**resource):
     final_policies.append({"attached":final_attached})
 
     return "Policies Enforced Successfully: {}".format(final_policies)
-                    
 
 # ============================================================================#
 #                               MAIN FUNCTION                                 #
@@ -446,7 +446,7 @@ def apply_policies(**resource):
 def lambda_handler(event,context):
     my_event = {
         "Id":"826839167791",
-        "IamResourceType":"Role",
+        "IamResourceType":"Group",
         "IamResourceName":"teste"
     }
 
@@ -493,5 +493,23 @@ def lambda_handler(event,context):
     resource = create_iam_resource(**item["Item"])
     my_logging("Enforce Resource: {}".format(resource))
 
+    # Enforces policies on resource
     policies = apply_policies(**item["Item"])
     my_logging("Enforce Policies: {}".format(policies))
+
+    # Sends message to queue of the microservice that attaches User to Groups
+    if resource_key == "User" and "Groups" in item["Item"]:
+        my_message = send_sqs(
+            {
+                "Id":my_event["Id"],
+                "User":item["Item"]
+            },
+            environ["attach_user_to_groups_queue"]
+        )
+        my_logging(
+            "Message to Attach User {} to Groups on account {} sent: {}".format(
+                resource_name,
+                my_event["Id"],
+                my_message
+            )
+        )
