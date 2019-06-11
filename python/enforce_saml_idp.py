@@ -3,6 +3,47 @@ import botocore
 from octopus import get_creds
 from octopus import my_logging
 
+# ============================================================================#
+#                                 CREATES IDP                                 #
+# ============================================================================#
+def create_idp(idp_name,saml_doc):
+    # Creates IDP on account
+    try:
+        create = iam_client.create_saml_provider(
+            SAMLMetadataDocument=str(saml_doc),
+            Name=idp_name
+        )
+        my_logging("IDP created: {}".format(create))
+        return create
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not create IDP: {}".format(e))
+        return e
+
+# ============================================================================#
+#                                 UPDATES IDP                                 #
+# ============================================================================#
+ def update_idp(Id,idp_name,saml_doc)
+    # Sets variable with ARN for IDP
+    idp_arn = "arn:aws:iam::{}:saml-provider/{}".format(
+        Id,
+        idp_name
+    )
+
+    try:
+        # Updates Saml Document
+        update = iam_client.update_saml_provider(
+            SAMLMetadataDocument=str(saml_doc),
+            SAMLProviderArn=idp_arn
+        )
+        my_logging("IDP updated: {}".format(update))
+        return update
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not update IDP: {}".format(e))
+        return e
+
+# ============================================================================#
+#                               MAIN FUNCTION                                 #
+# ============================================================================#
 def lambda_handler(event,context):
     # Event Sample
     # {"saml_xml":"", "bucket_name":"", "Id":"", "idp_name":""}
@@ -11,36 +52,26 @@ def lambda_handler(event,context):
     saml_xml = event["saml_xml"]
 
     # Retrieves SAML file from S3 bucket
-    s3 = boto3.resource("s3")
-    s3.meta.client.download_file(
-        event["bucket_name"],
-        "files/{}".format(saml_xml),
-        '/tmp/{}'.format(saml_xml))
+    s3_client = get_creds("s3")
+    saml_doc = s3_client.get_object(
+        Bucket=event["bucket_name"],
+        Key="files/{}".format(saml_xml)
+    )["Body"].read().decode("utf-8")
+    my_logging("SAML Doc: {}".format(saml_doc))
 
-    # Opens file as a variable
-    saml_doc = open("/tmp/{}".format(saml_xml),"r")
-
-    # Gets credential to work with iam in desired account
+    # Gets credentials for IAM Client
+    global iam_client
     iam_client = get_creds(
         "iam",
         Id= event["Id"]
     )
-    try:
-        # Creates IDP on account
-        create_idp = iam_client.create_saml_provider(
-            SAMLMetadataDocument=str(saml_doc.read()),
-            Name=event["idp_name"]
-        )
-        my_logging(create_idp)
-    except botocore.exceptions.ClientError as e:
-        my_logging(e)
 
-        # If IDP already exists, update it
-        if e.response["Error"]["Code"] != "": # TO DO update with error code
-            update_idp = iam_client.update_saml_provider(
-                SAMLMetadataDocument=str(saml_doc.read()),
-                SAMLProviderArn="arn:aws:iam::{}:saml-provider/{}".format(event["Id"],event["idp_name"])
-            )
-            my_logging(update_idp)
+    # Tryes to create idp on account
+    idp = create_idp(event["idp_name"],saml_doc)
+    if not isinstance(idp,botocore.exceptions.ClientError):
+        
 
-    saml_doc.close()
+    # If IDP already exists, updates it
+    elif idp.response["Error"]["Code"] == "EntityAlreadyExists":
+        
+        update_idp(event["Id"],event["idp_name"],saml_doc)
