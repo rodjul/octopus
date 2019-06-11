@@ -38,7 +38,7 @@ def create_idp(idp_name,saml_doc):
 # ============================================================================#
 #                                 UPDATES IDP                                 #
 # ============================================================================#
- def update_idp(Id,idp_name,saml_doc)
+def update_idp(Id,idp_name,saml_doc):
     # Sets variable with ARN for IDP
     idp_arn = "arn:aws:iam::{}:saml-provider/{}".format(
         Id,
@@ -79,10 +79,7 @@ def lambda_handler(event,context):
 
     # Tryes to create idp on account
     idp = create_idp(event["idp_name"],saml_doc)
-    if not isinstance(idp,botocore.exceptions.ClientError):
-        
-
     # If IDP already exists, updates it
-    elif idp.response["Error"]["Code"] == "EntityAlreadyExists":
-        
+    if isinstance(idp,botocore.exceptions.ClientError) and \
+    idp.response["Error"]["Code"] == "EntityAlreadyExists":
         update_idp(event["Id"],event["idp_name"],saml_doc)
