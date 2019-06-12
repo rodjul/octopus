@@ -182,6 +182,21 @@ def sort_multilevel_obj(items):
 
     return items
 
+# ============================================================================#
+#                     DOWNLOAD FILE FROM S3 AS A VARIABLE                     #
+# ============================================================================#
+def get_file_from_s3(bucket_name,file_path):
+    s3_client = get_creds("s3")
+
+    # Retrieves SAML file from S3 bucket
+    my_file = s3_client.get_object(
+        Bucket=bucket_name,
+        Key=file_path
+    )["Body"].read().decode("utf-8")
+
+    my_logging("File retrieved: {}".format(my_file))
+
+    return my_file
 
 
 # ====================================

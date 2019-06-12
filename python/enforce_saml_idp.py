@@ -2,22 +2,7 @@ import boto3
 import botocore
 from octopus import get_creds
 from octopus import my_logging
-
-# ============================================================================#
-#                     DOWNLOAD FILE FROM S3 AS A VARIABLE                     #
-# ============================================================================#
-def get_file_from_s3(bucket_name,file_path):
-    s3_client = get_creds("s3")
-
-    # Retrieves SAML file from S3 bucket
-    my_file = s3_client.get_object(
-        Bucket=bucket_name,
-        Key=file_path
-    )["Body"].read().decode("utf-8")
-
-    my_logging("File retrieved: {}".format(my_file))
-
-    return my_file
+from octopus import get_file_from_s3
 
 # ============================================================================#
 #                                 CREATES IDP                                 #
