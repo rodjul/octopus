@@ -10,7 +10,7 @@ Event: {"Id":"0123465789"}
 '''
 
 
-acc_id_trail = environ['id_cloudtrail'] #461835337376
+acc_id_trail = environ['id_cloudtrail']
 bucket_cloudtrail = environ['bucket_cloudtail']
 name_trail = environ['name_cloudtrail']
 
@@ -62,7 +62,7 @@ def update_policy_bucket(acc_id_new):
                     "Service": "cloudtrail.amazonaws.com"
                 },
                 "Action": "s3:GetBucketAcl",
-                "Resource": "arn:aws:s3:::rodrigo-teste-bucket-1"
+                "Resource": "arn:aws:s3:::"+bucket_cloudtrail
             },
             {
                 "Sid": "AWSCloudTrailWrite20150319",
