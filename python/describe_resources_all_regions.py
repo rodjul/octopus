@@ -100,7 +100,9 @@
 
 
 
-
+from octopus import get_creds
+from octopus import list_resources
+from ast import literal_eval
 
 
 
@@ -129,27 +131,28 @@ def vars_by_resource(resource):
     if resource == "ec2":
         my_logging("Setting variables for ec2")
         response_item = "Reservations"
-        resource_action = "describe_instances"
+        desc_action = "describe_instances"
         token_name = "NextToken"
         sg_type = "GroupNames"
 
     elif resource == "rds":
         my_logging("Setting variables for rds")
         response_item = "DBInstances"
-        resource_action = "describe_db_instances"
+        desc_action = "describe_db_instances"
         token_name = "Marker"
         sg_type = "DBSecurityGroupName"
     
-    return response_item, resource_action, token_name, sg_type
+    return response_item, desc_action, token_name, sg_type
 
 # ============================================================================#
 #                      LISTS RESOURCES ON SELECTED REGION                     #
 # ============================================================================#
-def list_resources(service, Id, region):
+def list_resources(service, Id, region, resp_item, action, token):
+
     my_logging("Describing {} on region {}".format(service,region))
     try:
         client = get_creds(service,Id,region)
-        return list_resources(client,response_item,resource_action,token_name)
+        return list_resources(client,resp_item,action,token)
 
     except botocore.exceptions.ClientError as e:
         my_logging("Could not list resources: {}".format(e),"error")
@@ -230,10 +233,9 @@ def send_to_s3(bucket_name,file_name,file):
 # ============================================================================#
 #                                 MAIN FUCTION                                #
 # ============================================================================#
+def main_function(event):
 
-    global response_item
-    global resource_action
-    global token_name
+
     global sg_type
     response_item,resource_action,token_name,sg_type=vars_by_resource(my_event["resource"])
 
@@ -251,10 +253,24 @@ def send_to_s3(bucket_name,file_name,file):
 
 
 # ============================================================================#
-#  #
+#         HANDLES TRIGGER EVENT WHETHER IS SINGLE MESSAGE OR BATCH JOB        #
 # ============================================================================#
+def handle_event_trigger(event):
+    my_logging("Event Received on Lambda Trigger: {}".format(event))
+    # Verifies if the event has more then 1 message in payload
 
+    # This happens with multiple SQS messages in batch jobs
+    if "Records" in event:
+        my_logging("{} messages for batch job".format(len(event["Records"])))
+        for record in event["Records"]:
+            my_logging("Working on message: {}".format(record))
+            main_function(literal_eval(record["body"]))
 
+    # This happens when function is triggered directly by another lambda or api
+    else:
+        my_logging("Single message in event. Trigger directly by api request")
+        my_logging("Working on message: {}".format(event))
+        main_function(event)
 
 
 # ============================================================================#
