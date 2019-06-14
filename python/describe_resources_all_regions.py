@@ -215,13 +215,20 @@ def get_sg_details(Id,region):
 # ============================================================================#
 #                        SENDS ACCOUNT INVENTORY TO S3                        #
 # ============================================================================#
-
-
-
-
+def send_to_s3(bucket_name,file_name,file):
+    try:
+        client = get_creds("s3")
+        return client.put_object(
+            Body=file,
+            Bucket=bucket_name,
+            Key=file_name
+        )
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not put object on s3: {}".format(e),"error")
+        return e
 
 # ============================================================================#
-# MAIN FUCTION #
+#                                 MAIN FUCTION                                #
 # ============================================================================#
 
     global response_item
