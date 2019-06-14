@@ -188,22 +188,34 @@ def keys_to_remove():
 #             REMOVES SECONDARY INFO ABOUT RESOURCES WHEN DESIRED             #
 # ============================================================================#
 def remove_secondary_data(instances,keys):
-    for i in instances:
+    my_logging("Undesired Keys to remove whether are found: {}".format(keys))
+    for instance in instances:
         for key in keys:
-            i.pop(key, None)
-
-
+            instance.pop(key, None)
+    
+    my_logging("Instances after undesired keys removed: {}".format(instances))
+    return instances
 
 # ============================================================================#
-#                GETS SECURITY GROUP DETAILS FOR EACH RESOURCE                #
+#                GETS SECURITY GROUPS DETAILS FOR EACH REGION                 #
 # ============================================================================#
-
-
-
+def get_sg_details(Id,region):
+    try:
+        client = get_creds("ec2",Id,region)
+        return list_resources(
+            client,
+            "SecurityGroups",
+            "describe_security_groups",
+            "NextToken"
+        )
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not get security groups: {}".format(e),"error")
+        return e
 
 # ============================================================================#
 #                        SENDS ACCOUNT INVENTORY TO S3                        #
 # ============================================================================#
+
 
 
 
