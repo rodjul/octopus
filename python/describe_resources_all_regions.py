@@ -147,7 +147,7 @@ def vars_by_resource(resource):
 # ============================================================================#
 #                      LISTS RESOURCES ON SELECTED REGION                     #
 # ============================================================================#
-def list_resources(service, Id, region, resp_item, action, token):
+def describe_resources(service, Id, region, resp_item, action, token):
 
     my_logging("Describing {} on region {}".format(service,region))
     try:
@@ -234,10 +234,34 @@ def send_to_s3(bucket_name,file_name,file):
 #                                 MAIN FUCTION                                #
 # ============================================================================#
 def main_function(event):
+# EVENT SAMPLE
+# {"resource":"ec2|rds"}
 
+    # Retrives current regions on AWS
+    regions = list_aws_regions()
+    my_logging("Regions: {}".format(regions))
 
-    global sg_type
-    response_item,resource_action,token_name,sg_type=vars_by_resource(my_event["resource"])
+    # Sets variables according to which resource is going to be described
+    # EC2 or RDS
+    resp_item,desc_action,token_name,sg_type=vars_by_resource(event["resource"])
+
+    # Loops through regions describing resources
+    resources = []
+    for region in regions:
+        my_logging(
+            "Describing {} for region {}".format(event["resource"],r)
+        )
+
+        region_resource = describe_resources(
+            event["resource"],
+            event["Id"],
+            region,
+            resp_item,
+            desc_action,
+            token_name
+        )
+        resources.append({region:region_resource})
+
 
     # If report generated should only contain main info, removes the rest
     if my_event["report"] == "main":
