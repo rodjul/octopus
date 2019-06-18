@@ -103,6 +103,8 @@
 from octopus import get_creds
 from octopus import list_resources
 from ast import literal_eval
+from json import dumps
+from datetime import datetime
 
 
 
@@ -247,6 +249,12 @@ def send_to_s3(bucket_name,file_name,file):
         return e
 
 # ============================================================================#
+#                            GETS CURRENT DATETIME                            #
+# ============================================================================#
+def now():
+    return datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+
+# ============================================================================#
 #                                 MAIN FUCTION                                #
 # ============================================================================#
 def main_function(event):
@@ -284,6 +292,23 @@ def main_function(event):
                     for i in item["Instances"]:
                         remove_secondary_data(i,keys)
 
+    # Get Security Groups created on regions
+    my_logging("Retrieving Security groups from account")
+    security_groups = {}
+    for region in regions:
+        security_groups[region] = get_sg_details(event["Id"],region)
+        my_logging("SGs for {}: {}".format(region,security_groups[region]))
+    my_logging("Security Groups: {}".format(security_groups)) 
+
+    # Saves data collected into a Json file on S3
+    my_logging("Sending json to S3")
+    file = {"Resources":resources,"SecGroups":security_groups}
+    my_logging("File to be uploaded: {}".format(file))
+    send = send_to_s3(
+        environ["bucket_resources"],
+        "{}/{}-{}.json".format(event["Id"],now(),event["resource"]),
+        dumps(file)
+    my_logging("file sent: {}".format(send))
 
 # ============================================================================#
 #         HANDLES TRIGGER EVENT WHETHER IS SINGLE MESSAGE OR BATCH JOB        #
