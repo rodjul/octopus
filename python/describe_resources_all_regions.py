@@ -259,7 +259,7 @@ def now():
 # ============================================================================#
 def main_function(event):
 # EVENT SAMPLE
-# {"resource":"ec2|rds"}
+# {"resource":"ec2|rds","Id":"123456789012","report":"main|full"}
 
     # Retrives current regions on AWS
     regions = list_aws_regions()
