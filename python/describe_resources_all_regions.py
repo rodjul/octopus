@@ -118,13 +118,6 @@ def list_aws_regions():
         return e
 
 # ============================================================================#
-#                ITERATES THROUGH AWS REGIONS EXECUTING ACTIONS               #
-# ============================================================================#
-
-
-
-
-# ============================================================================#
 #          SETS VARIABLES ACCORDING TO RESOURCE TYPE IN INPUT MESSAGE         #
 # ============================================================================#
 def vars_by_resource(resource):
@@ -157,6 +150,29 @@ def describe_resources(service, Id, region, resp_item, action, token):
     except botocore.exceptions.ClientError as e:
         my_logging("Could not list resources: {}".format(e),"error")
         return e
+
+# ============================================================================#
+#               ITERATES THROUGH AWS REGIONS DESCRIBING RESOURCES             #
+# ============================================================================#
+def describe_through_regions(Id,regions,resource,resp_item,action,token):
+    resources = {}
+    for region in regions:
+        my_logging(
+            "Describing {} for region {}".format(resource,region)
+        )
+
+        region_resource = describe_resources(
+            resource,
+            Id,
+            region,
+            resp_item,
+            action,
+            token
+        )
+
+        resources[region] = region_resource
+    my_logging("Done! {} described in all regions".format(event["resource"]))
+    return resources
 
 # ============================================================================#
 #              RETRIEVES LIST OF KEYS TO BE REMOVED ON RESOURCES              #
@@ -246,34 +262,27 @@ def main_function(event):
     resp_item,desc_action,token_name,sg_type=vars_by_resource(event["resource"])
 
     # Loops through regions describing resources
-    resources = []
-    for region in regions:
-        my_logging(
-            "Describing {} for region {}".format(event["resource"],r)
-        )
-
-        region_resource = describe_resources(
-            event["resource"],
-            event["Id"],
-            region,
-            resp_item,
-            desc_action,
-            token_name
-        )
-        resources.append({region:region_resource})
-
+    resources = describe_through_regions(
+        event["Id"],
+        regions,
+        event["resource"],
+        resp_item,
+        desc_action,
+        token_name
+    )
 
     # If report generated should only contain main info, removes the rest
-    if my_event["report"] == "main":
+    if event["report"] == "main":
         keys = keys_to_remove()
 
-        if resource = "rds":
-            for item in dasdasdas:
-                remove_secondary_data(item,keys)
-        elif resource = "ec2":
-            for item in dasdasdas:
-                for i in item:
-                remove_secondary_data(i,keys)
+        for region in resources.values():
+            if event["resource"] = "rds":
+                for item in region:
+                    remove_secondary_data(item,keys)
+            elif event["resource"] = "ec2":
+                for item in region:
+                    for i in item["Instances"]:
+                        remove_secondary_data(i,keys)
 
 
 # ============================================================================#
