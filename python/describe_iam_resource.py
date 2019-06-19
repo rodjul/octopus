@@ -11,8 +11,171 @@ from json import loads,dumps
 from ast import literal_eval
 
 # ============================================================================#
+#          SETS VARIABLES ACCORDING TO RESOURCE TYPE IN INPUT MESSAGE         #
+# ============================================================================#
+def vars_by_resource(resource):
+    if resource == "Roles":
+        key_name = "RoleName"
+        list_action = "list_roles"
+        list_policy = "list_role_policies"
+        get_policy = "get_role_policy"
+        list_attached = "list_attached_role_policies"
+        token = "Marker"
+
+    elif resource == "Groups":
+        key_name = "GroupName"
+        list_action = "list_groups"
+        list_policy = "list_group_policies"
+        get_policy = "get_group_policy"
+        list_attached = "list_attached_group_policies"
+        token = "Marker"
+    
+    elif resource == "Users":
+        key_name = "UserName"
+        list_action = "list_users"
+        list_policy = "list_user_policies"
+        get_policy = "get_user_policy"
+        list_attached = "list_attached_user_policies"
+        token = "Marker"
+    
+    return key_name, list_action, list_policy, get_policy, list_attached, token
+
+# ============================================================================#
+#                  DESCRIBES DESIRED IAM RESOURCES ON ACCOUNT                 #
+# ============================================================================#
+def describe_iam_resource(resource,acc_id,action,token):
+    my_logging("Describing {} on account {}".format(resource,acc_id))
+    try:
+        client = get_creds("iam",Id=acc_id)
+        resources = list_resources(client,resource,action,token)
+        my_logging("{} retrieved: {}".format(resource,resources))
+        return resources
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not list {}: {}".format(resource,e),"error")
+        return e    
+
+# ============================================================================#
+#                    DESCRIBES INLINE POLICIES ON RESOURCE                    #
+# ============================================================================#
+
+
+# ============================================================================#
+#                    DESCRIBES MANAGED POLICIES ON ACCOUNT                    #
+# ============================================================================#
+
+
+# ============================================================================#
+#               DESCRIBES MANAGED POLICIES ATTACHED ON RESOURCE               #
+# ============================================================================#
+
+
+# ============================================================================#
+#        RETRIEVES INLINE AND MANAGED POLICIES DEFINED FOR THE RESOURCE       #
+# ============================================================================#
+
+
+# ============================================================================#
+#                       RETRIEVES INLINE POLICY DOCUMENT                      #
+# ============================================================================#
+
+
+# ============================================================================#
+#                      RETRIEVES MANAGED POLICY DOCUMENT                      #
+# ============================================================================#
+
+
+# ============================================================================#
+#          VERIFIES RESOURCE DOES NOT HAVE INLINE POLICIES UNDEFINED          #
+# ============================================================================#
+
+
+
+# ============================================================================#
+#         VERIFIES RESOURCE DOES NOT HAVE ATTACHED POLICIES UNDEFINED         #
+# ============================================================================#
+
+
+
+# ============================================================================#
+#              VERIFIES RESOURCE HAS ALL INLINE POLICIES DEFINED              #
+# ============================================================================#
+
+
+# ============================================================================#
+#        VERIFIES MANAGED POLICIES RESOURCE SHOULD HAVE ATTACHED EXISTS       #
+# ============================================================================#
+
+
+# ============================================================================#
+#             VERIFIES RESOURCE HAS ALL ATTACHED POLICIES DEFINED             #
+# ============================================================================#
+
+
+# ============================================================================#
+#                      CREATES INLINE POLICIES AS DEFINED                     #
+# ============================================================================#
+
+
+# ============================================================================#
+#                     CREATES MANAGED POLICIES AS DEFINED                     #
+# ============================================================================#
+
+
+# ============================================================================#
+#              ATTACHES MANAGED POLICIES TO RESOURCE AS DEFINED               #
+# ============================================================================#
+
+
+# ============================================================================#
+#                 COMPARES INLINE POLICY WITH DEFINED VERSION                 #
+# ============================================================================#
+
+
+# ============================================================================#
+#                   UPDATES INLINE POLICY AS DEFINED VERSION                  #
+# ============================================================================#
+
+
+# ============================================================================#
+#            COMPARES MANAGED POLICY VERSION WITH DEFINED VERSION             #
+# ============================================================================#
+
+
+# ============================================================================#
+#           VALIDATES THAT EXISTS LESS THEN FIVE(5) POLICY VERSIONS           #
+# ============================================================================#
+
+
+# ============================================================================#
+#                  UPDATES MANAGED POLICY AS DEFINED VERSION                  #
+# ============================================================================#
+
+
+# ============================================================================#
 #  #
 # ============================================================================#
+
+
+# ============================================================================#
+#  #
+# ============================================================================#
+
+
+# ============================================================================#
+#  #
+# ============================================================================#
+
+
+# ============================================================================#
+#  #
+# ============================================================================#
+
+
+# ============================================================================#
+#  #
+# ============================================================================#
+
+
 
 # ============================================================================#
 #                       RECORDS ITEMS ON DYNAMODB TABLE                       #
@@ -65,228 +228,227 @@ def create_dynamo_structure_iam(resource,Id):
 #                                MAIN FUNCTION                                #
 # ============================================================================#
 def main_function(event):
-    print("Event received: {}".format(str(event)))
 
-    for record in event["Records"]:
-        # Variables
-        resource = literal_eval(record["body"])["resource"]
-        resource_name_tag = literal_eval(record["body"])["resource_name_tag"]
-        token_name = literal_eval(record["body"])["token_name"]
-        account = literal_eval(record["body"])["account"]
+    # Variables
+    resource = literal_eval(record["body"])["resource"]
+    resource_name_tag = literal_eval(record["body"])["resource_name_tag"]
+    token_name = literal_eval(record["body"])["token_name"]
+    account = literal_eval(record["body"])["account"]
 
-        my_logging("MessageId {} for account {}".format(
-            record["messageId"],
-            account["Id"])
-        )
-        # Assumes linked account role with IAM service
-        my_logging("Setting up IAM Service...")
-        iam_client = get_creds("iam",Id=account["Id"])
+    my_logging("MessageId {} for account {}".format(
+        record["messageId"],
+        account["Id"])
+    )
+    # Assumes linked account role with IAM service
+    my_logging("Setting up IAM Service...")
+    iam_client = get_creds("iam",Id=account["Id"])
 
-        # List Selected Resource on account
-        resource_list = list_resources(
-            iam_client,
-            resource,
-            literal_eval(record["body"])["action_list_resource"],
-            token_name
-        )
+    # List Selected Resource on account
+    resource_list = list_resources(
+        iam_client,
+        resource,
+        literal_eval(record["body"])["action_list_resource"],
+        token_name
+    )
 
-        create_dynamo_structure_iam(resource,account["Id"])
+    create_dynamo_structure_iam(resource,account["Id"])
 
-        # Iterates through resource listing policies
-        my_logging("Analysing %s one by one..." % resource)
-        for item in resource_list:
-            my_logging(item)
-            item["Policies"] = []
+    # Iterates through resource listing policies
+    my_logging("Analysing %s one by one..." % resource)
+    for item in resource_list:
+        my_logging(item)
+        item["Policies"] = []
+        try:
+            # Dict with parameters to list resource's inline policies
+            parameters = {
+                resource_name_tag:item[resource_name_tag]
+            }
+
+            inline_policies = list_resources(
+                iam_client,
+                "PolicyNames",
+                literal_eval(record["body"])["action_list_resource_policies"],
+                token_name,
+                **parameters
+            )
+        except Exception as e:
+            my_logging("Could not list inline policies for %s %s: %s" % (
+                str(resource_name_tag),
+                str(item[resource_name_tag]),
+                str(e)),
+            "error"
+            )
+
+        for policy in inline_policies:
             try:
-                # Dict with parameters to list resource's inline policies
+                # Creates dict with parameters used to get policy
                 parameters = {
-                    resource_name_tag:item[resource_name_tag]
+                    resource_name_tag:item[resource_name_tag],
+                    "PolicyName":policy
                 }
 
-                inline_policies = list_resources(
+                inline_doc = list_resources(
                     iam_client,
-                    "PolicyNames",
-                    literal_eval(record["body"])["action_list_resource_policies"],
+                    "PolicyDocument",
+                    literal_eval(record["body"])["action_get_resource_policy"],
                     token_name,
                     **parameters
                 )
-            except Exception as e:
-                my_logging("Could not list inline policies for %s %s: %s" % (
-                    str(resource_name_tag),
-                    str(item[resource_name_tag]),
-                    str(e)),
-                "error"
-                )
 
-            for policy in inline_policies:
-                try:
-                    # Creates dict with parameters used to get policy
-                    parameters = {
-                        resource_name_tag:item[resource_name_tag],
-                        "PolicyName":policy
+                item["Policies"].extend(
+                    {
+                        "PolicyName":policy,
+                        "PolicyDocument":inline_doc
                     }
-
-                    inline_doc = list_resources(
-                        iam_client,
-                        "PolicyDocument",
-                        literal_eval(record["body"])["action_get_resource_policy"],
-                        token_name,
-                        **parameters
-                    )
-
-                    item["Policies"].extend(
-                        {
-                            "PolicyName":policy,
-                            "PolicyDocument":inline_doc
-                        }
-                    )
-                except Exception as e:
-                    my_logging("Could not retrieve details for policy %s: %s" % (
-                        str(policy),
-                        str(e)),
-                    "error"
-                    )
-
-            try:
-                # Dict with parameters to list resource"s attached policies
-                parameters = {
-                    resource_name_tag:item[resource_name_tag]
-                }
-
-                attached_polices = list_resources(
-                    iam_client,
-                    "AttachedPolicies",
-                    literal_eval(record["body"])["action_list_attached_policies"],
-                    token_name,
-                    **parameters
                 )
             except Exception as e:
-                my_logging("Could not list attached policies for %s %s: %s " % (
+                my_logging("Could not retrieve details for policy %s: %s" % (
+                    str(policy),
+                    str(e)),
+                "error"
+                )
+
+        try:
+            # Dict with parameters to list resource"s attached policies
+            parameters = {
+                resource_name_tag:item[resource_name_tag]
+            }
+
+            attached_polices = list_resources(
+                iam_client,
+                "AttachedPolicies",
+                literal_eval(record["body"])["action_list_attached_policies"],
+                token_name,
+                **parameters
+            )
+        except Exception as e:
+            my_logging("Could not list attached policies for %s %s: %s " % (
+                str(resource_name_tag),
+                str(item[resource_name_tag]),
+                str(e)),
+            "error"
+            )
+
+        for i in attached_polices:
+            try:
+                # Creates dict with parameters used to get policy versions
+                policy_details = list_resources(
+                    iam_client,
+                    "Versions",
+                    "list_policy_versions",
+                    token_name,
+                    PolicyArn=i["PolicyArn"]
+                )
+            except Exception as e:
+                my_logging('Could not list versions of policy for %s %s: %s' % (
                     str(resource_name_tag),
                     str(item[resource_name_tag]),
                     str(e)),
                 "error"
                 )
+            try:    
+                # Select default policy and save the data about it
+                for sub in policy_details:
+                    if sub["IsDefaultVersion"]:
+                        document = iam_client.get_policy_version(
+                            PolicyArn=i["PolicyArn"],
+                            VersionId=sub["VersionId"]
+                        )
+                        item["Policies"].append(
+                            {
+                                "PolicyName":i["PolicyName"],
+                                "PolicyDocument":document["PolicyVersion"]["Document"],
+                                "DocumentVersion":sub["VersionId"]
+                            }
+                        )
+            except Exception as e:
+                my_logging("Could not get document policy for %s %s: %s" % (
+                    str(resource_name_tag),
+                    str(item[resource_name_tag]),
+                    str(e)),
+                "error"
+                )
+            
+            try:
+                for policy in item["Policies"]:
 
-            for i in attached_polices:
-                try:
-                    # Creates dict with parameters used to get policy versions
-                    policy_details = list_resources(
-                        iam_client,
-                        "Versions",
-                        "list_policy_versions",
-                        token_name,
-                        PolicyArn=i["PolicyArn"]
-                    )
-                except Exception as e:
-                    my_logging('Could not list versions of policy for %s %s: %s' % (
-                        str(resource_name_tag),
-                        str(item[resource_name_tag]),
-                        str(e)),
-                    "error"
-                    )
-                try:    
-                    # Select default policy and save the data about it
-                    for sub in policy_details:
-                        if sub["IsDefaultVersion"]:
-                            document = iam_client.get_policy_version(
-                                PolicyArn=i["PolicyArn"],
-                                VersionId=sub["VersionId"]
-                            )
-                            item["Policies"].append(
-                                {
-                                    "PolicyName":i["PolicyName"],
-                                    "PolicyDocument":document["PolicyVersion"]["Document"],
-                                    "DocumentVersion":sub["VersionId"]
-                                }
-                            )
-                except Exception as e:
-                    my_logging("Could not get document policy for %s %s: %s" % (
-                        str(resource_name_tag),
-                        str(item[resource_name_tag]),
-                        str(e)),
-                    "error"
-                    )
-                
-                try:
-                    for policy in item["Policies"]:
-
-                        # Finds AdministratorAccess Policy
-                        if policy["PolicyName"] == "AdministratorAccess":
-                            try:
-                                msg = {
-                                    "Alert":"Policy AdministratorAccess found attached",
-                                    "Id":account["Id"],
-                                    "Email":account["Email"],
-                                    resource_name_tag:item[resource_name_tag],
-                                    "Policy": policy
-                                }
-                                
-                                my_logging(
-                                    send_sqs(
-                                        msg,
-                                        environ["sqs_url_AdministratorAccess"]
-                                    )
+                    # Finds AdministratorAccess Policy
+                    if policy["PolicyName"] == "AdministratorAccess":
+                        try:
+                            msg = {
+                                "Alert":"Policy AdministratorAccess found attached",
+                                "Id":account["Id"],
+                                "Email":account["Email"],
+                                resource_name_tag:item[resource_name_tag],
+                                "Policy": policy
+                            }
+                            
+                            my_logging(
+                                send_sqs(
+                                    msg,
+                                    environ["sqs_url_AdministratorAccess"]
                                 )
-                                my_logging(
-                                    send_sns(
-                                        "Alert - AdministratorAccess Policy Found",
-                                        msg,
-                                        environ["sns_topic_administratorAccess"]
-                                    )
+                            )
+                            my_logging(
+                                send_sns(
+                                    "Alert - AdministratorAccess Policy Found",
+                                    msg,
+                                    environ["sns_topic_administratorAccess"]
                                 )
-                            except Exception as e:
-                                my_logging(e,"error")
+                            )
+                        except Exception as e:
+                            my_logging(e,"error")
 
-                        # Iterates through policies and finds those with full access permissions
-                        for statement in policy["PolicyDocument"]["Statement"]:
-                            if isinstance(statement["Action"], str):
+                    # Iterates through policies and finds those with full access permissions
+                    for statement in policy["PolicyDocument"]["Statement"]:
+                        if isinstance(statement["Action"], str):
+                            is_full_access(
+                                statement["Action"],
+                                account["Id"],
+                                account["Email"],
+                                resource_name_tag,
+                                item[resource_name_tag],
+                                policy,
+                                environ["sqs_url_fullaccess"]
+                            )
+                        else:
+                            for action in statement["Action"]:
                                 is_full_access(
-                                    statement["Action"],
+                                    action,
                                     account["Id"],
                                     account["Email"],
                                     resource_name_tag,
                                     item[resource_name_tag],
                                     policy,
                                     environ["sqs_url_fullaccess"]
-                                )
-                            else:
-                                for action in statement["Action"]:
-                                    is_full_access(
-                                        action,
-                                        account["Id"],
-                                        account["Email"],
-                                        resource_name_tag,
-                                        item[resource_name_tag],
-                                        policy,
-                                        environ["sqs_url_fullaccess"]
-                                    ) 
-                except Exception as e:
-                    my_logging("Could not verify if policies are too permissive. %s %s: %s" % (
-                        str(resource_name_tag),
-                        str(item[resource_name_tag]),
-                        str(e)),
-                    "error"
-                    )                                           
+                                ) 
+            except Exception as e:
+                my_logging("Could not verify if policies are too permissive. %s %s: %s" % (
+                    str(resource_name_tag),
+                    str(item[resource_name_tag]),
+                    str(e)),
+                "error"
+                )                                           
 
-            item["CreateDate"] = str(item["CreateDate"])
-            if "PasswordLastUsed" in item:
-                item["PasswordLastUsed"] = str(item["PasswordLastUsed"])
-            print(
-                update_item(
-                    account["Id"],
-                    "SET Services.IAM.{}_list = list_append(Services.IAM.{}_list,:v)".format(
-                        resource,
-                        resource
-                    ),
-                    {"L":[{"S":str(item)}]}
-                )
+        item["CreateDate"] = str(item["CreateDate"])
+        if "PasswordLastUsed" in item:
+            item["PasswordLastUsed"] = str(item["PasswordLastUsed"])
+        print(
+            update_item(
+                account["Id"],
+                "SET Services.IAM.{}_list = list_append(Services.IAM.{}_list,:v)".format(
+                    resource,
+                    resource
+                ),
+                {"L":[{"S":str(item)}]}
             )
-
-        print("List of {} extracted: {}".format(
-            resource,
-            resource_list)
         )
+
+    print("List of {} extracted: {}".format(
+        resource,
+        resource_list)
+    )
+    
     return my_logging("Execution finished")
 
 # ============================================================================#
