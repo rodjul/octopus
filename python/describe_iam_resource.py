@@ -1,32 +1,46 @@
 import boto3
 from os import environ
-from octopus import list_resources,my_logging,get_creds,is_full_access,send_sqs,send_sns
+from octopus import list_resources
+from octopus import my_logging
+from octopus import get_creds
+from octopus import is_full_access
+from octopus import send_sqs
+from octopus import send_sns
+from octopus import handle_event_trigger
 from json import loads,dumps
 from ast import literal_eval
 
+# ============================================================================#
+#  #
+# ============================================================================#
 
-
-# Records items on dynamodb table
+# ============================================================================#
+#                       RECORDS ITEMS ON DYNAMODB TABLE                       #
+# ============================================================================#
 def update_item(Id,expression,values):
-    
-    client = get_creds("dynamodb")
+    try:
+        client = get_creds("dynamodb")
 
-    response = client.update_item(
-        TableName=environ["accounts_table"],
-        Key={
-            "Id": {
-                "S": Id
-            }
-        },
-        ReturnValues="ALL_NEW",
-        ReturnConsumedCapacity="TOTAL",
-        ReturnItemCollectionMetrics="SIZE",
-        UpdateExpression=expression,
-        ExpressionAttributeValues={":v":values}
-    )
-    return response
+        response = client.update_item(
+            TableName=environ["accounts_table"],
+            Key={"Id":{"S": Id}},
+            ReturnValues="ALL_NEW",
+            ReturnConsumedCapacity="TOTAL",
+            ReturnItemCollectionMetrics="SIZE",
+            UpdateExpression=expression,
+            ExpressionAttributeValues={":v":values}
+        )
+        my_logging("Items recorded: {}".format(response))
+        return response
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not record items: {}".format(e),"error")
+        return e
 
+# ============================================================================#
+#            CREATES A BASIC TABLE STRUCTURE FOR THE IAM RESOURCES            #
+# ============================================================================#
 def create_dynamo_structure_iam(resource,Id):
+    my_logging("Recording IAM Structure on table for account {}".format(Id))
     try:
         # Parameters to create structure on DynamoDB table
         update_parameters = {
@@ -34,23 +48,23 @@ def create_dynamo_structure_iam(resource,Id):
             "SET Services.IAM = if_not_exists(Services.IAM, :v)":{"M":{}},
             "SET Services.IAM.{}_list = :v".format(resource):{"L":[]}
         }
+        my_logging("Parameters: {}".format(update_parameters))
     except Exception as e:
         my_logging("Error on setting update_parameters: {}".format(e))
 
-
     # Loop to create structure on table where resources will be saved
     for expression,values in update_parameters.items():
-        print(
-            update_item(
-                Id,
-                expression,
-                values
-            )
+        update = update_item(
+            Id,
+            expression,
+            values
         )
-    return True
+        my_logging(update)
 
-# Main function
-def lambda_handler(event, context):
+# ============================================================================#
+#                                MAIN FUNCTION                                #
+# ============================================================================#
+def main_function(event):
     print("Event received: {}".format(str(event)))
 
     for record in event["Records"]:
@@ -274,3 +288,9 @@ def lambda_handler(event, context):
             resource_list)
         )
     return my_logging("Execution finished")
+
+# ============================================================================#
+#                             GETS INITIAL INPUT                              #
+# ============================================================================#
+def lambda_handler(event,context):
+    handle_event_trigger(event)
