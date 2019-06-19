@@ -102,7 +102,7 @@ def keys_to_remove():
         "IAMDatabaseAuthenticationEnabled","PerformanceInsightsEnabled",
         "PerformanceInsightsKMSKeyId","PerformanceInsightsRetentionPeriod",
         "EnabledCloudwatchLogsExports","ProcessorFeatures","DeletionProtection",
-        "AssociatedRoles","ListenerEndpoint"]
+        "AssociatedRoles","ListenerEndpoint","AmiLaunchIndex",]
 
 # ============================================================================#
 #             REMOVES SECONDARY INFO ABOUT RESOURCES WHEN DESIRED             #
