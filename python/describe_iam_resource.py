@@ -43,21 +43,29 @@ def vars_by_resource(resource):
 # ============================================================================#
 #                  DESCRIBES DESIRED IAM RESOURCES ON ACCOUNT                 #
 # ============================================================================#
-def describe_iam_resource(resource,acc_id,action,token):
-    my_logging("Describing {} on account {}".format(resource,acc_id))
+def describe_iam_resource(client,resource_type,acc_id,action,token):
+    my_logging("Describing {} on account {}".format(resource_type,acc_id))
     try:
-        client = get_creds("iam",Id=acc_id)
-        resources = list_resources(client,resource,action,token)
-        my_logging("{} retrieved: {}".format(resource,resources))
+        resources = list_resources(client,resource_type,action,token)
+        my_logging("{} retrieved: {}".format(resource_type,resources))
         return resources
     except botocore.exceptions.ClientError as e:
-        my_logging("Could not list {}: {}".format(resource,e),"error")
-        return e    
+        my_logging("Could not list {}: {}".format(resource_type,e),"error")
+        return e
 
 # ============================================================================#
 #                    DESCRIBES INLINE POLICIES ON RESOURCE                    #
 # ============================================================================#
-
+def get_inline_policies(client,resource,acc_id,action,key_name):
+    my_logging("Describing inline policies for {}".format(resource))
+    try:
+        kwargs = {key_name:resource[key_name]}
+        policies = list_resources(client,"PolicyNames",action,token,**kwargs)
+        my_logging("{} retrieved: {}".format(resource[key_name],policies))
+        return policies
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not list {}: {}".format(resource,e),"error")
+        return e
 
 # ============================================================================#
 #                    DESCRIBES MANAGED POLICIES ON ACCOUNT                    #
@@ -175,6 +183,7 @@ def describe_iam_resource(resource,acc_id,action,token):
 #  #
 # ============================================================================#
 
+client = get_creds("iam",Id=acc_id)
 
 
 # ============================================================================#
