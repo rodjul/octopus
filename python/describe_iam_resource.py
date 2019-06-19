@@ -43,8 +43,12 @@ def vars_by_resource(resource):
 # ============================================================================#
 #                  DESCRIBES DESIRED IAM RESOURCES ON ACCOUNT                 #
 # ============================================================================#
-def describe_iam_resource(client,resource_type,acc_id,action,token):
-    my_logging("Describing {} on account {}".format(resource_type,acc_id))
+def describe_iam_resource(client,resource_type,action,token):
+    my_logging("Describing {}".format(resource_type))
+    # Returns a List of Dicts with "Path", "UserName", "UserId", "Arn", "CreateDate",
+    # "PermissionsBoundary", "Tags",
+    # "PasswordLasUsed", 
+    # "AssumeRolePolicyDocument", "Description", "MaxSessionDuration"
     try:
         resources = list_resources(client,resource_type,action,token)
         my_logging("{} retrieved: {}".format(resource_type,resources))
@@ -54,14 +58,18 @@ def describe_iam_resource(client,resource_type,acc_id,action,token):
         return e
 
 # ============================================================================#
-#                    DESCRIBES INLINE POLICIES ON RESOURCE                    #
+#              DESCRIBES INLINE OR ATTACHED POLICIES ON RESOURCE              #
 # ============================================================================#
-def get_inline_policies(client,resource,acc_id,action,key_name):
-    my_logging("Describing inline policies for {}".format(resource))
+def get_policies_on_resource(client,resource,action,token,key_name):
+    my_logging("Describing {} policies for {}".format(policy_type,resource))
+    # When "inline", returns a List of Strings (policy names)
+    # When "attached" returns a List of Dicts with "PolicyName" and "PolicyArn"
+        
     try:
-        kwargs = {key_name:resource[key_name]}
-        policies = list_resources(client,"PolicyNames",action,token,**kwargs)
-        my_logging("{} retrieved: {}".format(resource[key_name],policies))
+        kwargs = {key_name:resource}
+        item="AttachedPolicies" if "attached" in action else item="PolicyNames"
+        policies = list_resources(client,item,action,token,**kwargs)
+        my_logging("Policies for {}: {}".format(resource,policies))
         return policies
     except botocore.exceptions.ClientError as e:
         my_logging("Could not list {}: {}".format(resource,e),"error")
@@ -70,12 +78,18 @@ def get_inline_policies(client,resource,acc_id,action,key_name):
 # ============================================================================#
 #                    DESCRIBES MANAGED POLICIES ON ACCOUNT                    #
 # ============================================================================#
-
-
-# ============================================================================#
-#               DESCRIBES MANAGED POLICIES ATTACHED ON RESOURCE               #
-# ============================================================================#
-
+def get_managed_policies(client):
+    my_logging("Describing managed policies")
+    # Returns a List of Dicts with "PolicyName", "PolicyId", "Arn", "Path",
+    # "DefaultVersionId", "AttachmentCount", "PermissionsBoundaryUsageCount",
+    # "IsAttachable", "Description", "CreateDate", "UpdateDate"
+    try:
+        policies = list_resources(client,"Policies","list_policies","Marker")
+        my_logging("Managed Policies: {}".format(policies))
+        return policies
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not list Managed Policies: {}".format(e),"error")
+        return e
 
 # ============================================================================#
 #        RETRIEVES INLINE AND MANAGED POLICIES DEFINED FOR THE RESOURCE       #
