@@ -1,8 +1,11 @@
 from octopus import get_creds
 from octopus import list_resources
+from octopus import my_logging
 from ast import literal_eval
 from json import dumps
-from datetime import datetime
+from datetime import datetime,date
+from os import environ
+import botocore
 
 # ============================================================================#
 #                LISTS ALL EXISTENT REGION ON AWS AT THE MOMENT               #
@@ -38,11 +41,11 @@ def vars_by_resource(resource):
 # ============================================================================#
 #                      LISTS RESOURCES ON SELECTED REGION                     #
 # ============================================================================#
-def describe_resources(service, Id, region, resp_item, action, token):
+def describe_resources(service, acc_Id, Region, resp_item, action, token):
 
-    my_logging("Describing {} on region {}".format(service,region))
+    my_logging("Describing {} on region {}".format(service,Region))
     try:
-        client = get_creds(service,Id,region)
+        client = get_creds(service,Id=acc_Id,region=Region)
         return list_resources(client,resp_item,action,token)
 
     except botocore.exceptions.ClientError as e:
@@ -62,14 +65,14 @@ def describe_through_regions(Id,regions,resource,resp_item,action,token):
         region_resource = describe_resources(
             resource,
             Id,
-            region,
+            region["RegionName"],
             resp_item,
             action,
             token
         )
 
-        resources[region] = region_resource
-    my_logging("Done! {} described in all regions".format(event["resource"]))
+        resources[region["RegionName"]] = region_resource
+    my_logging("Done! {} described in all regions".format(resource))
     return resources
 
 # ============================================================================#
@@ -106,6 +109,7 @@ def keys_to_remove():
 # ============================================================================#
 def remove_secondary_data(instances,keys):
     my_logging("Undesired Keys to remove whether are found: {}".format(keys))
+    my_logging("Instances passed to the function: {}".format(instances))
     for instance in instances:
         for key in keys:
             instance.pop(key, None)
@@ -116,9 +120,9 @@ def remove_secondary_data(instances,keys):
 # ============================================================================#
 #                GETS SECURITY GROUPS DETAILS FOR EACH REGION                 #
 # ============================================================================#
-def get_sg_details(Id,region):
+def get_sg_details(acc_Id,Region):
     try:
-        client = get_creds("ec2",Id,region)
+        client = get_creds("ec2",Id=acc_Id,region=Region)
         return list_resources(
             client,
             "SecurityGroups",
@@ -128,6 +132,13 @@ def get_sg_details(Id,region):
     except botocore.exceptions.ClientError as e:
         my_logging("Could not get security groups: {}".format(e),"error")
         return e
+
+# ============================================================================#
+#                      CONVERTS DATETIME TO JSON SERIAL                       #
+# ============================================================================#
+def json_serial(obj):
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
 
 # ============================================================================#
 #                        SENDS ACCOUNT INVENTORY TO S3                        #
@@ -180,20 +191,26 @@ def main_function(event):
         keys = keys_to_remove()
 
         for region in resources.values():
-            if event["resource"] = "rds":
+            if event["resource"] == "rds":
                 for item in region:
                     remove_secondary_data(item,keys)
-            elif event["resource"] = "ec2":
+            elif event["resource"] == "ec2":
                 for item in region:
-                    for i in item["Instances"]:
-                        remove_secondary_data(i,keys)
+                    remove_secondary_data(item["Instances"],keys)
 
     # Get Security Groups created on regions
     my_logging("Retrieving Security groups from account")
     security_groups = {}
     for region in regions:
-        security_groups[region] = get_sg_details(event["Id"],region)
-        my_logging("SGs for {}: {}".format(region,security_groups[region]))
+        security_groups[region["RegionName"]] = get_sg_details(
+            event["Id"],region["RegionName"]
+        )
+        my_logging(
+            "SGs for {}: {}".format(
+                region,
+                security_groups[region["RegionName"]]
+            )
+        )
     my_logging("Security Groups: {}".format(security_groups)) 
 
     # Saves data collected into a Json file on S3
@@ -203,7 +220,8 @@ def main_function(event):
     send = send_to_s3(
         environ["bucket_resources"],
         "{}/{}-{}.json".format(event["Id"],now(),event["resource"]),
-        dumps(file)
+        dumps(file, default=json_serial)
+    )
     my_logging("file sent: {}".format(send))
 
 # ============================================================================#
@@ -225,3 +243,6 @@ def handle_event_trigger(event):
         my_logging("Single message in event. Trigger directly by api request")
         my_logging("Working on message: {}".format(event))
         main_function(event)
+
+def lambda_handler(event,context):
+    handle_event_trigger(event)
