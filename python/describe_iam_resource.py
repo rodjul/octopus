@@ -94,7 +94,9 @@ def get_managed_policies(client):
 # ============================================================================#
 #        RETRIEVES INLINE AND MANAGED POLICIES DEFINED FOR THE RESOURCE       #
 # ============================================================================#
-
+def retrieve_templ_policies(resource):
+    my_logging("Retrieving template policies for resource {}".format(resource))
+    # Returns policies for the specified IAM Resource
 
 # ============================================================================#
 #                       RETRIEVES INLINE POLICY DOCUMENT                      #
