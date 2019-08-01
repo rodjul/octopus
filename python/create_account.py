@@ -59,6 +59,15 @@ def create_octopusmngt_role(payer_id,account_id,payer_role):
     )
 
 # ============================================================================#
+#                          SETS ALIAS FOR NEW ACCOUNT                         #
+# ============================================================================#
+def set_alias(account_id,account_name):
+    iam_client = get_creds("iam",Id=account_id)
+
+    alias = account_name.replace(".","-")
+    return iam_client.create_account_alias(AccountAlias=alias)
+
+# ============================================================================#
 #             SENDS MESSAGE TO THE ACCOUNT SETUP CONTROLLER QUEUE             #
 # ============================================================================#
 
@@ -99,6 +108,8 @@ def main_function(event):
             status["AccountId"],
             payer_role
         )
+        
+        alias = set_alias(status["AccountId"],event["name")
 
     else:
         my_logging("Error on Account Creation: {}".format(status))
