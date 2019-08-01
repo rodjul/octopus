@@ -108,8 +108,8 @@ def main_function(event):
             status["AccountId"],
             payer_role
         )
-        
-        alias = set_alias(status["AccountId"],event["name")
+
+        set_alias(status["AccountId"],event["name"])
 
     else:
         my_logging("Error on Account Creation: {}".format(status))
