@@ -1,6 +1,7 @@
 from octopus import get_creds
 from octopus import list_resources
 from octopus import my_logging
+from octopus import handle_event_trigger
 from ast import literal_eval
 from json import dumps
 from datetime import datetime,date
@@ -224,25 +225,10 @@ def main_function(event):
     )
     my_logging("file sent: {}".format(send))
 
+
+
 # ============================================================================#
-#         HANDLES TRIGGER EVENT WHETHER IS SINGLE MESSAGE OR BATCH JOB        #
+#                             GETS INITIAL INPUT                              #
 # ============================================================================#
-def handle_event_trigger(event):
-    my_logging("Event Received on Lambda Trigger: {}".format(event))
-    # Verifies if the event has more then 1 message in payload
-
-    # This happens with multiple SQS messages in batch jobs
-    if "Records" in event:
-        my_logging("{} messages for batch job".format(len(event["Records"])))
-        for record in event["Records"]:
-            my_logging("Working on message: {}".format(record))
-            main_function(literal_eval(record["body"]))
-
-    # This happens when function is triggered directly by another lambda or api
-    else:
-        my_logging("Single message in event. Trigger directly by api request")
-        my_logging("Working on message: {}".format(event))
-        main_function(event)
-
 def lambda_handler(event,context):
     handle_event_trigger(event)
