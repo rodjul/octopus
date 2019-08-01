@@ -6,6 +6,7 @@ from ast import literal_eval
 from octopus import get_creds
 from octopus import my_logging
 from octopus import list_linked_accounts
+from octopus import json_serial
 
 # ============================================================================#
 #               CREATES NEW ACCOUNT UNDER ROOT (PAYER) ACCOUNT                #
@@ -123,7 +124,7 @@ def lambda_handler(event,context):
         
         return {
             "statusCode":200,
-            "body":dumps(main_function(event)),
+            "body":dumps(main_function(event), default=json_serial),
             "headers":{
                 "Content-Type":"application/json",
                 "Access-Control-Allow-Origin":"*"
