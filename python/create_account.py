@@ -71,7 +71,7 @@ def create_octopusmngt_role(payer_id,account_id,payer_role):
 def main_function(event):
 
     payer_role = "security"
-    
+
     orgs_client = get_creds(
         "organizations",
         Id=event["payer_id"],
@@ -99,6 +99,9 @@ def main_function(event):
             payer_role
         )
 
+    else:
+        my_logging("Error on Account Creation: {}".format(status))
+        return status
 
 
 
@@ -118,3 +121,11 @@ def lambda_handler(event,context):
         my_logging("Single message in event. Trigger directly by api request")
         my_logging("Working on message: {}".format(event))
         main_function(event)
+        return {
+            'statusCode':200,
+            'body':dumps({"Octopusmngt":confirm_role["Role"]}),
+            "headers":{
+                "Content-Type":"application/json",
+                "Access-Control-Allow-Origin":"*"
+            }
+        }
