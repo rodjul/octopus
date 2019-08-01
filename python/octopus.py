@@ -251,3 +251,19 @@ def list_linked_accounts(payer_id,**kwargs):
         print()
     
     return dumps(accounts,default=json_serial)
+
+# ============================================================================#
+#                         SETS ACCOUNT PASSWORD POLICY                        #
+# ============================================================================#
+def set_iam_password_policy(iam_client):
+    return iam_client.update_account_password_policy(
+        MinimumPasswordLength=14,
+        RequireSymbols=True,
+        RequireNumbers=True,
+        RequireUppercaseCharacters=True,
+        RequireLowercaseCharacters=True,
+        AllowUsersToChangePassword=True,
+        MaxPasswordAge=60,
+        PasswordReusePrevention=24,
+        HardExpiry=False
+    )

@@ -7,6 +7,7 @@ from octopus import get_creds
 from octopus import my_logging
 from octopus import list_linked_accounts
 from octopus import json_serial
+from octopus import set_iam_password_policy
 
 # ============================================================================#
 #               CREATES NEW ACCOUNT UNDER ROOT (PAYER) ACCOUNT                #
@@ -61,9 +62,7 @@ def create_octopusmngt_role(payer_id,account_id,payer_role):
 # ============================================================================#
 #                          SETS ALIAS FOR NEW ACCOUNT                         #
 # ============================================================================#
-def set_alias(account_id,account_name):
-    iam_client = get_creds("iam",Id=account_id)
-
+def set_alias(iam_client,account_name):
     alias = account_name.replace(".","-")
     return iam_client.create_account_alias(AccountAlias=alias)
 
@@ -109,7 +108,11 @@ def main_function(event):
             payer_role
         )
 
-        set_alias(status["AccountId"],event["name"])
+        iam_client = get_creds("iam",Id=status["AccountId"])
+
+        set_alias(iam_client,event["name"])
+
+        set_iam_password_policy(iam_client)
 
     else:
         my_logging("Error on Account Creation: {}".format(status))
