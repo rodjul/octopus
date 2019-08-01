@@ -51,8 +51,9 @@ def lambda_handler(event, context):
             Payload=dumps(
                 {
                     "payer_id": environ["payer_id"],
-                    "role_name": environ["payer_role"]}
-                )
+                    "role_name": environ["payer_role"]
+                }
+            )
         )["Payload"].read().decode("utf-8")
     )
 

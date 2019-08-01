@@ -1,27 +1,16 @@
 import boto3
 import botocore
 from json import loads
+from json import dumps
+from ast import literal_eval
 from octopus import get_creds
 from octopus import my_logging
 from octopus import list_linked_accounts
 
 # ============================================================================#
-#                VALIDATES THAT ACCOUNT DOES NOT EXIST YET                    #
-# ============================================================================#
-def verify_account_exist(payer_id,role,email):
-    accounts = list_linked_accounts(payer_id,role=role)
-    my_logging("accounts on payer {}: {}".format(payer_id,accounts))
-
-    for acc in loads(accounts):
-        if acc["Email"] == email:
-            return "Account already exists"
-    
-    return "ok"
-
-# ============================================================================#
 #               CREATES NEW ACCOUNT UNDER ROOT (PAYER) ACCOUNT                #
 # ============================================================================#
-def create_account(orgs_client,payer_id,role,email,name,payer_role):
+def create_account(orgs_client,payer_id,email,name,payer_role):
     try:
         new_account = orgs_client.create_account(
             Email=email,
@@ -38,27 +27,35 @@ def create_account(orgs_client,payer_id,role,email,name,payer_role):
 # ============================================================================#
 #                         VERIFIES NEW ACCOUNT STATUS                         #
 # ============================================================================#
-def new_account_status(orgs_client,creat_id):
+def new_account_status(orgs_client,create_id):
     account_status = orgs_client.describe_create_account_status(
         CreateAccountRequestId= create_id
     )
     my_logging(account_status)
-    return account_status
+    while account_status["CreateAccountStatus"]["State"] == "IN_PROGRESS":
+        account_status = orgs_client.describe_create_account_status(
+            CreateAccountRequestId= create_id
+        )
+        my_logging(account_status)
+
+    return account_status["CreateAccountStatus"]
 
 # ============================================================================#
 # CALLS FUNCTION ON ROOT ACCOUNT TO CREATE CROSSACCOUNTROLE ON LINKED ACCOUNT #
 # ============================================================================#
-
-
-
-
-
-
-# ============================================================================#
-# ASSUMES NEW CROSS ACCOUNT ROLE AND DELETES OLD CROSS ROLE FROM ROOT ACCOUNT #
-# ============================================================================#
-
-
+def create_octopusmngt_role(payer_id,account_id,payer_role):
+    lambda_client = get_creds("lambda",Id=payer_id,role="octopus_svc")
+    return lambda_client.invoke(
+        FunctionName="create_octopus_role",
+        InvocationType="RequestResponse",
+        LogType="Tail",
+        Payload=dumps(
+            {
+                "account_id":account_id,
+                "role_to_payer":payer_role
+            }
+        )
+    )
 
 # ============================================================================#
 #             SENDS MESSAGE TO THE ACCOUNT SETUP CONTROLLER QUEUE             #
@@ -71,7 +68,53 @@ def new_account_status(orgs_client,creat_id):
 # ============================================================================#
 #                                 MAIN FUNCTION                               #
 # ============================================================================#
+def main_function(event):
 
-orgs_client = get_creds("organizations",Id=payer_id,role="octopus_svc")
+    payer_role = "security"
+    
+    orgs_client = get_creds(
+        "organizations",
+        Id=event["payer_id"],
+        role="octopus_svc"
+    )
+    
+    account = create_account(
+        orgs_client,
+        event["payer_id"],
+        event["email"],
+        event["name"],
+        payer_role
+    )
+    my_logging(account)
 
-create_id = new_account["CreateAccountStatus"]["Id"]
+    status = new_account_status(
+        orgs_client,
+        account["CreateAccountStatus"]["Id"]
+    )
+    
+    if status["State"] == "SUCCEEDED":
+        create_octopusmngt_role(
+            event["payer_id"],
+            status["AccountId"],
+            payer_role
+        )
+
+
+
+
+def lambda_handler(event,context):
+    my_logging("Event Received on Lambda Trigger: {}".format(event))
+    # Verifies if the event has more then 1 message in payload
+
+    # This happens with multiple SQS messages in batch jobs
+    if "Records" in event:
+        my_logging("{} messages for batch job".format(len(event["Records"])))
+        for record in event["Records"]:
+            my_logging("Working on message: {}".format(record))
+            main_function(literal_eval(record["body"]))
+
+    # This happens when function is triggered directly by another lambda or api
+    else:
+        my_logging("Single message in event. Trigger directly by api request")
+        my_logging("Working on message: {}".format(event))
+        main_function(event)
