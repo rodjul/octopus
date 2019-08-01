@@ -2,6 +2,7 @@ from octopus import get_creds
 from octopus import list_resources
 from octopus import my_logging
 from octopus import handle_event_trigger
+from octopus import json_serial
 from ast import literal_eval
 from json import dumps
 from datetime import datetime,date
@@ -133,13 +134,6 @@ def get_sg_details(acc_Id,Region):
     except botocore.exceptions.ClientError as e:
         my_logging("Could not get security groups: {}".format(e),"error")
         return e
-
-# ============================================================================#
-#                      CONVERTS DATETIME TO JSON SERIAL                       #
-# ============================================================================#
-def json_serial(obj):
-    if isinstance(obj, (datetime, date)):
-        return obj.isoformat()
 
 # ============================================================================#
 #                        SENDS ACCOUNT INVENTORY TO S3                        #

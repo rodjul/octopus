@@ -217,6 +217,13 @@ def get_file_from_s3(bucket_name,file_path):
     return my_file
 
 # ============================================================================#
+#                      CONVERTS DATETIME TO JSON SERIAL                       #
+# ============================================================================#
+def json_serial(obj):
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+
+# ============================================================================#
 #         HANDLES TRIGGER EVENT WHETHER IS SINGLE MESSAGE OR BATCH JOB        #
 # ============================================================================#
 def handle_event_trigger(event):
@@ -235,3 +242,29 @@ def handle_event_trigger(event):
         my_logging("Single message in event. Trigger directly by api request")
         my_logging("Working on message: {}".format(event))
         main_function(event)
+
+# ============================================================================#
+#                 LIST ALL LINKED ACCOUNTS ON A PAYER ACCOUNT                 #
+# ============================================================================#
+def list_linked_accounts(payer_id,**kwargs):
+    my_logging("retrieving linked accounts under account {}".format(payer_id))
+
+    if "role" in kwargs:
+            role = kwargs["role"]
+        else:
+            role = "octopus_svc"
+
+    orgs_client = get_creds("organizations",Id=payer_id,role=role)
+
+    list_accounts = orgs_client.list_accounts()
+    my_logging(list_accounts)
+    print()
+    accounts = linked_accounts['Accounts']
+    while 'NextToken' in linked_accounts:
+        token=linked_accounts['NextToken']
+        linked_accounts = orgs_client.list_accounts(NextToken=token)
+        accounts.extend(linked_accounts['Accounts'])
+        my_logging(linked_accounts)
+        print()
+    
+    return dumps(accounts,default=json_serial)
