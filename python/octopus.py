@@ -4,6 +4,9 @@ import re
 from json import dumps
 import logging
 import botocore
+from datetime import datetime
+from datetime import date
+from ast import literal_eval
 
 logger = logging.Logger("catch_all")
 
@@ -251,13 +254,13 @@ def list_linked_accounts(payer_id,**kwargs):
 
     if "role" in kwargs:
             role = kwargs["role"]
-        else:
-            role = "octopus_svc"
+    else:
+        role = "octopus_svc"
 
     orgs_client = get_creds("organizations",Id=payer_id,role=role)
 
-    list_accounts = orgs_client.list_accounts()
-    my_logging(list_accounts)
+    linked_accounts = orgs_client.list_accounts()
+    my_logging(linked_accounts)
     print()
     accounts = linked_accounts['Accounts']
     while 'NextToken' in linked_accounts:
