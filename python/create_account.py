@@ -67,9 +67,15 @@ def set_alias(iam_client,account_name):
     return iam_client.create_account_alias(AccountAlias=alias)
 
 # ============================================================================#
-#             SENDS MESSAGE TO THE ACCOUNT SETUP CONTROLLER QUEUE             #
+#                                 CREATE ADFS                                 #
 # ============================================================================#
 
+
+
+
+# ============================================================================#
+#                        EXECUTE CLOUDFORMATION STACKS                        #
+# ============================================================================#
 
 
 
@@ -119,7 +125,9 @@ def main_function(event):
         return status
 
 
-
+# ============================================================================#
+#                                INPUT FUNCTION                               #
+# ============================================================================#
 def lambda_handler(event,context):
     my_logging("Event Received on Lambda Trigger: {}".format(event))
     # Verifies if the event has more then 1 message in payload
