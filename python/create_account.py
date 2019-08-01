@@ -120,10 +120,10 @@ def lambda_handler(event,context):
     else:
         my_logging("Single message in event. Trigger directly by api request")
         my_logging("Working on message: {}".format(event))
-        main_function(event)
+        
         return {
             'statusCode':200,
-            'body':dumps({"Octopusmngt":confirm_role["Role"]}),
+            'body':dumps(main_function(event)),
             "headers":{
                 "Content-Type":"application/json",
                 "Access-Control-Allow-Origin":"*"

@@ -81,8 +81,8 @@ def lambda_handler(event,context):
         delete_payer_role(iam_client,event["role_to_payer"])
     
     return {
-        'statusCode':200,
-        'body':dumps({"Octopusmngt":confirm_role["Role"]}),
+        "statusCode":200,
+        "body":dumps({"Octopusmngt":confirm_role["Role"]}),
         "headers":{
             "Content-Type":"application/json",
             "Access-Control-Allow-Origin":"*"
