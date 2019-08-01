@@ -122,8 +122,8 @@ def lambda_handler(event,context):
         my_logging("Working on message: {}".format(event))
         
         return {
-            'statusCode':200,
-            'body':dumps(main_function(event)),
+            "statusCode":200,
+            "body":dumps(main_function(event)),
             "headers":{
                 "Content-Type":"application/json",
                 "Access-Control-Allow-Origin":"*"
