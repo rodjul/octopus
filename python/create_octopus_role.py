@@ -28,7 +28,8 @@ def attach_octopus_policies(iam_client):
     policies = [
         "arn:aws:iam::aws:policy/IAMFullAccess",
         "arn:aws:iam::aws:policy/AWSCloudTrailFullAccess",
-        "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+        "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess",
+        "arn:aws:iam::aws:policy/ReadOnlyAccess"
     ]
     attachment = {}
     for policy in policies:

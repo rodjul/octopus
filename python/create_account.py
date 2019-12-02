@@ -8,6 +8,8 @@ from octopus import my_logging
 from octopus import list_linked_accounts
 from octopus import json_serial
 from octopus import set_iam_password_policy
+from octopus import get_file_from_s3
+from os import environ
 
 # ============================================================================#
 #               CREATES NEW ACCOUNT UNDER ROOT (PAYER) ACCOUNT                #
@@ -69,15 +71,44 @@ def set_alias(iam_client,account_name):
 # ============================================================================#
 #                                 CREATE ADFS                                 #
 # ============================================================================#
+def create_adfs(iam_client):
+    idp_name = "ADFS"
+    saml_doc = get_file_from_s3(environ['octopus_resource'],"FederationMetadata.xml")
 
+    try:
+        create = iam_client.create_saml_provider(
+            SAMLMetadataDocument=str(saml_doc),
+            Name=idp_name
+        )
+        my_logging("IDP created: {}".format(create))
+        return create
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not create IDP: {}".format(e))
+        return e
 
 
 
 # ============================================================================#
 #                        EXECUTE CLOUDFORMATION STACKS                        #
 # ============================================================================#
+def create_stack_cloudformation(account_id, file_s3, payer_role):
+    cloudformation_client = get_creds("cloudformation",Id=account_id, role=payer_role)
+    try:
+        result = cloudformation_client.create_stack(
+            StackName = 'iam-createroles',
+            TemplateURL = "https://{0}.s3.us-east-2.amazonaws.com/cloudformation/{1}_without_octopusmngt.json".formation(environ['octopus_resource'],file_s3),
+            Parameters=[
+                {
+                    'ParameterKey': 'ArnIdentityProvider',
+                    'ParameterValue': 'arn:aws:iam::{0}:saml-provider/ADFS'.format(account_id)
+                }
+            ]
 
-
+        )
+        my_logging("Cloudformation {}".format(result))
+    except botocore.exceptions.ClientError as e:
+        my_logging("Could not create Cloudformation: {}".format(e))
+        return e
 
 
 # ============================================================================#
@@ -85,8 +116,10 @@ def set_alias(iam_client,account_name):
 # ============================================================================#
 def main_function(event):
 
+    # the role to do cross account when creating the account in the aws console
     payer_role = "security"
 
+    # getting temp credentials
     orgs_client = get_creds(
         "organizations",
         Id=event["payer_id"],
@@ -119,6 +152,12 @@ def main_function(event):
         set_alias(iam_client,event["name"])
 
         set_iam_password_policy(iam_client)
+
+        create_adfs(iam_client)
+
+        # given a cloudformation file, this cloudformation will create the necessay roles for the account
+        file_s3 = event['file_cloudformation']
+        create_stack_cloudformation(account["CreateAccountStatus"]["Id"], file_s3, payer_role)
 
     else:
         my_logging("Error on Account Creation: {}".format(status))
