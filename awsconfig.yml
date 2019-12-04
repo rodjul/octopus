@@ -1,0 +1,8 @@
+dev:
+  log_retention_in_days: 1
+  aws_account_id: 826839167791
+  aws_role_lambda: sslcom_certificado_lambda
+prod:
+  log_retention_in_days: 7
+  aws_account_id: 826839167791
+  aws_role_lambda: sslcom_certificado_lambda

@@ -1,0 +1,163 @@
+service: octopus
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "src/model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+
+plugins:
+  - serverless-plugin-log-retention
+  - serverless-s3-sync
+  
+custom:
+  awsconfig: ${file(awsconfig.yml):${self:provider.stage}}
+  splitStacks:
+    perFunction: true
+    perType: false
+    perGroupFunction: false
+
+
+functions:
+  create_account:
+    handler: src/lambda_create_account.lambda_handler
+    environment:
+      URL_SQS: 
+        Ref: SQSCreateAccount
+    runtime: python3.6
+    memorySize: 256
+    timeout: 300 # 300 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-create_account-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_create_account.py
+        - src/model/*.py
+    layers:
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:1"
+    events:
+      - sqs:
+         arn: 
+          Fn::GetAtt: [ SQSCreateAccount , Arn ]
+          
+  request_creation_account:
+    handler: src/lambda_controller_creation_account.lambda_handler
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-controller_creation_account-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_controller_creation_account.py
+    events:
+      - http:
+          path: /account/create
+          method: post
+          cors: true
+
+
+resources:
+  Resources:
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:service}-${self:provider.stage}
+    GatewayResponseDefault4XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+    GatewayResponseDefault5XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+         
+    DynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: IdTopology
+            AttributeType: S
+          - AttributeName: DateAction
+            AttributeType: S
+        KeySchema:
+          - AttributeName: IdTopology
+            KeyType: HASH
+          - AttributeName: DateAction 
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_accounts
+
+
+    SQSCreateAccount:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "CreateAccount"
+        #VisibilityTimeout: 120
+
+    # StaticSite:
+    #   Type: AWS::S3::Bucket
+    #   Properties:
+    #     AccessControl: PublicRead
+    #     BucketName: octopus-site
+    #     WebsiteConfiguration:
+    #       IndexDocument: index.html
+    
+    # StaticSiteS3BucketPolicy:
+    #   Type: AWS::S3::BucketPolicy
+    #   Properties:
+    #     Bucket:
+    #       Ref: StaticSite
+    #     PolicyDocument:
+    #       Statement:
+    #         - Sid: PublicReadGetObject
+    #           Effect: Allow
+    #           Principal: "*"
+    #           Action:
+    #           - s3:GetObject
+    #           Resource:
+    #             Fn::Join: [
+    #               "", [
+    #                 "arn:aws:s3:::",
+    #                 {
+    #                   "Ref": "StaticSite"
+    #                 },
+    #                 "/*"
+    #               ]
+    #             ]
