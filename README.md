@@ -19,7 +19,7 @@ update_layer.sh name_of_model profile_aws
 ## Get plugins
 ```
 npm install serverless-plugin-log-retention #install local
-npm install serverless-s3-sync #install local
+npm install serverless-s3-sync #install local https://github.com/k1LoW/serverless-s3-sync
 ```
 
 

@@ -9,6 +9,7 @@ from model.octopus import list_linked_accounts
 from model.octopus import json_serial
 from model.octopus import set_iam_password_policy
 from model.octopus import get_file_from_s3
+from model.dynamodb import save_account_db, insert_account_id_db
 from os import environ
 
 # ============================================================================#
@@ -116,19 +117,23 @@ def create_stack_cloudformation(account_id, file_s3, payer_role):
 # ============================================================================#
 def main_function(event):
 
+    payer_id = environ['PAYER_ID']
+    
+    save_account_db(event['name'], event['email'])
+
     # the role to do cross account when creating the account in the aws console
     payer_role = "security"
 
     # getting temp credentials
     orgs_client = get_creds(
         "organizations",
-        Id=event["payer_id"],
+        Id=payer_id,
         role="octopus_svc"
     )
     
     account = create_account(
         orgs_client,
-        event["payer_id"],
+        payer_id,
         event["email"],
         event["name"],
         payer_role
@@ -141,8 +146,11 @@ def main_function(event):
     )
     
     if status["State"] == "SUCCEEDED":
+        #storing the account id created
+        insert_account_id_db(event['name'], status['AccountId'])
+
         create_octopusmngt_role(
-            event["payer_id"],
+            payer_id,
             status["AccountId"],
             payer_role
         )
@@ -156,7 +164,7 @@ def main_function(event):
         create_adfs(iam_client)
 
         # given a cloudformation file, this cloudformation will create the necessay roles for the account
-        file_s3 = event['file_cloudformation']
+        file_s3 = event['cloudformation'].lower()
         create_stack_cloudformation(account["CreateAccountStatus"]["Id"], file_s3, payer_role)
 
     else:

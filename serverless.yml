@@ -33,21 +33,26 @@ provider:
 plugins:
   - serverless-plugin-log-retention
   - serverless-s3-sync
-  
+
 custom:
   awsconfig: ${file(awsconfig.yml):${self:provider.stage}}
   splitStacks:
     perFunction: true
     perType: false
     perGroupFunction: false
+  sqs_name: "CreateAccount"
+  s3Sync:
+    - bucketName: "octopus-site"
+      localDir: public/
 
 
 functions:
   create_account:
     handler: src/lambda_create_account.lambda_handler
     environment:
-      URL_SQS: 
-        Ref: SQSCreateAccount
+      URL_SQS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_name}"
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      octopus_resource: ""
     runtime: python3.6
     memorySize: 256
     timeout: 300 # 300 seconds
@@ -78,6 +83,22 @@ functions:
       - http:
           path: /account/create
           method: post
+          cors: true
+  
+  request_account_id_created:
+    handler: src/lambda_get_account_id_created.lambda_handler
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-get_account_id_created-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_get_account_id_created.py
+    events:
+      - http:
+          path: /account/id/{name_account}
+          method: get
           cors: true
 
 
@@ -110,54 +131,54 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
-          - AttributeName: IdTopology
-            AttributeType: S
-          - AttributeName: DateAction
+          - AttributeName: NameAccount
             AttributeType: S
         KeySchema:
-          - AttributeName: IdTopology
+          - AttributeName: NameAccount
             KeyType: HASH
-          - AttributeName: DateAction 
-            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: octopus_accounts
+        TableName: octopus_account
 
 
     SQSCreateAccount:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: "CreateAccount"
-        #VisibilityTimeout: 120
+        QueueName: ${self:custom.sqs_name}
+        VisibilityTimeout: 500 
 
-    # StaticSite:
-    #   Type: AWS::S3::Bucket
-    #   Properties:
-    #     AccessControl: PublicRead
-    #     BucketName: octopus-site
-    #     WebsiteConfiguration:
-    #       IndexDocument: index.html
     
-    # StaticSiteS3BucketPolicy:
-    #   Type: AWS::S3::BucketPolicy
-    #   Properties:
-    #     Bucket:
-    #       Ref: StaticSite
-    #     PolicyDocument:
-    #       Statement:
-    #         - Sid: PublicReadGetObject
-    #           Effect: Allow
-    #           Principal: "*"
-    #           Action:
-    #           - s3:GetObject
-    #           Resource:
-    #             Fn::Join: [
-    #               "", [
-    #                 "arn:aws:s3:::",
-    #                 {
-    #                   "Ref": "StaticSite"
-    #                 },
-    #                 "/*"
-    #               ]
-    #             ]
+    
+    ## Specifying the S3 Bucket
+    StaticSite:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: PublicRead
+        BucketName: "octopus-site"
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          #ErrorDocument: index.html
+
+    StaticSiteS3BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: StaticSite
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action:
+              - s3:GetObject
+              Resource:
+                Fn::Join: ["", ["arn:aws:s3:::",{"Ref": "StaticSite"},"/*"]]
+              Condition:
+                IpAddress: 
+                  aws:SourceIp: 
+                    - "187.94.52.20/32"
+                    # - "187.94.48.0/20"
+                    # - "138.219.88.0/22"
+                    # - "189.89.32.0/20"
+                    # - "181.41.160.0/19"

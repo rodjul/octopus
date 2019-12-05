@@ -33,7 +33,7 @@
 
 	<div class="container-contact100">
 		<div class="wrap-contact100">
-			<form class="contact100-form validate-form" id="create_account">
+			<section class="contact100-form validate-form" id="create_account" >
 				<span class="contact100-form-title">
 					Criar conta
 				</span>
@@ -43,7 +43,7 @@
 					<input class="input100" type="text" name="name" placeholder="Insira o nome da conta">
 				</div>
 
-				<div class="wrap-input100 validate-input bg1" data-validate = "Inserir email (e@a.x)">
+				<div class="wrap-input100 validate-input bg1" data-validate="Inserir email (example@cloudtotvs.com.br)">
 					<span class="label-input100">Email</span>
 					<input class="input100" type="text" name="email" placeholder="Inserir email">
 				</div>
@@ -60,14 +60,15 @@
 
 
 				<div class="container-contact100-form-btn">
-					<button class="contact100-form-btn">
+					<button class="contact100-form-btn" onclick="createAccount()">
 						<span>
 							Criar conta
 							<i class="fa fa-long-arrow-right m-l-7" aria-hidden="true"></i>
 						</span>
 					</button>
 				</div>
-			</form>
+			</section>
+			<span id="output"></span>
 		</div>
 	</div>
 
@@ -137,25 +138,83 @@
 	<script src="js/main.js"></script>
 
 	<script>
+		var msg_control = "";
+
 		function createAccount(){
-			json_data = $("#create_account")[0];
+			
+			
+			const name = $("input")[0].value;
+			const email = $("input")[1].value;
+			const cloudformation = $("select")[0].value;
+
+			if(name==="" || email==="")
+				return;
+
 			dataJson = {
-						"name":json_data[0].value,
-						"email":json_data[1].value,
-						"cloudformation":json_data[2].value
+						"name":name,
+						"email":email,
+						"cloudformation":cloudformation
 					};
 			$.ajax({
-				url: "",
+				url: "https://amgqmkuyae.execute-api.us-east-2.amazonaws.com/dev/account/create",
 				type: "POST",
 				crossDomain: true,
 				headers: {"Content-Type":"application/json"},
 				data: JSON.stringify(dataJson),
 				success: function(response){
-					//console.log(response);
-					htmlOutput = "";
+					//console.log(response.responseJSON);
+					//$("#output").after(response.message);
+					//alert(response.error);
+					data = "";
+
+					//do{
+					$.ajax({
+						url: "https://amgqmkuyae.execute-api.us-east-2.amazonaws.com/dev/account/id/"+name_account,
+						type: "GET",
+						crossDomain: true,
+						tryCount:0,
+						retryLimit: 10,
+						headers: {"Content-Type":"application/json"},
+						success: function(response){
+							if(! ( response.message.startsWith("Account id number: ")) ){
+								if(tryCount<=retryLimit){
+									this.tryCount++;
+									$.ajax(this);
+									return;
+								}
+							}
+							$("#output").after("<h2>"+response.message+"</h2>");
+						},
+						error: function(r){
+							alert("Erro em obter account id da conta:"+name_account);
+						}
+					});
+						
+					//}while(!(msg_control.startsWith("Account id number: ")));
+					
+					//$("#output").after(data);
+
 				},
 				error: function(r){
 					alert(r);
+				}
+			});
+		}
+
+		function getAccountId(name_account){
+			if(name_account==="") return;
+			
+			data = ""
+			$.ajax({
+				url: "https://amgqmkuyae.execute-api.us-east-2.amazonaws.com/dev/account/id/"+name_account,
+				type: "GET",
+				crossDomain: true,
+				headers: {"Content-Type":"application/json"},
+				success: function(response){
+					return response;
+				},
+				error: function(r){
+					alert("Erro em obter account id da conta:"+name_account);
 				}
 			});
 		}
