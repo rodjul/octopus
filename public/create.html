@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Criar conta</title>
+		<title>Octopus - Criar conta</title>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 	<!--===============================================================================================-->
@@ -35,17 +35,17 @@
 		<div class="wrap-contact100">
 			<section class="contact100-form validate-form" id="create_account" >
 				<span class="contact100-form-title">
-					Criar conta
+					Octopus - Criar conta
 				</span>
 
 				<div class="wrap-input100 validate-input bg1" data-validate="Insira o nome da conta">
 					<span class="label-input100">Nome da conta</span>
-					<input class="input100" type="text" name="name" placeholder="Insira o nome da conta">
+					<input class="input100" type="text" name="name" placeholder="Insira o nome da conta" value="rodjul">
 				</div>
 
 				<div class="wrap-input100 validate-input bg1" data-validate="Inserir email (example@cloudtotvs.com.br)">
 					<span class="label-input100">Email</span>
-					<input class="input100" type="text" name="email" placeholder="Inserir email">
+					<input class="input100" type="text" name="email" placeholder="Inserir email" value="rodjul@example.com">
 				</div>
 
 				<div class="wrap-input100 input100-select bg1">
@@ -68,7 +68,10 @@
 					</button>
 				</div>
 			</section>
-			<span id="output"></span>
+			<section id="output" style="margin-top:2em">
+
+
+			</section>
 		</div>
 	</div>
 
@@ -138,7 +141,7 @@
 	<script src="js/main.js"></script>
 
 	<script>
-		var msg_control = "";
+		//var msg_control = "";
 
 		function createAccount(){
 			
@@ -149,6 +152,10 @@
 
 			if(name==="" || email==="")
 				return;
+			
+			render_html = "<div id='temporary'><p id='output_text' style='font-size:1.5em'>Enviando os dados..</p>\n\
+							<img id='loader' style='width:15em; display:block; margin:auto' src='images/loadinfo.net.gif' alt='loading' ></div>";
+			$("#output").after(render_html);
 
 			dataJson = {
 						"name":name,
@@ -162,62 +169,45 @@
 				headers: {"Content-Type":"application/json"},
 				data: JSON.stringify(dataJson),
 				success: function(response){
-					//console.log(response.responseJSON);
-					//$("#output").after(response.message);
-					//alert(response.error);
-					data = "";
-
-					//do{
-					$.ajax({
-						url: "https://amgqmkuyae.execute-api.us-east-2.amazonaws.com/dev/account/id/"+name_account,
-						type: "GET",
-						crossDomain: true,
-						tryCount:0,
-						retryLimit: 10,
-						headers: {"Content-Type":"application/json"},
-						success: function(response){
-							if(! ( response.message.startsWith("Account id number: ")) ){
-								if(tryCount<=retryLimit){
-									this.tryCount++;
-									$.ajax(this);
-									return;
-								}
-							}
-							$("#output").after("<h2>"+response.message+"</h2>");
-						},
-						error: function(r){
-							alert("Erro em obter account id da conta:"+name_account);
-						}
-					});
-						
-					//}while(!(msg_control.startsWith("Account id number: ")));
 					
-					//$("#output").after(data);
+					$("#output_text").text("Criando a conta...");
+					
+					var interval = setInterval(function(){
+						$.ajax({
+							url: "https://amgqmkuyae.execute-api.us-east-2.amazonaws.com/dev/account/id/"+name,
+							type: "GET",
+							crossDomain: true,
+							tryCount:0,
+							retryLimit: 30,
+							headers: {"Content-Type":"application/json"},
+							success: function(response){
+								if(! ( response.message.startsWith("Account id number: ")) ){
+									if(tryCount<=retryLimit){
+										this.tryCount++;
+										$.ajax(this);
+										return;
+									}
+								}
+								clearInterval(interval);
+
+								$("#temporary").remove();
+								
+								$("#output").after("<p style='font-size:1.5em'>Conta: "+name+" - "+response.message+"</p>");
+							},
+							error: function(r){
+								$("#output").after("<p>Erro em obter account id da conta:"+name+"</p>");
+							}
+						});
+					},2000); // usando setInterval para executar a cada 2 segundos
+
 
 				},
 				error: function(r){
-					alert(r);
+					$("#output").after("<p>Houve um erro ao fazer a ação. Error:"+r.responseText+"</p>");
 				}
 			});
 		}
 
-		function getAccountId(name_account){
-			if(name_account==="") return;
-			
-			data = ""
-			$.ajax({
-				url: "https://amgqmkuyae.execute-api.us-east-2.amazonaws.com/dev/account/id/"+name_account,
-				type: "GET",
-				crossDomain: true,
-				headers: {"Content-Type":"application/json"},
-				success: function(response){
-					return response;
-				},
-				error: function(r){
-					alert("Erro em obter account id da conta:"+name_account);
-				}
-			});
-		}
 	</script>
 
 </body>

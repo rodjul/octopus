@@ -22,7 +22,7 @@ def lambda_handler(event,context):
     if response['Items']:
         try:
             account_id = response['Items'][0]['AccountId']
-            msg = "Account id number: "+account_id
+            msg = "AccountId: "+account_id
         except KeyError:
             msg = "Not found"
     else:
