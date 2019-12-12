@@ -101,6 +101,21 @@ functions:
           method: get
           cors: true
 
+  request_login_checktoken:
+    handler: src/lambda_login_check_token.lambda_handler
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-login_check_token-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_login_check_token.py
+    events:
+      - http:
+          path: /account/checkToken
+          method: post
+          cors: true
 
 resources:
   Resources:
