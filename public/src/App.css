@@ -1,0 +1,11 @@
+@media all and (min-width: 480px) {
+  .forms {
+    padding: 30px 0;
+  }
+
+  .forms form {
+    margin: 0 auto;
+    /* max-width: 520px; */
+    max-width: 50em;
+  }
+}
