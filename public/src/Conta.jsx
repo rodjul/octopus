@@ -6,8 +6,8 @@ export default class Login extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      email : 'rodjul@example.com',
-      name: 'rodjul',
+      email : 'octopus.teste-1@cloudtotvs.com.br',
+      name: 'octopus.teste-1',
       cloudformation: 'tcloud',
       lists: [],
       fetch_vars: {tryCount:0, retryLimit: 0,}, // not the best solution to do fetch retry

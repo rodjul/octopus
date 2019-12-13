@@ -19,10 +19,12 @@ export default function withAuth(ComponentToProtect) {
 
     componentDidMount() {
 
-      fetch('https://ph9emn94e6.execute-api.us-east-2.amazonaws.com/dev/account/checkToken', {
-        method: 'POST',
+      //fetch('https://ph9emn94e6.execute-api.us-east-2.amazonaws.com/dev/account/checkToken', {
+      fetch('https://ph9emn94e6.execute-api.us-east-2.amazonaws.com/dev/account/id/rodjul', {
+        //method: 'POST',
+        method: 'GET',
         mode: 'cors',
-        body: JSON.stringify(this.state.token),
+        //body: JSON.stringify(this.state.token),
         headers: {
           'Content-Type': 'application/json'
         }
@@ -30,11 +32,11 @@ export default function withAuth(ComponentToProtect) {
           //console.log(ComponentToProtect);
           // ao dar o check, valida se o token é valido 
           if (res.status === 200 ) {
-            this.props.history.push("/login");
-            // this.setState({ loading: false });
-            // const cookies = new Cookies();
-            // cookies.set('myCat', 'Pacman', { path: '/' });
-            // console.log(cookies.get('myCat')); // Pacman
+            //this.props.history.push("/login");
+            this.setState({ loading: false });
+            const cookies = new Cookies();
+            cookies.set('myCat', 'Pacman', { path: '/' });
+            console.log(cookies.get('myCat')); // Pacman
 
 
           } else if(res.status === 401){

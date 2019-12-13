@@ -6,6 +6,8 @@ import './App.css';
 import Conta from './Conta';
 import withAuth from './withAuth';
 import LoginForm from './LoginForm';
+import Policies from './Policies';
+
 
 
 const NavbarApp = () => 
@@ -16,6 +18,7 @@ const NavbarApp = () =>
     <Nav className="mr-auto">
       <Nav.Link href="/login">Login</Nav.Link>
       <Nav.Link href="/criar-conta">Criar conta</Nav.Link>
+      <Nav.Link href="/policies">Gerenciar policies</Nav.Link>
 
       {/* <NavDropdown title="Dropdown" id="basic-nav-dropdown">
         <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
@@ -48,6 +51,7 @@ class App  extends React.Component {
           <Switch>
               <Route path="/login" exact component={LoginForm} />
               <Route path="/criar-conta" component={withAuth(Conta)} />
+              <Route path="/policies" component={Policies} />
           </Switch>
         </BrowserRouter>
         
