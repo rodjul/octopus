@@ -8,14 +8,26 @@ from json import dumps
 #                      TRUST POLICY FOR OCTOPUSMNGT ROLE                      #
 # ============================================================================#
 def trust_policy_octopus():
-    return {}
+    return """{
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                    "Sid": "assumeoctopusmngt",
+                    "Effect": "Allow",
+                    "Principal": {
+                        "AWS": "arn:aws:iam::826839167791:root"
+                    },
+                    "Action": "sts:AssumeRole"
+                    }
+                ]
+            }"""
+
 
 # ============================================================================#
 #    CREATES ROLE ON LINKED ACCOUNT THROUGH PAYERS ACCOUNT MANAGEMENT ROLE    #
 # ============================================================================#
 def create_octopus_role(iam_client,trust_policy):
     return iam_client.create_role(
-        Path="/security/",
         RoleName=octopusmngt,
         AssumeRolePolicyDocument=trust_policy,
         Description="Role used by Octopus to manage accounts"
