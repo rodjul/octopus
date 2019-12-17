@@ -52,7 +52,7 @@ functions:
     environment:
       URL_SQS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_name}"
       PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
-      octopus_resource: ""
+      octopus_resource: "totvs-cloudformation-templates"
     runtime: python3.6
     memorySize: 256
     timeout: 300 # 300 seconds
@@ -63,11 +63,12 @@ functions:
         - src/lambda_create_account.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:1"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:5"
     events:
       - sqs:
          arn: 
-          Fn::GetAtt: [ SQSCreateAccount , Arn ]
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:CreateAccount"
+          #Fn::GetAtt: [ SQSCreateAccount , Arn ]
           
   request_creation_account:
     handler: src/lambda_controller_creation_account.lambda_handler
@@ -165,7 +166,7 @@ resources:
 
     
     
-    ## Specifying the S3 Bucket
+    # Specifying the S3 Bucket
     StaticSite:
       Type: AWS::S3::Bucket
       Properties:
