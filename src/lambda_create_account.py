@@ -10,6 +10,7 @@ from model.octopus import json_serial
 from model.octopus import set_iam_password_policy
 from model.octopus import get_file_from_s3
 from model.dynamodb import save_account_db, insert_account_id_db
+from model.iam_control import IamControl
 from os import environ
 from time import sleep
 
@@ -102,30 +103,12 @@ def create_adfs(iam_client):
 
 
 # ============================================================================#
-#                        EXECUTE CLOUDFORMATION STACKS                        #
+#                        CREATE STANDARD ROLES AND POLICIES                   #
 # ============================================================================#
-def create_stack_cloudformation(account_id, file_s3):
-    cloudformation_client = get_creds("cloudformation",Id=account_id)
-    print("Client cloudformation:",cloudformation_client)
-    try:
-        result = cloudformation_client.create_stack(
-            StackName = 'iam-createroles',
-            TemplateURL = "https://{0}.s3.us-east-2.amazonaws.com/{1}_without_octopusmngt.json".format(environ['octopus_resource'],file_s3),
-            Capabilities= [ 'CAPABILITY_AUTO_EXPAND', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_IAM' ],
-            Parameters=[
-                {
-                    'ParameterKey': 'ArnIdentityProvider',
-                    'ParameterValue': 'arn:aws:iam::{0}:saml-provider/ADFS'.format(account_id)
-                }
-            ]
-
-        )
-        my_logging("Cloudformation {}".format(result))
-    except botocore.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == 'EntityAlreadyExists':
-            my_logging("Cloudformation already exists. Error: {}".format(e))
-        else:
-            my_logging("Error in cloudformation: {}".format(e))
+def setup_roles_account(account_id, file_s3):
+    iamcontrol = IamControl(account_id)
+    #path_json = "https://{0}.s3.us-east-2.amazonaws.com/{1}_without_octopusmngt.json".format(environ['octopus_resource'],file_s3)
+    iamcontrol.setup_iam_account(file_s3)
 
 
 # ============================================================================#
@@ -190,8 +173,8 @@ def main_function(event):
         
         # given a cloudformation file, this cloudformation will create the necessay roles for the account
         file_s3 = event['cloudformation'].lower()
-        sleep(10)
-        create_stack_cloudformation(status["AccountId"], file_s3)
+        file_s3 = "roles_policies_trusts.json"
+        setup_roles_account(status["AccountId"], file_s3)
 
     else:
         my_logging("Error on Account Creation: {}".format(status))
