@@ -6,11 +6,11 @@ export default class Login extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      email : 'octopus.teste-1@cloudtotvs.com.br',
-      name: 'octopus.teste-1',
+      email : 'octopus.teste-20@cloudtotvs.com.br',
+      name: 'octopus.teste-20',
       cloudformation: 'tcloud',
       lists: [],
-      fetch_vars: {tryCount:0, retryLimit: 0,}, // not the best solution to do fetch retry
+      fetch_vars: {tryCount:0, retryLimit: 30,}, // not the best solution to do fetch retry
     };
 
   }
@@ -43,7 +43,7 @@ export default class Login extends Component {
     //fetch('/api/authenticate', {
     //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
     const self = this;
-    fetch('https://ph9emn94e6.execute-api.us-east-2.amazonaws.com/dev/account/create', {
+    fetch('https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev/account/create', {
       method: 'POST',
       body: JSON.stringify(this.state),
       headers: {
@@ -53,14 +53,13 @@ export default class Login extends Component {
     .then(res => {
       if (res.status === 200) {
         //this.props.history.push('/');
-        
+        //console.log(res.json().then( body => console.log(body) ));
         document.getElementById("output_text").textContent = "Criando a conta...";
         let name = self.state.name;
-        // console.log("name:",name);
         
         // definimos um intervalo a cada 2 segundos para obter o resultado 
         var interval = setInterval(function(){
-          fetch("https://ph9emn94e6.execute-api.us-east-2.amazonaws.com/dev/account/id/"+name,{
+          fetch("https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev/account/id/"+name,{
             method: "GET",
             headers: {"Content-Type":"application/json"},
           })

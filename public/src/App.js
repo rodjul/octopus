@@ -50,7 +50,7 @@ class App  extends React.Component {
           <NavbarApp />
           <Switch>
               <Route path="/login" exact component={LoginForm} />
-              <Route path="/criar-conta" component={withAuth(Conta)} />
+              <Route path="/criar-conta" component={(Conta)} />
               <Route path="/policies" component={Policies} />
           </Switch>
         </BrowserRouter>
