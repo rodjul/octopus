@@ -55,36 +55,20 @@ export default class Login extends React.Component {
                 <Form horizontal="true" onSubmit={this.onSubmit}>
                 {trusts.map((trust) => {
                     console.log(trust);
-                    return (
-                        <div className="form_margin_bottom shadow" key={trust['Name']}>
-                            <div className="form-group row">
-                                <label htmlFor="name_trust" className="col-sm-1 col-form-label bolder">Name: </label>
-                                <div className="col-sm-11">
-                                    <input type="text" id="name_trust" name={"name_"+ trust['Name']} className="form-control" placeholder="Readonly" value={trust['Name']} />
-                                </div>
-                            </div>
-                            <FormGroup controlId="email2" >
-                                <FormLabel className="bolder">AssumeRolePolicyDocument:</FormLabel>
-                                <FormControl name="name2" as="textarea" rows="12" defaultValue={JSON.stringify( trust['AssumeRolePolicyDocument'], null, '\t' )} />
-                            </FormGroup>
-
-                            {/* <Editor theme="ace/theme/github"  value={trust['AssumeRolePolicyDocument']} onChange="" name="unique_name" ace={ace} /> */}
-                            {/* <Editor value={trust['AssumeRolePolicyDocument']} ace={ace} theme="ace/theme/github" /> */}
-                            
-                            {/* <FormGroup  controlId="email">
-                                <FormLabel  >Name</FormLabel>
-                                <FormControl autoFocus name="name" type="text" defaultValue={trust['Name']} />
-                            </FormGroup>
-                            <FormGroup controlId="email2" >
-                                <FormLabel>AssumeRolePolicyDocument</FormLabel>
-                                <FormControl name="name2" as="textarea" rows="12" defaultValue={JSON.stringify( trust['AssumeRolePolicyDocument'], null, '\t' )} />
-                            </FormGroup> */}
-                        </div>
-                        // <div>
-                        //     <p key={trust['Name']}>}</p>
-                        //     <textarea key={trust['Name']} value={JSON.stringify( trust['AssumeRolePolicyDocument'] ) }  />
-                        // </div>
-                    );
+                    // return (
+                    //     <div className="form_margin_bottom shadow" key={trust['Name']}>
+                    //         <div className="form-group row">
+                    //             <label htmlFor="name_trust" className="col-sm-1 col-form-label bolder">Name: </label>
+                    //             <div className="col-sm-11">
+                    //                 <input type="text" id="name_trust" name={"name_"+ trust['Name']} className="form-control" placeholder="Readonly" value={trust['Name']} />
+                    //             </div>
+                    //         </div>
+                    //         <FormGroup controlId="email2" >
+                    //             <FormLabel className="bolder">AssumeRolePolicyDocument:</FormLabel>
+                    //             <FormControl name="name2" as="textarea" rows="12" defaultValue={JSON.stringify( trust['AssumeRolePolicyDocument'], null, '\t' )} />
+                    //         </FormGroup>
+                    //     </div>
+                    // );
                 })}
                 </Form>
 
@@ -94,26 +78,27 @@ export default class Login extends React.Component {
                     return (
                         <div className="form_margin_bottom shadow" key={role['Name']}>
                             <div className="form-group row">
-                                <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Name: </label>
-                                <div className="col-sm-10">
+                                <label htmlFor="name_trust" className="col-sm-3 col-form-label bolder">Name: </label>
+                                <div className="col-sm-9">
                                     <input type="text" id="name_trust" name={"name_"+ role['Name']} className="form-control" placeholder="seginfo" value={role['Name']} />
                                 </div>
                             </div>
                             <div className="form-group row">
-                                <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Policies: </label>
-                                <div className="col-sm-10">
+                                <label htmlFor="name_trust" className="col-sm-3 col-form-label bolder">Policies: </label>
+                                <div className="col-sm-9">
                                     <input type="text" id="name_trust" name={"name_"+ role['Policies']} className="form-control" placeholder="policy-example" value={role['Policies']} />
                                 </div>
                             </div>
                             <div className="form-group row">
-                                <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">PolicyArnAWS: </label>
-                                <div className="col-sm-10">
+                                <label htmlFor="name_trust" className="col-sm-3 col-form-label bolder">PolicyArnAWS: </label>
+                                <div className="col-sm-9">
                                     <input type="text" id="name_trust" name={"name_"+ role['PolicyArnAWS']} className="form-control" placeholder="arn:aws:iam::aws:policy/ReadOnlyAccess" value={role['PolicyArnAWS']} />
+                                    <span className="text-note">Separar por vírgula se tiver mais de uma ARN</span>
                                 </div>
                             </div>
                             <div className="form-group row">
-                                <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">TrustRelationship: </label>
-                                <div className="col-sm-10">
+                                <label htmlFor="name_trust" className="col-sm-3 col-form-label bolder">TrustRelationship: </label>
+                                <div className="col-sm-9">
                                     <input type="text" id="name_trust" name={"name_"+ role['TrustRelationship']} className="form-control" placeholder="ADFS" value={role['TrustRelationship']} />
                                 </div>
                             </div>
@@ -126,32 +111,32 @@ export default class Login extends React.Component {
                 <h1 id="policy_titles">Policies</h1>
                 <Form>
                 {policies.map((policy) => {
-                    return (
-                        <div className="form_margin_bottom shadow" key={policy['Name']}>
-                            <div className="form-group row">
-                                <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Name: </label>
-                                <div className="col-sm-10">
-                                    <input type="text" id="name_trust" name={"name_"+ policy['Name']} className="form-control" placeholder="seginfo" value={policy['Name']} />
-                                </div>
-                            </div>
-                            <div className="form-group row">
-                                <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Description: </label>
-                                <div className="col-sm-10">
-                                    <input type="text" id="name_trust" name={"name_"+ policy['Name']} className="form-control" placeholder="seginfo" value={policy['Description']} />
-                                </div>
-                            </div>
-                            <div className="form-group row">
-                                <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Path: </label>
-                                <div className="col-sm-10">
-                                    <input type="text" id="name_trust" name={"name_"+ policy['Path']} className="form-control" placeholder="seginfo" value={policy['Path']} />
-                                </div>
-                            </div>
-                            <FormGroup  controlId="email2" bssize="large">
-                                <FormLabel className="bolder">AssumeRolePolicyDocument</FormLabel>
-                                <FormControl name="name2" as="textarea" rows="12" defaultValue={JSON.stringify( policy['PolicyDocument'], null, '\t' )} />
-                            </FormGroup>                                                                              
-                        </div>
-                    );
+                    // return (
+                    //     <div className="form_margin_bottom shadow" key={policy['Name']}>
+                    //         <div className="form-group row">
+                    //             <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Name: </label>
+                    //             <div className="col-sm-10">
+                    //                 <input type="text" id="name_trust" name={"name_"+ policy['Name']} className="form-control" placeholder="seginfo" value={policy['Name']} />
+                    //             </div>
+                    //         </div>
+                    //         <div className="form-group row">
+                    //             <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Description: </label>
+                    //             <div className="col-sm-10">
+                    //                 <input type="text" id="name_trust" name={"name_"+ policy['Name']} className="form-control" placeholder="seginfo" value={policy['Description']} />
+                    //             </div>
+                    //         </div>
+                    //         <div className="form-group row">
+                    //             <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Path: </label>
+                    //             <div className="col-sm-10">
+                    //                 <input type="text" id="name_trust" name={"name_"+ policy['Path']} className="form-control" placeholder="seginfo" value={policy['Path']} />
+                    //             </div>
+                    //         </div>
+                    //         <FormGroup  controlId="email2" bssize="large">
+                    //             <FormLabel className="bolder">AssumeRolePolicyDocument</FormLabel>
+                    //             <FormControl name="name2" as="textarea" rows="12" defaultValue={JSON.stringify( policy['PolicyDocument'], null, '\t' )} />
+                    //         </FormGroup>                                                                              
+                    //     </div>
+                    // );
                 })}
                 </Form>
                 
