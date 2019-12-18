@@ -118,6 +118,25 @@ functions:
           method: post
           cors: true
 
+  request_get_default_role_policy:
+    handler: src/lambda_get_default_role_policy.lambda_handler
+    environment:
+      octopus_resource: "totvs-cloudformation-templates"
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-get_default_role_policy-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_get_default_role_policy.py
+    events:
+      - http:
+          path: /policy/default
+          method: get
+          cors: true
+
+
 resources:
   Resources:
     ApiGatewayRestApi:

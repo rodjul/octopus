@@ -10,7 +10,7 @@ def account_created(name_account,email_account):
     status = False
     if response['Items']:
         #account_id = response['Items'][0]['AccountId']
-        stauts = True
+        status = True
     
     return status
 
@@ -28,12 +28,15 @@ def lambda_handler(event,context):
     
     if not account_created(name,email):
         print("Criando conta", name,email)
+        '''
         sqs_client = boto3.client("sqs")
         sqs_client.send_message(
                 QueueUrl="https://sqs.us-east-2.amazonaws.com/826839167791/CreateAccount",
                 MessageBody=dumps({"name": name, "email":email, "cloudformation":cloudformation_file })
-            )
-        
-
-    return {"statusCode":200, "body":dumps({"error":False, "message":"Creating account"}),
+            )   
+        '''
+        return {"statusCode":200, "body":dumps({"error":False, "message":"Creating account"}),
+        "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
+    
+    return {"statusCode":200, "body":dumps({"error":False, "message":"Already created"}),
         "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
