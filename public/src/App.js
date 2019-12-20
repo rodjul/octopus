@@ -3,10 +3,11 @@ import { Link, Route, Switch, BrowserRouter } from 'react-router-dom';
 import { Button, FormGroup, FormControl, FormLabel, Navbar, Nav, NavDropdown, Form } from "react-bootstrap";
 import logo from './logo.svg';
 import './App.css';
-import Conta from './Conta';
+import CreateAccount from './CreateAccount';
 import withAuth from './withAuth';
 import LoginForm from './LoginForm';
 import Policies from './Policies';
+import ManageAccounts from './ManageAccounts';
 
 
 
@@ -17,8 +18,9 @@ const NavbarApp = () =>
   <Navbar.Collapse id="basic-navbar-nav">
     <Nav className="mr-auto">
       <Nav.Link href="/login">Login</Nav.Link>
-      <Nav.Link href="/criar-conta">Criar conta</Nav.Link>
+      <Nav.Link href="/create-account">Criar conta</Nav.Link>
       <Nav.Link href="/policies">Gerenciar policies</Nav.Link>
+      <Nav.Link href="/manage-accounts">Gerenciar policies das contas</Nav.Link>
 
       {/* <NavDropdown title="Dropdown" id="basic-nav-dropdown">
         <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
@@ -50,8 +52,9 @@ class App  extends React.Component {
           <NavbarApp />
           <Switch>
               <Route path="/login" exact component={LoginForm} />
-              <Route path="/criar-conta" component={(Conta)} />
+              <Route path="/create-account" component={(CreateAccount)} />
               <Route path="/policies" component={Policies} />
+              <Route path="/manage-accounts" component={ManageAccounts} />
           </Switch>
         </BrowserRouter>
         

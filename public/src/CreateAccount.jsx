@@ -1,6 +1,6 @@
 import React, { Component, useState } from 'react';
 import { Button, FormGroup, FormControl, FormLabel, Table } from "react-bootstrap";
-import "./Conta.css";
+import "./CreateAccount.css";
 
 export default class Login extends Component {
   constructor(props) {
@@ -121,7 +121,7 @@ export default class Login extends Component {
   render() {
     return (
         <section className="forms">
-		    	<form onSubmit={this.onSubmit} >
+		    	<form className="shadow" onSubmit={this.onSubmit} >
                 {/* <span >
                     Octopus - Criar conta
                 </span> */}
