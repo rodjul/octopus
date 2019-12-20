@@ -63,7 +63,7 @@ functions:
         - src/lambda_create_account.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:5"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:6"
     events:
       - sqs:
          arn: 
@@ -135,6 +135,49 @@ functions:
           path: /policy/default
           method: get
           cors: true
+
+  request_get_account_organizations:
+    handler: src/lambda_get_accounts_organizations.lambda_handler
+    environment:
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}    
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-get_accounts_organizations-${self:provider.stage}
+    package:
+      include:
+        - src/model/*.py
+        - src/lambda_get_accounts_organizations.py
+    layers:
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:6"        
+    events:
+      - http:
+          path: /account/organizations
+          method: get
+          cors: true
+
+
+  compliance_iam_account:
+    handler: src/lambda_compliance_iam.lambda_handler
+    environment:
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}    
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-compliance_iam-${self:provider.stage}
+    package:
+      include:
+        - src/model/*.py
+        - src/lambda_compliance_iam.py
+    layers:
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:6"        
+    # events:
+    #   - http:
+    #       path: /account/organizations
+    #       method: get
+    #       cors: true
 
 
 resources:

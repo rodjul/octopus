@@ -18,13 +18,32 @@ class IamControl:
     def list_policies(self):
         return self.iam_client.list_policies()
 
+    def list_attached_role_policies(self,role_name):
+        return self.iam_client.list_attached_role_policies(RoleName=role_name)
+
     def get_policy_arn(self, policy_name):
         policies = self.list_policies()
-        for policy in policies:
+        for policy in policies['Policies']:
             if policy['PolicyName'] == policy_name:
                 return policy['Arn']
         return "Not found"
 
+    def get_policy_details(self, policy_name):
+        policy_arn = self.get_policy_arn(policy_name)
+        if policy_arn != "Not found":
+            return self.iam_client.get_policy(PolicyArn=policy_arn)
+        return "Not found"
+    
+    def get_policy_document(self, policy_name):
+        policy_arn = self.get_policy_arn(policy_name)
+        if policy_arn != "Not found":
+            version = self.get_policy_version(policy_arn)
+            return self.iam_client.get_policy_version(PolicyArn=policy_arn, VersionId=version)
+        return "Not found"
+    
+    # get the version of an arn policy
+    def get_policy_version(self,policy_arn):
+        return self.iam_client.list_policy_versions(PolicyArn=policy_arn)['Versions'][0]['VersionId']
 
     def create_policy(self, policy_name, policy_document):
         try:
