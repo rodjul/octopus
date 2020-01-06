@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, FormGroup, FormControl, FormLabel, Table, Form, Row, horizontal } from "react-bootstrap";
+import { Button, FormGroup, FormControl, FormLabel, Table, Form, Tab,Tabs } from "react-bootstrap";
 import './Policies.css';
 
 import JSONInput from 'react-json-editor-ajrm';
@@ -23,12 +23,19 @@ export default class Login extends React.Component {
         // Policies - Name, Description, Path, PolicyDocument
         // Roles  - Name, Policies[], PolicyArnAWS[] , TrustRelationship
         // TrustRelationships - Name, AssumeRolePolicyDocument
-        fetch("https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev/policy/default")
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
         .then(resp => resp.json())
-        .then(data => this.setState({ description: data.message.Description,
+        .then(data => {
+            if(data.message === "Internal server error"){
+                throw "Error in fetching data";
+            }else{
+                this.setState({ description: data.message.Description,
                                     trusts: data.message.TrustRelationships,
                                     policies: data.message.Policies,
-                                    roles:  data.message.Roles}))
+                                    roles:  data.message.Roles});
+                }
+            }
+        )
     }
     
     handleInputChangeARN = (event) => {
@@ -134,7 +141,6 @@ export default class Login extends React.Component {
         // VER https://www.robinwieruch.de/react-fetching-data
         return (
             <section className="forms">
-                
 
                 <Form name="form_trust" onSubmit={this.onSubmit}>
                 <h1 id="policy_titles">Description of "{document_name}"</h1>
@@ -174,18 +180,30 @@ export default class Login extends React.Component {
                                     {/* <FormControl name={"assumerolepolicydocument_"+ trust['Name']} as="textarea" rows="12" defaultValue={JSON.stringify( trust['AssumeRolePolicyDocument'], "", '\t' )} /> */}
                                 </FormGroup>
                                 
-                                {/* https://github.com/AndrewRedican/react-json-editor-ajrm */}
-                                <JSONInput onChange={(e) => this.onChangeJson("trust",index,e)} className="custom-rod" name="teste"
-                                    id          = 'json_editor'
-                                    placeholder = { trust['AssumeRolePolicyDocument'] }
-                                    //theme="light_mitsuketa_tribute"
-                                    // colors      = { {
-                                    //     string: "#DAA520" // overrides theme colors with whatever color value you want
-                                    //   }}
-                                    locale      = { locale }
-                                    height      = 'auto'
-                                    width       = 'auto'
-                                />
+                                <Tabs defaultActiveKey="json" id="uncontrolled-tab-example">
+
+                                    <Tab eventKey="json" title="JSON">
+
+                                        {/* https://github.com/AndrewRedican/react-json-editor-ajrm */}
+                                        <JSONInput onChange={(e) => this.onChangeJson("trust",index,e)} className="custom-rod" name="teste"
+                                            id          = 'json_editor'
+                                            placeholder = { trust['AssumeRolePolicyDocument'] }
+                                            //theme="light_mitsuketa_tribute"
+                                            // colors      = { {
+                                            //     string: "#DAA520" // overrides theme colors with whatever color value you want
+                                            //   }}
+                                            locale      = { locale }
+                                            height      = 'auto'
+                                            width       = 'auto'
+                                        />
+
+                                    </Tab>
+                                    <Tab eventKey="editor" title="Editor">
+                                        <p>item 2</p>
+                                    </Tab>
+                                </Tabs>
+
+                                
                             </div>
 
                                

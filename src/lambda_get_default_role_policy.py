@@ -1,5 +1,5 @@
 import boto3
-from json import dumps
+from json import dumps, loads
 from os import environ
 
 def lambda_handler(event,context):

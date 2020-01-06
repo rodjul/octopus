@@ -32,7 +32,7 @@ provider:
 
 plugins:
   - serverless-plugin-log-retention
-  - serverless-s3-sync
+  # - serverless-s3-sync
 
 custom:
   awsconfig: ${file(awsconfig.yml):${self:provider.stage}}
@@ -41,9 +41,9 @@ custom:
     perType: false
     perGroupFunction: false
   sqs_name: "CreateAccount"
-  s3Sync:
-    - bucketName: "octopus-site"
-      localDir: public/
+  # s3Sync:
+  #   - bucketName: "octopus-site"
+  #     localDir: public/
 
 
 functions:
@@ -161,7 +161,7 @@ functions:
   compliance_iam_account:
     handler: src/lambda_compliance_iam.lambda_handler
     environment:
-      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}    
+      octopus_resource: totvs-cloudformation-templates 
     runtime: python3.6
     memorySize: 256
     timeout: 30 # 30 seconds
@@ -172,7 +172,7 @@ functions:
         - src/model/*.py
         - src/lambda_compliance_iam.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:6"        
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:7"        
     # events:
     #   - http:
     #       path: /account/organizations
@@ -228,35 +228,35 @@ resources:
 
     
     
-    # Specifying the S3 Bucket
-    StaticSite:
-      Type: AWS::S3::Bucket
-      Properties:
-        AccessControl: PublicRead
-        BucketName: "octopus-site"
-        WebsiteConfiguration:
-          IndexDocument: index.html
-          #ErrorDocument: index.html
+    # # Specifying the S3 Bucket
+    # StaticSite:
+    #   Type: AWS::S3::Bucket
+    #   Properties:
+    #     AccessControl: PublicRead
+    #     BucketName: "octopus-site"
+    #     WebsiteConfiguration:
+    #       IndexDocument: index.html
+    #       #ErrorDocument: index.html
 
-    StaticSiteS3BucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket:
-          Ref: StaticSite
-        PolicyDocument:
-          Statement:
-            - Sid: PublicReadGetObject
-              Effect: Allow
-              Principal: "*"
-              Action:
-              - s3:GetObject
-              Resource:
-                Fn::Join: ["", ["arn:aws:s3:::",{"Ref": "StaticSite"},"/*"]]
-              Condition:
-                IpAddress: 
-                  aws:SourceIp: 
-                    - "187.94.52.20/32"
-                    # - "187.94.48.0/20"
-                    # - "138.219.88.0/22"
-                    # - "189.89.32.0/20"
-                    # - "181.41.160.0/19"
+    # StaticSiteS3BucketPolicy:
+    #   Type: AWS::S3::BucketPolicy
+    #   Properties:
+    #     Bucket:
+    #       Ref: StaticSite
+    #     PolicyDocument:
+    #       Statement:
+    #         - Sid: PublicReadGetObject
+    #           Effect: Allow
+    #           Principal: "*"
+    #           Action:
+    #           - s3:GetObject
+    #           Resource:
+    #             Fn::Join: ["", ["arn:aws:s3:::",{"Ref": "StaticSite"},"/*"]]
+    #           Condition:
+    #             IpAddress: 
+    #               aws:SourceIp: 
+    #                 - "187.94.52.20/32"
+    #                 # - "187.94.48.0/20"
+    #                 # - "138.219.88.0/22"
+    #                 # - "189.89.32.0/20"
+    #                 # - "181.41.160.0/19"

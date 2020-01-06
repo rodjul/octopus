@@ -18,6 +18,9 @@ class IamControl:
     def list_policies(self):
         return self.iam_client.list_policies()
 
+    def list_roles(self):
+        return self.iam_client.list_roles()
+
     def list_attached_role_policies(self,role_name):
         return self.iam_client.list_attached_role_policies(RoleName=role_name)
 
