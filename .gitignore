@@ -1,3 +1,4 @@
-*.txt
-*.xml
-*aws-orgs*
+__pycache__/*
+*/__pycache__/*
+.serverless/*
+.serverless
