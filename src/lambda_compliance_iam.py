@@ -4,6 +4,7 @@ from model.iam_control import IamControl
 from os import environ
 from json import loads, dumps
 import hashlib
+import datetime 
 
 def get_file_master_compliance(file_key):
     s3 = boto3.resource('s3')
@@ -11,11 +12,32 @@ def get_file_master_compliance(file_key):
         obj = s3.Object(environ['octopus_resource'], file_key)
         return loads( obj.get()['Body'].read().decode('utf-8') )
     except botocore.exceptions.ClientError as e:
-        my_logging("Could not create account: {}".format(e),"error")
+        print("Could not create account: {0}".format(e))
         return e
 
 
-def lambda_handler(event, context):
+def save_to_s3(s3_key, content):
+    '''
+    :param s3_key: nome do arquivo
+    :param content: conteudo do arquivo
+    '''
+    s3 = boto3.client('s3')
+    kwargs = {
+        #'ContentType':'text/plain; charset=utf-8',
+        'Bucket': environ['octopus_resource'],
+        'Key':  "compliance/"+s3_key,
+        'Body': content,
+        'ACL': 'private'
+    }
+    
+    try:
+        s3.put_object(**kwargs)
+    except Exception as e:
+        #print( e)
+        raise e
+
+
+def check_compliance(event):
     try:
         # account_id = loads(event['body'])['AccountId']
         account_id = event['AccountId']
@@ -111,6 +133,47 @@ def lambda_handler(event, context):
         if not role_compliance_found:
             lista_compliance.append({"name":role_master['Name'],"policy":role_master['Policies'], "compliance":False,
                                     "status":"Não encontrado"})        
-    print(lista_compliance)
     
+    print(lista_compliance)
+    s3_key = account_id +"_"+ datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    save_to_s3(s3_key, dumps(lista_compliance, ensure_ascii=False))
+
     return 200
+
+
+def get_compliance(event):
+    try:
+        account_id = event['pathParameters']['account_id'] 
+    except IndexError:
+        return {"statusCode":400, "body":{"error":True, "message":"Key error param"}}
+    
+    s3 = boto3.client("s3")
+    
+    contents = s3.list_objects(
+        Bucket=environ['octopus_resource'],
+        Prefix="compliance/"+account_id
+    )
+    
+    if "Contents" in contents and contents['Contents']:
+        last = len(contents['Contents']) -1 
+        last_key = contents['Contents'][last]['Key'] 
+        content =  s3.get_object(Bucket=environ['octopus_resource'], Key=last_key)['Body'].read().decode()
+        
+        return {"statusCode":200, "body":dumps({"found":True, "message":content}, ensure_ascii=False),
+        "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
+        
+    return {"statusCode":200, "body":dumps({"found":False, "message":"Not found"}), 
+        "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
+    
+
+
+def lambda_handler(event, context):
+    print("Debug:",event)
+    
+    if "Records" in event:
+        for msg in event['Records']:
+            event2 = {"AccountId": loads(msg['body'])['account_id'] }
+            check_compliance(event2)
+            
+    elif "httpMethod" in event and event['httpMethod'] == "GET":
+        return get_compliance(event)

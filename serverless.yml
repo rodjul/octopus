@@ -41,6 +41,7 @@ custom:
     perType: false
     perGroupFunction: false
   sqs_name: "CreateAccount"
+  sqs_compliance_new_check: "ComplianceNewCheck"
   # s3Sync:
   #   - bucketName: "octopus-site"
   #     localDir: public/
@@ -63,7 +64,7 @@ functions:
         - src/lambda_create_account.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:6"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"
     events:
       - sqs:
          arn: 
@@ -150,7 +151,7 @@ functions:
         - src/model/*.py
         - src/lambda_get_accounts_organizations.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:6"        
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"        
     events:
       - http:
           path: /account/organizations
@@ -164,7 +165,7 @@ functions:
       octopus_resource: totvs-cloudformation-templates 
     runtime: python3.6
     memorySize: 256
-    timeout: 30 # 30 seconds
+    timeout: 300 # 30 seconds
     role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
     name: ${self:service}-compliance_iam-${self:provider.stage}
     package:
@@ -172,12 +173,38 @@ functions:
         - src/model/*.py
         - src/lambda_compliance_iam.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:7"        
-    # events:
-    #   - http:
-    #       path: /account/organizations
-    #       method: get
-    #       cors: true
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"        
+    events:
+      - http:
+          path: /policy/compliance/check/{account_id}
+          method: get
+          cors: true
+      - sqs:
+         arn: 
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_new_check}"
+
+  controller_compliance_new_check: 
+    handler: src/lambda_controller_compliance_iam.lambda_handler
+    environment:
+      URL_SQS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      octopus_resource: "totvs-cloudformation-templates"
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 300 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-controller_compliance_iam-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_controller_compliance_iam.py
+        - src/model/*.py
+    layers:
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"
+    events:
+      - http:
+          path: /policy/compliance/new
+          method: post
+          cors: true
 
 
 resources:
@@ -225,7 +252,12 @@ resources:
       Properties:
         QueueName: ${self:custom.sqs_name}
         VisibilityTimeout: 500 
-
+    
+    SQSComplianceNewCheck:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:custom.sqs_compliance_new_check}
+        VisibilityTimeout: 500 
     
     
     # # Specifying the S3 Bucket
