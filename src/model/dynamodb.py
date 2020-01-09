@@ -25,3 +25,6 @@ def insert_account_id_db(name_account, account_id_generated):
         UpdateExpression="set AccountId=:ai",
         ExpressionAttributeValues={":ai":account_id_generated}
         )
+
+
+#octopus_account_compliance

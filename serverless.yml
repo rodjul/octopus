@@ -232,19 +232,37 @@ resources:
         RestApiId:
           Ref: 'ApiGatewayRestApi'
          
-    DynamoDbTable:
+    # DynamoDbOctopusAccount:
+    #   Type: 'AWS::DynamoDB::Table'
+    #   Properties:
+    #     AttributeDefinitions:
+    #       - AttributeName: NameAccount
+    #         AttributeType: S
+    #     KeySchema:
+    #       - AttributeName: NameAccount
+    #         KeyType: HASH
+    #     ProvisionedThroughput:
+    #       ReadCapacityUnits: 1
+    #       WriteCapacityUnits: 1
+    #     TableName: octopus_account
+
+    DynamoDbAccountCompliance1:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
-          - AttributeName: NameAccount
+          - AttributeName: DateAction
+            AttributeType: S
+          - AttributeName: Account
             AttributeType: S
         KeySchema:
-          - AttributeName: NameAccount
+          - AttributeName: DateAction
             KeyType: HASH
+          - AttributeName: Account
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: octopus_account
+        TableName: octopus_account_compliance1
 
 
     SQSCreateAccount:

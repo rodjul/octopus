@@ -37,18 +37,33 @@ def save_to_s3(s3_key, content):
         raise e
 
 
+def insert_data(account_id, account_name, data_json, date_action):
+    '''
+    Insert the name account create to make the index
+    '''
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_account_compliance1")
+
+    item = {"DateAction": date_action,
+            "Account": account_id,
+            "Name": account_name,
+            "DataCompliance": dumps(data_json, ensure_ascii=False)}
+
+    table.put_item( Item=item )
+
 def check_compliance(event):
     try:
         # account_id = loads(event['body'])['AccountId']
-        account_id = event['AccountId']
-
+        account_id  = event['AccountId']
+        date_action = event['DateAction']
+        account_name = event['AccountName']
     except KeyError:
         return 400
 
     file_key = "roles_policies_trusts.json"
     file_master = get_file_master_compliance(file_key)
     
-    iam_cont = IamControl("826839167791")
+    iam_cont = IamControl(account_id)
         
     # 1- comparar quantidade de policies atachadas 
     # 2- comparar com cada policy para ver o md5
@@ -135,13 +150,14 @@ def check_compliance(event):
                                     "status":"Não encontrado"})        
     
     print(lista_compliance)
-    s3_key = account_id +"_"+ datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    save_to_s3(s3_key, dumps(lista_compliance, ensure_ascii=False))
+    #s3_key = account_id +"_"+ datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    #save_to_s3(s3_key, dumps(lista_compliance, ensure_ascii=False))
+    insert_data(account_id, account_name, lista_compliance, date_action)
 
     return 200
 
 
-def get_compliance(event):
+def get_compliance_by_account(event):
     try:
         account_id = event['pathParameters']['account_id'] 
     except IndexError:
@@ -166,13 +182,26 @@ def get_compliance(event):
         "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
     
 
+def get_compliance(event):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_account_compliance1")
+
+    try:
+        content = table.scan()['Items']
+    except KeyError:
+        content = ""
+
+    return {"statusCode":200, "body":{"error":False, "content": content},
+    "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
 
 def lambda_handler(event, context):
     print("Debug:",event)
     
     if "Records" in event:
         for msg in event['Records']:
-            event2 = {"AccountId": loads(msg['body'])['account_id'] }
+            event2 = {"AccountId": loads(msg['body'])['account_id'],
+                     "DateAction": loads(msg['body'])['date_action'],
+                     "AccountName": loads(msg['body'])['account_name']  }
             check_compliance(event2)
             
     elif "httpMethod" in event and event['httpMethod'] == "GET":
