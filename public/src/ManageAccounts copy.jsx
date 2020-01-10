@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Dropdown, Button } from "react-bootstrap";
+import { Table, Dropdown} from "react-bootstrap";
 //import { Accordion, AccordionItem, AccordionItemHeading, AccordionItemButton, AccordionItemPanel } from 'react-accessible-accordion';
 import 'react-accessible-accordion/dist/fancy-example.css';
 
@@ -74,7 +74,7 @@ export default class ManageAccounts extends React.Component {
         .then(data => {
             this.setState( {accounts:data['content'],
                             loading:false } );
-            // console.log(this.state.accounts);
+            console.log(this.state.accounts);
         
         })
         
@@ -127,33 +127,12 @@ export default class ManageAccounts extends React.Component {
     
     handleFilterSelection(e){
         let copy = this.state.filter_text;
-        if(e.target.value !== undefined && e.target.value.toLocaleLowerCase() === "clear"){
-            // Array.from( document.querySelectorAll("td[data_filter='"+e.target.name+"']") ).map((elem, index) => { 
-            Array.from( document.querySelectorAll("td") ).map((elem, index) => { 
-                    elem.parentElement.style.display = ""; 
-            })
+        if(e.target.text.toLowerCase() === "todos"){
             copy[e.target.name] = "" ; //[] ;
             this.setState({ filter_text: copy});
-
         }else{
-            if(copy[e.target.name].length > 0){
-                console.log(copy[e.target.name]);
-                Array.from( document.querySelectorAll("td[data_filter='"+e.target.name+"']") ).map((elem, index) => { 
-                    //if(elem.innerText === copy[e.target.name]){
-                        elem.parentElement.style.display = ""; 
-                    //}
-                })
-            }
             copy[e.target.name] = e.target.text; //.push(e.target.text) ;
             this.setState({ filter_text: copy});
-
-            Array.from( document.querySelectorAll("td[data_filter='"+e.target.name+"']") ).map((elem, index) => { 
-                if(elem.innerText !== e.target.text){
-                    elem.parentElement.style.display = "none"; 
-                }
-            })
-
-            
         }
     }
     
@@ -183,9 +162,7 @@ export default class ManageAccounts extends React.Component {
                     policy.push(elem['policy'].toString());
                     compliance.push(elem['compliance']);
                     status.push(elem['status']);
-                    if(elem['policies_adicionais'] !== undefined){
-                        policies_adicionais.push( elem['policies_adicionais'].length === 0 ? "" : elem['policies_adicionais']);
-                    }
+                    policies_adicionais.push(elem['policies_adicionais']);
                 });
             })}
             
@@ -206,9 +183,6 @@ export default class ManageAccounts extends React.Component {
                 {/* <div>
                     <input type="text" placeholder="Search" name="filter_text" value={this.state.filter_text}  onChange={this.handleUserInput.bind(this)} />
                 </div>    */}
-                <Button className="space_y" value="clear" onClick={this.handleFilterSelection.bind(this)} >Limpar filtros</Button>
-                <Button className="space" value="a"  >Novo check</Button>
-
                 <Table responsive striped bordered  size="sm">
                     <thead>
                         <tr>
@@ -220,7 +194,7 @@ export default class ManageAccounts extends React.Component {
                                         <Dropdown.Toggle size="sm" variant="ligth" id="dropdown-basic"></Dropdown.Toggle>
 
                                         <Dropdown.Menu onMouseUp={this.handleFilterSelection.bind(this)}>
-                                            {/* <Dropdown.Item key="0" name="account_id" value="todos">Todos</Dropdown.Item> */}
+                                            <Dropdown.Item key="0" name="account_id" value="todos">Todos</Dropdown.Item>
                                             {accounts.map((elem,index) =>{
                                                 if(filter_text.account_id.length !== 0 && elem['Account'].indexOf(filter_text.account_id) === 0){
                                                     return <Dropdown.Item key={index} className="filter_selected" name="account_id" value={elem['Account']}>{elem['Account']}</Dropdown.Item>
@@ -244,7 +218,7 @@ export default class ManageAccounts extends React.Component {
                                         <Dropdown.Toggle size="sm" variant="light" id="dropdown-basic"></Dropdown.Toggle>
 
                                         <Dropdown.Menu onMouseUp={this.handleFilterSelection.bind(this)}>
-                                            {/* <Dropdown.Item key="0" name="account_name" value="todos">Todos</Dropdown.Item> */}
+                                            <Dropdown.Item key="0" value="todos">Todos</Dropdown.Item>
                                             {accounts.map((elem,index) =>{
                                                 if(filter_text.account_name.length !== 0 && elem['Name'].indexOf(filter_text.account_name) === 0){
                                                     return <Dropdown.Item key={index} className="filter_selected" name="account_name" value={elem['Name']}>{elem['Name']}</Dropdown.Item>
@@ -265,7 +239,7 @@ export default class ManageAccounts extends React.Component {
                                         <Dropdown.Toggle size="sm" variant="light" id="dropdown-basic"></Dropdown.Toggle>
 
                                         <Dropdown.Menu onMouseUp={this.handleFilterSelection.bind(this)}>
-                                            {/* <Dropdown.Item key="0" name="role_name" value="todos">Todos</Dropdown.Item> */}
+                                            <Dropdown.Item key="0" value="todos">Todos</Dropdown.Item>
                                         {roles.map((elem,index) =>{
                                             if(filter_text.role_name.length !== 0 && elem.indexOf(filter_text.role_name) === 0){
                                                 return <Dropdown.Item key={index} className="filter_selected" name="role_name" value={elem}>{elem}</Dropdown.Item>
@@ -286,10 +260,10 @@ export default class ManageAccounts extends React.Component {
                                         <Dropdown.Toggle size="sm" variant="light" id="dropdown-basic"></Dropdown.Toggle>
 
                                         <Dropdown.Menu onMouseUp={this.handleFilterSelection.bind(this)}>
-                                            {/* <Dropdown.Item key="0" name="role_policy" value="todos">Todos</Dropdown.Item> */}
+                                            <Dropdown.Item key="0" value="todos">Todos</Dropdown.Item>
                                             {policy.map((elem,index) =>{
                                                 if(filter_text.role_policy.length !== 0 && elem.indexOf(filter_text.role_policy) === 0){
-                                                    return <Dropdown.Item key={index} className="filter_selected" name="role_policy" value={elem}>{elem}</Dropdown.Item>
+                                                    return <Dropdown.Item key={index} className="filter_selected" name="policy" value={elem}>{elem}</Dropdown.Item>
                                                 }
                                                 return (
                                             <Dropdown.Item key={index} name="role_policy" value={elem}>{elem}</Dropdown.Item>
@@ -307,7 +281,7 @@ export default class ManageAccounts extends React.Component {
                                         <Dropdown.Toggle size="sm" variant="light" id="dropdown-basic"></Dropdown.Toggle>
 
                                         <Dropdown.Menu onMouseUp={this.handleFilterSelection.bind(this)}>
-                                            {/* <Dropdown.Item key="0" name="compliance" value="todos">Todos</Dropdown.Item> */}
+                                            <Dropdown.Item key="0" value="todos">Todos</Dropdown.Item>
                                             {compliance.map((elem,index) =>{
                                                 if(filter_text.compliance.length !== 0 && elem.indexOf(filter_text.compliance) === 0){
                                                     return <Dropdown.Item key={index} className="filter_selected" name="compliance" value={elem}>{elem.toString()}</Dropdown.Item>
@@ -328,8 +302,9 @@ export default class ManageAccounts extends React.Component {
                                         <Dropdown.Toggle size="sm" variant="light" id="dropdown-basic"></Dropdown.Toggle>
 
                                         <Dropdown.Menu onMouseUp={this.handleFilterSelection.bind(this)}>
-                                            {/* <Dropdown.Item key="0" name="status" value="todos">Todos</Dropdown.Item> */}
+                                            <Dropdown.Item key="0" value="todos">Todos</Dropdown.Item>
                                             {status.map((elem,index) =>{
+                                                console.log(elem, filter_text.status);
                                                 if(filter_text.status.length !== 0 && elem === filter_text.status){
                                                     return <Dropdown.Item key={index} className="filter_selected" name="status" value={elem}>{elem}</Dropdown.Item>
                                                 }
@@ -349,7 +324,7 @@ export default class ManageAccounts extends React.Component {
                                         <Dropdown.Toggle size="sm" variant="light" id="dropdown-basic"></Dropdown.Toggle>
 
                                         <Dropdown.Menu onMouseUp={this.handleFilterSelection.bind(this)}>
-                                            {/* <Dropdown.Item key="0" name="policies_adicionais" value="todos">Todos</Dropdown.Item> */}
+                                            <Dropdown.Item key="0" value="todos">Todos</Dropdown.Item>
                                             {policies_adicionais.map((elem,index) =>{
                                                 if(filter_text.policies_adicionais.length !== 0 && elem === filter_text.policies_adicionais){
                                                     return <Dropdown.Item key={index} className="filter_selected" name="policies_adicionais" value={elem}>{elem}</Dropdown.Item>
@@ -370,15 +345,36 @@ export default class ManageAccounts extends React.Component {
                             return (
 
                                 JSON.parse(elem['DataCompliance']).map((elem2,index) => {
+                                    console.log(elem2['status'] === filter_text.status);
+                                    if(filter_text.account_id.length !== 0 
+                                        // || filter_text.status !== 0 
+                                        && ( 
+                                             elem['Account'].indexOf(filter_text.account_id) === -1
+                                        //   || elem['Name'].indexOf(filter_text.account_name) === -1
+                                        //   || elem2['name'] === filter_text.role_name
+                                        //   || elem2['policy'].toString() === filter_text.role_policy
+                                        //   || elem2['compliance'].toString().indexOf(filter_text.compliance) === -1
+                                        //   || elem2['status'].indexOf(filter_text.status) === -1
+                                        //   || (elem2.hasOwnProperty("policies_adicionais") && 
+                                        //         elem2['policies_adicionais'].find( arr => arr === filter_text.policies_adicionais) === -1)
+                                            )
+                                        ){
+                                        return ;
+                                    }
+                                    // o !== retorna apenas o que esta sendo filtrado
+                                    // console.log(filter_text.account_id, elem['Account']);
+                                    // if(filter_text.account_id.length !== 0 && filter_text.account_id.find( arr => arr !== elem['Account']) ) {
+                                    //     return ;
+                                    // }
                                     return(
                                         <tr key={index}>
-                                            <td data_filter="account_id">{elem['Account']}</td>
-                                            <td data_filter="account_name">{elem['Name']}</td>
-                                            <td data_filter="role_name">{elem2['name']}</td>
-                                            <td data_filter="role_policy">{elem2['policy']}</td>
-                                            <td data_filter="compliance">{elem2['compliance'].toString()}</td>
-                                            <td data_filter="status">{elem2['status']}</td>
-                                            <td data_filter="policies_adicionais">{elem2.hasOwnProperty("policies_adicionais") ? elem2['policies_adicionais'].toString() : ""}</td>
+                                            <td>{elem['Account']}</td>
+                                            <td>{elem['Name']}</td>
+                                            <td>{elem2['name']}</td>
+                                            <td>{elem2['policy']}</td>
+                                            <td>{elem2['compliance'].toString()}</td>
+                                            <td hide-value="false">{elem2['status']}</td>
+                                            <td>{elem2.hasOwnProperty("policies_adicionais") ? elem2['policies_adicionais'].toString() : ""}</td>
                                         </tr>
                                     );
                                 })

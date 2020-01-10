@@ -182,6 +182,16 @@ def get_compliance_by_account(event):
         "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
     
 
+def get_date_actions():
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_account_compliance1")
+    date_actions = table.scan(AttributesToGet=["DateAction"])
+    dates =  list( set( [date['DateAction'] for date in date_actions['Items']] ) )
+    print(dates[0])
+    # obter todos as datas e dps retornar no json as datas disponiveis
+    # obter da data mais recente quando na 1 vez
+
+
 def get_compliance(event):
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_account_compliance1")
