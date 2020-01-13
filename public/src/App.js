@@ -7,7 +7,7 @@ import CreateAccount from './CreateAccount';
 import withAuth from './withAuth';
 import LoginForm from './LoginForm';
 import Policies from './Policies';
-import ManageAccounts from './ManageAccounts';
+import AccountsCompliance from './AccountsCompliance';
 
 
 
@@ -20,7 +20,7 @@ const NavbarApp = () =>
       <Nav.Link href="/login">Login</Nav.Link>
       <Nav.Link href="/create-account">Criar conta</Nav.Link>
       <Nav.Link href="/policies">Gerenciar policies</Nav.Link>
-      <Nav.Link href="/manage-accounts">Gerenciar policies das contas</Nav.Link>
+      <Nav.Link href="/accounts-compliance">Compliance das contas</Nav.Link>
 
       {/* <NavDropdown title="Dropdown" id="basic-nav-dropdown">
         <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
@@ -54,7 +54,7 @@ class App  extends React.Component {
               <Route path="/login" exact component={LoginForm} />
               <Route path="/create-account" component={(CreateAccount)} />
               <Route path="/policies" component={Policies} />
-              <Route path="/manage-accounts" component={ManageAccounts} />
+              <Route path="/accounts-compliance" component={AccountsCompliance} />
           </Switch>
         </BrowserRouter>
         

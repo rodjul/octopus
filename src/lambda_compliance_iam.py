@@ -5,6 +5,8 @@ from os import environ
 from json import loads, dumps
 import hashlib
 import datetime 
+from boto3.dynamodb.conditions import Attr
+
 
 def get_file_master_compliance(file_key):
     s3 = boto3.resource('s3')
@@ -183,25 +185,40 @@ def get_compliance_by_account(event):
     
 
 def get_date_actions():
+    # obter todos as datas e dps retornar no json as datas disponiveis
+    # obter da data mais recente quando na 1 vez
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_account_compliance1")
     date_actions = table.scan(AttributesToGet=["DateAction"])
     dates =  list( set( [date['DateAction'] for date in date_actions['Items']] ) )
-    print(dates[0])
-    # obter todos as datas e dps retornar no json as datas disponiveis
-    # obter da data mais recente quando na 1 vez
+    dates.sort()
+    return dates
 
 
 def get_compliance(event):
+    try:
+        date_input = event['queryStringParameters']['date_action']
+    except KeyError as e:
+        raise e
+    
+    dates = get_date_actions()
+    if date_input == "":
+        try:
+            print(dates)
+            date_input = dates[len(dates)-1]
+        except IndexError:
+            date_input = ""
+    
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_account_compliance1")
-
+    print(date_input)
     try:
-        content = table.scan()['Items']
-    except KeyError:
+        content = table.scan(FilterExpression=Attr("DateAction").eq(date_input))['Items']
+    except KeyError as e:
+        print(e)
         content = ""
-
-    return {"statusCode":200, "body":{"error":False, "content": content},
+    
+    return {"statusCode":200, "body":dumps({"error":False, "dates_available":dates, "content": content}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
 
 def lambda_handler(event, context):
@@ -216,3 +233,4 @@ def lambda_handler(event, context):
             
     elif "httpMethod" in event and event['httpMethod'] == "GET":
         return get_compliance(event)
+        
