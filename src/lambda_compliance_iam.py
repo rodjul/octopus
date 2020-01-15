@@ -44,7 +44,7 @@ def insert_data(account_id, account_name, data_json, date_action):
     Insert the name account create to make the index
     '''
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table("octopus_account_compliance1")
+    table = dynamodb.Table("octopus_account_compliance")
 
     item = {"DateAction": date_action,
             "Account": account_id,
@@ -75,7 +75,15 @@ def check_compliance(event):
     lista_compliance = []
 
     for role_master in file_master['Roles']:
-        roles_account = iam_cont.list_roles()
+        try:
+            roles_account = iam_cont.list_roles()
+        except Exception as e:
+            print("Não conseguiu fazer sts:", e, account_id)
+            lista_compliance = [{"name":"n/a","policy":"n/a", "compliance":False,
+                                "status":"Não foi possível fazer o acesso a conta"}]
+            insert_data(account_id, account_name, lista_compliance, date_action)
+            return 200
+
         role_compliance_found = False
 
         for role_account in roles_account['Roles']:
@@ -188,7 +196,7 @@ def get_date_actions():
     # obter todos as datas e dps retornar no json as datas disponiveis
     # obter da data mais recente quando na 1 vez
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table("octopus_account_compliance1")
+    table = dynamodb.Table("octopus_account_compliance")
     date_actions = table.scan(AttributesToGet=["DateAction"])
     dates =  list( set( [date['DateAction'] for date in date_actions['Items']] ) )
     dates.sort()
@@ -199,24 +207,26 @@ def get_compliance(event):
     try:
         date_input = event['queryStringParameters']['date_action']
     except KeyError as e:
-        raise e
+        print("Error in get param: ",e)
+        date_input = ""
     
     dates = get_date_actions()
     if date_input == "":
         try:
-            print(dates)
             date_input = dates[len(dates)-1]
         except IndexError:
             date_input = ""
     
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table("octopus_account_compliance1")
-    print(date_input)
-    try:
-        content = table.scan(FilterExpression=Attr("DateAction").eq(date_input))['Items']
-    except KeyError as e:
-        print(e)
-        content = ""
+    table = dynamodb.Table("octopus_account_compliance")
+    
+    content = ""
+    if date_input != "":
+        try:
+            content = table.scan(FilterExpression=Attr("DateAction").eq(date_input))['Items']
+        except KeyError as e:
+            print(e)
+            content = ""
     
     return {"statusCode":200, "body":dumps({"error":False, "dates_available":dates, "content": content}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}

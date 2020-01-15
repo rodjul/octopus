@@ -22,3 +22,34 @@
     font-size: 0.8em;
     color:gray;
 }
+
+.disclaimer{
+    font-weight: bolder;
+    font-size: 0.8em;
+}
+
+
+.padding_header_forms{
+    padding: 2em 0;
+}
+
+.margin_header_forms{
+    margin: 2em 0;
+}
+
+.button_small_central{
+    width: 8em;
+    display: block;
+    margin: 0 auto;
+}
+
+.header_button_select{
+    width:15em;
+}
+
+.header_buttons button{
+    float: right;
+    position: relative;
+    top: 1.5em;
+
+}

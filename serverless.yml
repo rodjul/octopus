@@ -32,7 +32,7 @@ provider:
 
 plugins:
   - serverless-plugin-log-retention
-  # - serverless-s3-sync
+  - serverless-s3-sync
 
 custom:
   awsconfig: ${file(awsconfig.yml):${self:provider.stage}}
@@ -42,9 +42,9 @@ custom:
     perGroupFunction: false
   sqs_name: "CreateAccount"
   sqs_compliance_new_check: "ComplianceNewCheck"
-  # s3Sync:
-  #   - bucketName: "octopus-site"
-  #     localDir: public/
+  s3Sync:
+    - bucketName: "octopus-site"
+      localDir: public/build/
 
 
 functions:
@@ -208,6 +208,39 @@ functions:
           cors: true
 
 
+  requests_manage_policy: 
+    handler: src/lambda_manage_policy.lambda_handler
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-manage_policy-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_manage_policy.py
+        - src/model/*.py
+    layers:
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"
+      #- "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
+    events:
+      - http:
+          path: /policy/available
+          method: get
+          cors: true
+      - http:
+          path: /policy/{policy_name}
+          method: get
+          cors: true
+      - http:
+          path: /policy/update
+          method: post
+          cors: true
+      - http:
+          path: /policy/delete
+          method: post
+          cors: true
+
+
 resources:
   Resources:
     ApiGatewayRestApi:
@@ -233,19 +266,19 @@ resources:
         RestApiId:
           Ref: 'ApiGatewayRestApi'
          
-    # DynamoDbOctopusAccount:
-    #   Type: 'AWS::DynamoDB::Table'
-    #   Properties:
-    #     AttributeDefinitions:
-    #       - AttributeName: NameAccount
-    #         AttributeType: S
-    #     KeySchema:
-    #       - AttributeName: NameAccount
-    #         KeyType: HASH
-    #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 1
-    #       WriteCapacityUnits: 1
-    #     TableName: octopus_account
+    DynamoDbOctopusAccount:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: NameAccount
+            AttributeType: S
+        KeySchema:
+          - AttributeName: NameAccount
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_account
 
     DynamoDbAccountCompliance1:
       Type: 'AWS::DynamoDB::Table'
@@ -263,7 +296,21 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: octopus_account_compliance1
+        TableName: octopus_account_compliance
+
+    DynamoDbAPolicies:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: PolicyName
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PolicyName
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_policy
 
 
     SQSCreateAccount:
@@ -287,7 +334,7 @@ resources:
     #     BucketName: "octopus-site"
     #     WebsiteConfiguration:
     #       IndexDocument: index.html
-    #       #ErrorDocument: index.html
+    #       ErrorDocument: index.html
 
     # StaticSiteS3BucketPolicy:
     #   Type: AWS::S3::BucketPolicy

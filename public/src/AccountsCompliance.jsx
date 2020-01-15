@@ -11,39 +11,6 @@ export default class AccountsCompliance extends React.Component {
       this.state = {
         accounts: [],
         dates_available: [],
-        accounts2: [
-            {
-              "Account": "069512972055",
-              "DateAction": "09012020",
-              "DataCompliance": "[{\"name\": \"accessmngt\", \"policy\": [\"policy-accessmngt\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"ateleia-systemmanager\", \"policy\": [\"policy-ateleiasystemmanager\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"businessops\", \"policy\": [\"policy-businessops\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"lionsplatform\", \"policy\": [\"policy-lionsplataform\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"siemaudit\", \"policy\": \"policy-siemaudit\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\"}, {\"name\": \"supportportal\", \"policy\": [\"policy-supportportal\"], \"compliance\": false, \"status\": \"Não encontrado\"}]",
-              "Name": "C84A44.aws"
-            },
-            {
-              "Account": "240932178171",
-              "DateAction": "09012020",
-              "DataCompliance": "[{\"name\": \"accessmngt\", \"policy\": [\"policy-accessmngt\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"ateleia-systemmanager\", \"policy\": [\"policy-ateleiasystemmanager\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"businessops\", \"policy\": [\"policy-businessops\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"cloudynRole\", \"policy\": [], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"lionsplatform\", \"policy\": [\"policy-lionsplataform\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"siemaudit\", \"policy\": [\"policy-siemaudit\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"supportportal\", \"policy\": [\"policy-supportportal\"], \"compliance\": false, \"status\": \"Não encontrado\"}]",
-              "Name": "octopus.teste-8"
-            },
-            {
-              "Account": "350819178402",
-              "DateAction": "09012020",
-              "DataCompliance": "[{\"name\": \"accessmngt\", \"policy\": \"policy-accessmngt\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"ateleia-systemmanager\", \"policy\": \"policy-ateleiasystemmanager\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"businessops\", \"policy\": \"policy-businessops\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"lionsplatform\", \"policy\": \"policy-lionsplataform\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"siemaudit\", \"policy\": \"policy-siemaudit\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"supportportal\", \"policy\": \"policy-supportportal\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}]",
-              "Name": "licenseserversm2plataforma.aws"
-            },
-            {
-              "Account": "367386392375",
-              "DateAction": "09012020",
-              "DataCompliance": "[{\"name\": \"accessmngt\", \"policy\": \"policy-accessmngt\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"ateleia-systemmanager\", \"policy\": \"policy-ateleiasystemmanager\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"businessops\", \"policy\": \"policy-businessops\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"lionsplatform\", \"policy\": \"policy-lionsplataform\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"siemaudit\", \"policy\": \"policy-siemaudit\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}, {\"name\": \"supportportal\", \"policy\": \"policy-supportportal\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\", \"policies_adicionais\": []}]",
-              "Name": "service.buckets16.aws"
-            },
-            {
-              "Account": "961360804028",
-              "DateAction": "09012020",
-              "DataCompliance": "[{\"name\": \"accessmngt\", \"policy\": [\"policy-accessmngt\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"ateleia-systemmanager\", \"policy\": [\"policy-ateleiasystemmanager\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"businessops\", \"policy\": [\"policy-businessops\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"lionsplatform\", \"policy\": [\"policy-lionsplataform\"], \"compliance\": false, \"status\": \"Não encontrado\"}, {\"name\": \"siemaudit\", \"policy\": \"policy-siemaudit\", \"compliance\": false, \"status\": \"Policy com o nome informado não encontrado\"}, {\"name\": \"supportportal\", \"policy\": [\"policy-supportportal\"], \"compliance\": false, \"status\": \"Não encontrado\"}]",
-              "Name": "service.buckets1.aws"
-            }
-          ],
-        compliance_info: [],
         loading: true,
         showModal: false,
         filter_text: {
@@ -60,7 +27,7 @@ export default class AccountsCompliance extends React.Component {
   
     componentDidMount(){
         // after finishing mounting the elements (by react), the first thing to do is a GET
-        fetch("https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev/policy/compliance/check?date_action=", {
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action=", {
             method:"GET", mode:"cors"
         })
         .then(resp => resp.json())
@@ -92,17 +59,15 @@ export default class AccountsCompliance extends React.Component {
         let yyyy = today.getFullYear();
         let date_format = dd + mm + yyyy;
 
-        fetch("https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev//policy/compliance/new",{
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/new",{
             method:"POST", mode:"cors",
             body: JSON.stringify( {"date_action":date_format} )
         })
         .then( resp => resp.json())
         .then( _ => {
             this.setState( {accounts: [], dates_available: [], loading: true } );
-            
+            this.componentDidMount(); // TODO: colocar refresh a cada 5 seg
         })
-
-        // fazer um post para dps ficar controlando na tabela
     }
     
     handleFilterSelection(e){
@@ -112,9 +77,8 @@ export default class AccountsCompliance extends React.Component {
             //console.log(copy, e.target.name, e.target.value);
             if(e.target.value !== undefined && e.target.value.toLocaleLowerCase() === "clear"){
                 // Array.from( document.querySelectorAll("td[data_filter='"+e.target.name+"']") ).map((elem, index) => { 
-                Array.from( document.querySelectorAll("td") ).map((elem, index) => { 
-                    elem.parentElement.style.display = ""; 
-                })
+                Array.from( document.querySelectorAll("td") ).map( elem => { elem.parentElement.style.display = ""; })
+
                 // removing the filter color from menus
                 Array.from( document.querySelectorAll("a[class~='filter_selected']") ).map( elem => { elem.classList.remove("filter_selected") } );
 
@@ -146,10 +110,10 @@ export default class AccountsCompliance extends React.Component {
         }
     }
     
-    /* MODAL */
+    /* MODAL NOVO CHECK*/
     handleClose(e){ 
-        console.log(e, e.target);
-        if(e.target.value === "new_check"){
+        //console.log(e, e.target);
+        if(e != undefined && e.target.value === "new_check"){
             this.requestNewCompliance();
         }
         this.setState({showModal:false}) ;
@@ -183,6 +147,41 @@ export default class AccountsCompliance extends React.Component {
         
     }
 
+    // source https://stackoverflow.com/a/56370447
+    download_table_as_csv(e) {
+        let table_id = e.target.value;
+
+        // Select rows from table_id
+        let rows = document.querySelectorAll('table#' + table_id + ' tr');
+        // Construct csv
+        let csv = [];
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll('td, th');
+            for (let j = 0; j < cols.length; j++) {
+                // Clean innertext to remove multiple spaces and jumpline (break csv)
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, '').replace(/(\s\s)/gm, ' ')
+                // Escape double-quote with double-double-quote (see https://stackoverflow.com/questions/17808511/properly-escape-a-double-quote-in-csv)
+                data = data.replace(/"/g, '""');
+                // Push escaped string
+                row.push('"' + data + '"');
+            }
+            // csv.push(row.join(';'));
+            csv.push(row.join(','));
+        }
+        let csv_string = csv.join('\n');
+        // Download it
+        let filename = 'export_' + table_id + '_' + new Date().toLocaleDateString() + '.csv';
+        let link = document.createElement('a');
+        link.style.display = 'none';
+        link.setAttribute('target', '_blank');
+        link.setAttribute('href', 'data:text/csv;charset=utf-8,%EF%BB%BF' + encodeURIComponent(csv_string));
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+
     render(){
         const { showModal, filter_text, accounts, loading, dates_available} = this.state;
         let img_loading = "";
@@ -199,6 +198,7 @@ export default class AccountsCompliance extends React.Component {
         //console.log();
         if(accounts && !(accounts.length === 0) ){
             {accounts.map((elem,index) =>{
+                // console.log(elem);
                 JSON.parse(elem['DataCompliance']).map(elem => {
                     roles.push(elem['name']);
                     
@@ -207,7 +207,7 @@ export default class AccountsCompliance extends React.Component {
                     
                     compliance.push(elem['compliance']);
 
-                    if(elem['status'].length === 0) status.push("(empty)");
+                    if(elem['status'].length === 0 || elem['status'] === "") status.push("(empty)");
                     else status.push(elem['policy'].toString());
 
                     if(elem['policies_adicionais'] !== undefined){
@@ -219,7 +219,6 @@ export default class AccountsCompliance extends React.Component {
             })}
 
             total_rows = policy.length;
-
             roles = [... new Set(roles)]; // removing duplicates
             policy = [... new Set(policy)];
             compliance = [... new Set(compliance)];
@@ -230,13 +229,18 @@ export default class AccountsCompliance extends React.Component {
         }
         
         return (
-            <section className="forms">
+            <section className="padding_header">
                 
+                {/* <h1>Compliance das contas</h1> */}
+
                 <Button className="space_y" value="clear" onClick={this.handleFilterSelection.bind(this)} >
                     Limpar filtros
                 </Button>
                 <Button className="space" onClick={this.handleShow.bind(this)} >
                     Novo check
+                </Button>
+                <Button value="table_main" onClick={this.download_table_as_csv.bind(this)} >
+                    Exportar csv
                 </Button>
 
                 <Modal show={showModal} onHide={this.handleClose.bind(this)} animation={false}>
@@ -272,7 +276,7 @@ export default class AccountsCompliance extends React.Component {
 
                 <span className="total_results">Total de resultados: {total_rows}</span>
 
-                <Table responsive striped bordered  size="sm">
+                <Table id="table_main" responsive striped bordered size="sm">
                     <thead>
                         <tr>
                             <th className="width9em">

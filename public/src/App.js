@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, Route, Switch, BrowserRouter } from 'react-router-dom';
+import { NavLink, Route, Switch, BrowserRouter } from 'react-router-dom';
 import { Button, FormGroup, FormControl, FormLabel, Navbar, Nav, NavDropdown, Form } from "react-bootstrap";
 import logo from './logo.svg';
 import './App.css';
@@ -17,10 +17,10 @@ const NavbarApp = () =>
   <Navbar.Toggle aria-controls="basic-navbar-nav" />
   <Navbar.Collapse id="basic-navbar-nav">
     <Nav className="mr-auto">
-      <Nav.Link href="/login">Login</Nav.Link>
-      <Nav.Link href="/create-account">Criar conta</Nav.Link>
-      <Nav.Link href="/policies">Gerenciar policies</Nav.Link>
-      <Nav.Link href="/accounts-compliance">Compliance das contas</Nav.Link>
+      <NavLink to="/login" className="nav-link" activeClassName="nav_clicked">Login</NavLink>
+      <NavLink  to="/create-account" className="nav-link" activeClassName="nav_clicked">Criar conta</NavLink>
+      <NavLink to="/policies" className="nav-link" activeClassName="nav_clicked">Gerenciar policies</NavLink>
+      <NavLink to="/accounts-compliance" className="nav-link" activeClassName="nav_clicked">Compliance das contas</NavLink>
 
       {/* <NavDropdown title="Dropdown" id="basic-nav-dropdown">
         <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
@@ -46,6 +46,7 @@ class App  extends React.Component {
   render(){
     // console.log(<withAuth/>);
     // console.log( <withAuth./> );
+    console.log(window.location.pathname);
     return (
       <section className="container">
         <BrowserRouter>
