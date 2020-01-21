@@ -4,13 +4,7 @@ import './Policies.css';
 
 import JSONInput from 'react-json-editor-ajrm';
 import locale    from 'react-json-editor-ajrm/locale/en';
-/*
 
-MOSTRAR SOMENTE AS POLICIES
-NA PAGINA DE ROLES, É A MSM DINAMICA MAS CRIAR POR TIPO DE CONTA/ROLE
-
-
-*/
 
 export default class Login extends React.Component {
     constructor(props) {
@@ -32,21 +26,34 @@ export default class Login extends React.Component {
         // Policies - Name, Description, Path, PolicyDocument
         // Roles  - Name, Policies[], PolicyArnAWS[] , TrustRelationship
         // TrustRelationships - Name, AssumeRolePolicyDocument
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
+        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
+        // .then(resp => resp.json())
+        // .then(data => {
+        //     if(data.message === "Internal server error"){
+        //         console.error("Error in fetching data");
+        //     }else{
+        //         console.log(data);
+        //         this.setState({ description: data.message.Description,
+        //                         trusts: data.message.TrustRelationships,
+        //                         policies: data.message.Policies,
+        //                         roles:  data.message.Roles});
+        //         }
+        //     }
+        // )
+        
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/available")
         .then(resp => resp.json())
         .then(data => {
             if(data.message === "Internal server error"){
                 console.error("Error in fetching data");
             }else{
                 console.log(data);
-                this.setState({ description: data.message.Description,
-                                trusts: data.message.TrustRelationships,
-                                policies: data.message.Policies,
-                                roles:  data.message.Roles});
+                this.setState({ policies_available: data.policies});
                 }
             }
         )
-        
+
+
     }
     
     handleInputChangeARN = (event) => {
@@ -108,6 +115,50 @@ export default class Login extends React.Component {
         } )
     }
 
+    onChangeGetPolicy(e){
+        if(e != undefined && e.target.value.length != 0){
+            fetch(process.env.REACT_APP_ENDPOINT+"/policy/"+e.target.value,{
+                method:"GET", mode:"cors"
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                // console.log("Data:",data);
+                if( data['policy'][0].hasOwnProperty("Data") ){
+                    let policy = JSON.parse(data['policy'][0]['Data']);
+                    // console.log(policy);
+                    this.setState({ 
+                        document_name: policy.Name,
+                        description: policy.Description,
+                        trusts: policy.TrustRelationships,
+                        policies: policy.Policies,
+                        roles: policy.Roles,
+                        delete_policy: policy.Name
+                    });
+                }else{
+                    let policy = data['policy'][0];
+                    this.setState({ 
+                        document_name: policy.PolicyName,
+                        description: "",
+                        trusts: [],
+                        policies: [],
+                        roles: [],
+                        delete_policy: policy.PolicyName
+                    });
+                }
+            });
+        
+            // if the value is null, show the first view
+        }else if(e != undefined && e.target.value.length == 0){
+            this.setState({ 
+                document_name: "",
+                description: "",
+                trusts: [],
+                policies: [],
+                roles: [],
+                delete_policy: "não declarado"
+            });
+        }
+    }
 
     // https://dev.to/fuchodeveloper/dynamic-form-fields-in-react-1h6c
     // add dynamically the part of the form
@@ -191,16 +242,76 @@ export default class Login extends React.Component {
     render(){
         //console.log(this.state.data);
         const { document_name, description, trusts, policies, roles, policies_available, showModal, delete_policy } = this.state;
+        let html_delete_button = "";
+        if(delete_policy != "não declarado"){
+            html_delete_button = <Button variant="danger" className="" onClick={this.handleShow.bind(this)} >Deletar "{delete_policy}"</Button>;
+        }
 
         // VER https://www.robinwieruch.de/react-fetching-data
         return (
-            <section className="">
+            <section className="margin_header_forms">
                 {/* <h1>Gerenciar policies</h1> */}
+
+                <div className="header_buttons">
+                    {html_delete_button}
+
+                    <Form className="space_y" >
+                        <Form.Group controlId="exampleForm.ControlSelect1">
+                            <Form.Label>Selecionar policy:</Form.Label>
+                            <Form.Control as="select" className="header_button_select"
+                                onChange={this.onChangeGetPolicy.bind(this)} 
+                                >
+                                <option key="null" value="" >Criar novo documento</option>
+                                {policies_available && policies_available.map((elem,index) =>{
+                                    return <option key={elem} value={elem} >{elem}</option>;
+                                })}
+                            </Form.Control>
+                        </Form.Group>
+                    </Form>
+
+                    
+
+                    <Modal show={showModal} onHide={this.handleClose.bind(this)} animation={false}>
+                        <Modal.Header closeButton>
+                            <Modal.Title>Novo check</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>Essa ação irá deletar o documento "{delete_policy}" permanentemente. Deseja continuar?</Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="success" value="new_check" onClick={this.handleClose.bind(this)}>
+                                Sim
+                            </Button>
+                            <Button variant="danger" onClick={this.handleClose.bind(this)}>
+                                Não
+                            </Button>
+                        </Modal.Footer>
+                    </Modal> 
+                    
+                {/* <img className="centralize-img2" src="images/loading-spinning-bubbles.svg" /> */}
+                </div>
 
 
                 <Form className="padding_header_forms" name="form_trust" onSubmit={this.onSubmit.bind(this)}>
-                    <h1 id="policy_titles">Trust Relationships</h1>
+                    {/* <h1 id="policy_titles">Description of "{document_name}"</h1> */}
+                    <div className="form-group row">
+                        <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Document name: </label>
+                        <div className="col-sm-10">
+                            <input type="text" name="Description" 
+                            //onChange={(e) => this.onChangeForms("description",null,e)}
+                            className="form-control" placeholder="policies-cloud" defaultValue={document_name} />
+                        </div>
+                    </div>
 
+                    <div className="form-group row">
+                        <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Description: </label>
+                        <div className="col-sm-10">
+                            <input type="text" name="Description" 
+                            onChange={(e) => this.onChangeForms("description",null,e)}
+                            className="form-control" placeholder="This document..." defaultValue={description} />
+                        </div>
+                    </div>
+
+
+                    <h1 id="policy_titles">Trust Relationships</h1>
                     <p className="disclaimer">OBS: os documentos que possuírem "ACCOUNT_ID" no lugar da Account ID, irão ser interpretados pelo código para serem substituídos pelo valor do Account ID.</p>
                     {trusts.map((trust, index) => {
                         //console.log(trust['AssumeRolePolicyDocument']);
