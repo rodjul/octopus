@@ -26,45 +26,54 @@ export default class Login extends React.Component {
           trusts_select:[],
           policies_select:[],
           roles_select:[],
-          policies_available: [],
+          roles_available: [],
           delete_policy: "não declarado",
-          test:"",
+          role_type:"",
           selectedOption: null
       };
     }
     
     componentDidMount(){
-        // Policies - Name, Description, Path, PolicyDocument
-        // Roles  - Name, Policies[], PolicyArnAWS[] , TrustRelationship
-        // TrustRelationships - Name, AssumeRolePolicyDocument
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
+
+        fetch(process.env.REACT_APP_ENDPOINT+"/role/available")
+        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/available")
         .then(resp => resp.json())
         .then(data => {
             if(data.message === "Internal server error"){
                 console.error("Error in fetching data");
             }else{
-                console.log(data);
-                let trust_ar = []; let policy_ar = []; let role_ar = [];
-                data.message.TrustRelationships.map((elem, index)=>{
-                    trust_ar[index] = { "value":elem['Name'] ,"label":elem['Name'] };
-                })
-                data.message.Policies.map((elem,index)=>{
-                    policy_ar[index] = { "value":elem['Name'], "label":elem['Name'] };
-                });
-                data.message.Roles.map((elem,index)=>{
-                    role_ar[index] = { "value":elem['Name'], "label":elem['Name'] };
-                });
-                this.setState({ description: data.message.Description,
-                                trusts: trust_ar,
-                                roles:  [],
-                                policies: policy_ar,
-                                trusts_select: trust_ar,
-                                roles_select: role_ar,
-                                policies_select: policy_ar
-                            });
-                }
+                // console.log(data);
+                this.setState({ roles_available: data.type_roles});
             }
-        )
+
+            fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
+            .then(resp => resp.json())
+            .then(data => {
+                if(data.message === "Internal server error"){
+                    console.error("Error in fetching data");
+                }else{
+                    console.log(data);
+                    let trust_ar = []; let policy_ar = []; let role_ar = [];
+                    data.message.TrustRelationships.map((elem, index)=>{
+                        trust_ar[index] = { "value":elem['Name'] ,"label":elem['Name'] };
+                    })
+                    data.message.Policies.map((elem,index)=>{
+                        policy_ar[index] = { "value":elem['Name'], "label":elem['Name'] };
+                    });
+                    data.message.Roles.map((elem,index)=>{
+                        role_ar[index] = { "value":elem['Name'], "label":elem['Name'] };
+                    });
+                    this.setState({ 
+                        trusts: trust_ar,
+                        policies: policy_ar,
+                        trusts_select: trust_ar,
+                        roles_select: role_ar,
+                        policies_select: policy_ar
+                    });
+                }
+            })
+
+            })
         
     }
     
@@ -86,42 +95,43 @@ export default class Login extends React.Component {
 
     onSubmit(event){
         event.preventDefault();
+        console.log("Event: ",event.target);
+        console.log("Event: ",this.state);
+        // event.preventDefault();
         // console.log(event.target);
         // console.log(event.target[0].value);
-        console.log(this.state.document_name);
+        // console.log(this.state.document_name);
         let format = {
-            Name: this.state.document_name,
-            Description: this.state.description,
-            TrustRelationships: this.state.trusts,
-            Policies: this.state.policies,
-            Roles: this.state.roles,
+            role_type: this.state.role_type,
+            description: this.state.description,
+            roles: this.state.roles,
         };
-        console.log(JSON.stringify(format));
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/update",{
+        console.log(format);
+        // console.log(JSON.stringify(format));
+        fetch(process.env.REACT_APP_ENDPOINT+"/role/new",{
             method:"POST", mode:"cors",
-            body: JSON.stringify( {"policy_name":this.state.document_name, "policy_data":format} )
+            body: JSON.stringify( format )
         })
         .then(resp => resp.json())
     }
 
-    requestDeletePolicy(){
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/delete",{
-            method:"POST", mode:"cors",
-            body: JSON.stringify( {"policy_name":this.state.delete_policy} )
+    requestDeleteRoleType(){
+        fetch(process.env.REACT_APP_ENDPOINT+"/role/delete",{
+            method:"DELETE", mode:"cors",
+            body: JSON.stringify( {"role_type":this.state.delete_policy} )
         })
         .then(resp => resp.json())
         .then( _ => {
-            let index = this.state.policies_available.indexOf(this.state.delete_policy);
-            let new_available = this.state.policies_available;
+            let index = this.state.roles_available.indexOf(this.state.delete_policy);
+            let new_available = this.state.roles_available;
             new_available.splice(index, 1);
             this.setState({ 
-                policies_available: new_available,
+                roles_available: new_available,
                 document_name: "",
                 description:"",
                 trusts:[],
                 policies:[],
                 roles:[],
-                policies_available: [],
                 delete_policy: "não declarado"
             });
         } )
@@ -131,21 +141,16 @@ export default class Login extends React.Component {
     // https://dev.to/fuchodeveloper/dynamic-form-fields-in-react-1h6c
     // add dynamically the part of the form
     handleAddFields = tipo => {
-        //console.log(tipo);
-        if(tipo === "trustrelationships"){
-            const values = [...this.state.trusts];
-            values.push({ Name: 'New Trust Relationship', AssumeRolePolicyDocument: {"null":true} });
-            this.setState({trusts : values});
-
-        }else if(tipo === "role"){
+        if(tipo === "role"){
             const values = [...this.state.roles];
-            values.push({ Name: 'New Role',Policies:"", PolicyArnAWS:"" , TrustRelationship:""});
+            values.push({
+                role_name: 'New Role',
+                role_description: "Description of this role",
+                policies:[], 
+                policy_arn_aws:"" , 
+                trust_relationship:""
+            });
             this.setState({roles : values});
-
-        }else if(tipo === "policy"){
-            const values = [...this.state.policies];
-            values.push({ Name: 'New Policy', Description:"", Path:"", PolicyDocument:{"null":true} });
-            this.setState({policies : values});
         }
     };
     
@@ -178,27 +183,32 @@ export default class Login extends React.Component {
     }
 
     onChangeForms = (type, index, event) => {
-        if(type==="trust"){
-            this.state.trusts[index][event.target.name] = event.target.value;
-            //this.setState( this.state.trusts );
-        }else if(type==="role"){
-            this.state.roles[index][event.target.name] = event.target.value;
-            // this.setState( this.state.roles );
-        }else if(type==="policy"){
-            this.state.policies[index][event.target.name] = event.target.value;
-            // this.setState( this.state.policies );
-        }else if(type==="description"){
+        if(type === "role_type"){
+            this.state.role_type = event.target.value;
+        }else if(type === "description"){
             this.state.description = event.target.value;
-            // this.setState( this.state.policies );
+        }else{
+            this.state.roles[index][event.target.name] = event.target.value;
         }
-        
     }
+
+    onChangeSelect = (selectedOption, type, index) => {
+        if(type === "policies"){
+            this.state.roles[index][type].push(selectedOption[0].value);
+        }else{
+            let value = selectedOption[0].value;
+            if(type === "trust_relationship"){
+                value = selectedOption;
+            }
+            this.state.roles[index][type] = value;
+        }
+    };
 
     /* MODAL NOVO CHECK*/
     handleClose(e){ 
         //console.log(e, e.target);
         if(e != undefined && e.target.value === "new_check"){
-            this.requestDeletePolicy();
+            this.requestDeleteRoleType();
         }
         this.setState({showModal:false}) ;
     }
@@ -206,18 +216,67 @@ export default class Login extends React.Component {
         this.setState({showModal:true}); 
     }
 
-    onChangeSelect = (selectedOption, type, index) => {
-        this.setState(
-          { selectedOption },
-        //   () => console.log(`Option selected:`, this.state.selectedOption, index)
-          () => console.log(`Option selected:`, selectedOption, index)
-        );
-      };
+    onChangeGetPolicy(e){
+        
+        if(e != undefined && e.target.value.length != 0){
+            fetch(process.env.REACT_APP_ENDPOINT+"/role/"+e.target.value,{
+                method:"GET", mode:"cors"
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                let type_role_json =  data.type_role[0] ;
+                let roles =  JSON.parse( type_role_json.Roles ) ;
+
+                this.setState({ 
+                    document_name: type_role_json.RoleType,
+                    description: type_role_json.Description,
+                    roles: roles,
+                    delete_policy: type_role_json.RoleType
+                });
+            //     console.log(roles);
+            //     // this.setState({ trusts_select: [ { "value":"ADFS" ,"label":"ADFS" } ] } );
+            //     // FAZER UM FETCH NAS POLICIES PARA OBTER OS TRUTS E POLICIES
+            //     // removing the duplicates and setting the values in select tag
+            //     let trust_ar = []; let policy_ar = []; let role_ar = [];
+            //     // data.message.TrustRelationships.map((elem, index)=>{
+            //     //     trust_ar[index] = { "value":elem['Name'] ,"label":elem['Name'] };
+            //     // })
+            //     data.message.Policies.map((elem,index)=>{
+            //         policy_ar[index] = { "value":elem['Name'], "label":elem['Name'] };
+            //     });
+            //     // // data.message.Roles.map((elem,index)=>{
+            //     // //     role_ar[index] = { "value":elem['Name'], "label":elem['Name'] };
+            //     // // });
+            //     this.setState({ 
+            //         // description: data.message.Description,
+            //         // trusts: trust_ar,
+            //         // roles:  [],
+            //         // policies: policy_ar,
+            //         // trusts_select: trust_ar,
+            //         // roles_select: role_ar,
+            //         policies_select: policy_ar
+            //     });
+                
+            });
+
+
+        // if the value is null, show the first view
+        }else if(e != undefined && e.target.value.length == 0){
+            this.setState({ 
+                document_name: "",
+                description: "",
+                trusts: [],
+                policies: [],
+                roles: [],
+                delete_policy: "não declarado"
+            });
+        }
+    }
 
     render(){
         //console.log(this.state.data);
-        const { document_name, description, trusts, policies, roles, policies_available, showModal, delete_policy, roles_select, trusts_select, policies_select } = this.state;
-        
+        const { document_name, description, trusts, policies, roles, roles_available, showModal, delete_policy, roles_select, trusts_select, policies_select } = this.state;
+        console.log("trusts_select:",trusts_select);
         let html_delete_button = "";
         if(delete_policy != "não declarado"){
             html_delete_button = <Button variant="danger" className="" onClick={this.handleShow.bind(this)} >Deletar "{delete_policy}"</Button>;
@@ -234,10 +293,10 @@ export default class Login extends React.Component {
                         <Form.Group controlId="exampleForm.ControlSelect1">
                             <Form.Label>Selecionar tipo de role da conta:</Form.Label>
                             <Form.Control as="select" className="header_button_select"
-                                //onChange={this.onChangeGetPolicy.bind(this)} 
+                                onChange={this.onChangeGetPolicy.bind(this)} 
                                 >
                                 <option key="null" value="" >Criar novo documento</option>
-                                {policies_available && policies_available.map((elem,index) =>{
+                                {roles_available && roles_available.map((elem,index) =>{
                                     return <option key={elem} value={elem} >{elem}</option>;
                                 })}
                             </Form.Control>
@@ -268,8 +327,8 @@ export default class Login extends React.Component {
                     <div className="form-group row">
                         <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Tipo da conta: </label>
                         <div className="col-sm-10">
-                            <input type="text" name="Description" 
-                            //onChange={(e) => this.onChangeForms("description",null,e)}
+                            <input type="text" name="role_type" 
+                            onChange={(e) => this.onChangeForms("role_type",null,e)}
                             className="form-control" placeholder="policies-cloud" defaultValue={document_name} />
                         </div>
                     </div>
@@ -288,23 +347,32 @@ export default class Login extends React.Component {
                         return (
                             <div className="form_margin_bottom shadow" key={`${role['Name']}~${index}`}>
                                 <div className="form-group row">
-                                    <label htmlFor="name_role" className="col-sm-3 col-form-label bolder">Name: </label>
+                                    <label htmlFor="role_name" className="col-sm-3 col-form-label bolder">Name: </label>
                                     <div className="col-sm-9">
                                         {/* <input type="text" name="Name"
                                         onChange={(e) => this.onChangeForms("role",index,e)}
                                         className="form-control" placeholder="seginfo" defaultValue={role['Name']} /> */}
-                                        <Select className="trust_relationship" closeMenuOnSelect={true} options={roles_select} 
+                                        {/* <Select className="trust_relationship" closeMenuOnSelect={true} options={roles_select} 
                                         //defaultValue={roles[0]}
                                         onChange={e => this.onChangeSelect(e.value, "role_name", index)}
+                                        /> */}
+                                        
+                                        <input type="text" name="role_name" 
+                                        onChange={(e) => this.onChangeForms("role_name",index,e)}
+                                        className="form-control" placeholder="accessmngt" 
+                                        defaultValue={role['role_name']}
+                                        //onChange={e => this.onChangeSelect(e.value, "policy_arn", index)}
                                         />
+
+
                                     </div>
                                 </div>
                                 <div className="form-group row">
                                     <label htmlFor="name_role" className="col-sm-3 col-form-label bolder">Description: </label>
                                     <div className="col-sm-9">
-                                        <input type="text" name="Description"
-                                        onChange={(e) => this.onChangeForms("role",index,e)}
-                                        className="form-control" placeholder="" defaultValue={role['Name']} />
+                                        <input type="text" name="role_description"
+                                        onChange={(e) => this.onChangeForms("role_description",index,e)}
+                                        className="form-control" placeholder="" defaultValue={role['role_description']} />
                                     </div>
                                 </div>                            
                                 <div className="form-group row">
@@ -313,8 +381,14 @@ export default class Login extends React.Component {
                                         {/* <input type="text" name="Policies" 
                                         onChange={(e) => this.onChangeForms("role",index,e)}
                                         className="form-control" placeholder="policy-example" defaultValue={role['Policies']} /> */}
-                                        <Select className="trust_relationship" closeMenuOnSelect={false} isMulti options={policies_select} 
-                                        //defaultValue={policies[0]}
+                                        <Select className="policies" closeMenuOnSelect={false} isMulti 
+                                        options={policies_select} 
+                                        // options={this.trusts_select } 
+                                        defaultValue={ 
+                                            role['policies'].map(elem => {
+                                                return { "value":elem ,"label":elem }
+                                            }) 
+                                        }
                                         onChange={e_arr => this.onChangeSelect(e_arr, "policies", index)}
                                         />
                                     </div>
@@ -322,11 +396,11 @@ export default class Login extends React.Component {
                                 <div className="form-group row">
                                     <label htmlFor="policyArnAws_role" className="col-sm-3 col-form-label bolder">PolicyArnAWS: </label>
                                     <div className="col-sm-9">
-                                        <input type="text" name="PolicyArnAWS" 
+                                        <input type="text" name="policy_arn_aws" 
                                         // onChange={this.handleInputChange}
-                                        onChange={(e) => this.onChangeForms("role",index,e)}
+                                        onChange={(e) => this.onChangeForms("policy_arn_aws",index,e)}
                                         className="form-control" placeholder="arn:aws:iam::aws:policy/ReadOnlyAccess" 
-                                        //defaultValue={role['PolicyArnAWS']}
+                                        defaultValue={role['policy_arn_aws']}
                                         //onChange={e => this.onChangeSelect(e.value, "policy_arn", index)}
                                         />
                                         <span className="text-note">Separar por vírgula se tiver mais de uma ARN</span>
@@ -335,12 +409,9 @@ export default class Login extends React.Component {
                                 <div className="form-group row">
                                     <label htmlFor="trustRelationship_role" className="col-sm-3 col-form-label bolder">TrustRelationship: </label>
                                     <div className="col-sm-9">
-                                        {/* <input type="text" name="TrustRelationship" 
-                                        onChange={(e) => this.onChangeForms("role",index,e)}
-                                        className="form-control" placeholder="ADFS" defaultValue={role['TrustRelationship']} /> */}
                                         <Select className="trust_relationship" closeMenuOnSelect={true} options={trusts_select} 
-                                        //defaultValue={trusts[0]}
-                                        onChange={e => this.onChangeSelect(e.value, "trust", index)}
+                                        defaultValue={ { "value":role['trust_relationship'] ,"label":role['trust_relationship'] } }
+                                        onChange={e => this.onChangeSelect(e.value, "trust_relationship", index)}
                                         />
                                     </div>
                                 </div>

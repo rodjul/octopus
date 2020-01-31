@@ -215,11 +215,11 @@ functions:
           cors: true
       - http:
           path: /policy/update
-          method: post
+          method: put
           cors: true
       - http:
           path: /policy/delete
-          method: post
+          method: delete
           cors: true
 
   request_get_default_role_policy:
@@ -238,6 +238,40 @@ functions:
       - http:
           path: /policy/default
           method: get
+          cors: true
+
+  request_manage_roles:
+    handler: src/lambda_manage_role.lambda_handler
+    environment:
+      octopus_resource: "totvs-cloudformation-templates"
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-manage_role-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_manage_role.py
+    events:
+      - http:
+          path: /role/available
+          method: get
+          cors: true
+      - http:
+          path: /role/{role_type}
+          method: get
+          cors: true
+      - http:
+          path: /role/new
+          method: post
+          cors: true          
+      - http:
+          path: /role/update
+          method: put
+          cors: true
+      - http:
+          path: /role/delete
+          method: delete
           cors: true
 
 
@@ -311,6 +345,20 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: octopus_policy
+
+    DynamoDbRoleType:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: RoleType
+            AttributeType: S
+        KeySchema:
+          - AttributeName: RoleType
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_role_type
 
 
     SQSCreateAccount:
