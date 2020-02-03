@@ -12,6 +12,26 @@ def insert_role(role_type, description, data_json):
 
     table.put_item( Item=item )
 
+def update_role(role_type, description, data_json):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_role_type")
+
+    item = {"RoleType": role_type,
+            "Description": description,
+            "Roles": dumps(data_json, ensure_ascii=False)}
+
+    table.update_item(
+        Key={"RoleType":role_type},
+        UpdateExpression="set Description = :d, #Roles = :r",
+        ExpressionAttributeValues={
+            ':d': description,
+            ':r': dumps(data_json, ensure_ascii=False),
+        },
+        ExpressionAttributeNames={
+            "#Roles":"Roles"
+        }
+    )
+
 def delete_role(role_type):
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_role_type")
@@ -59,6 +79,10 @@ def lambda_handler(event,context):
             return {"statusCode":400, "body":dumps({"error":True, "message":"Params invalid"}),
                 "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
         
+        if "" in (role_type, description, roles_data):
+            return {"statusCode":400, "body":dumps({"error":True, "message":"Params blank"}),
+                "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
+
         insert_role(role_type, description, roles_data)
         content = "ok"
         return {"statusCode":200, "body":dumps({"error":False, "message":content}),
@@ -66,13 +90,16 @@ def lambda_handler(event,context):
 
     elif event['httpMethod'] == "PUT" and event['resource'] == "/role/update":
         try:
-            role_type = loads(event['body'])['role_type']
+            body = loads(event['body'])
+            role_type = body['role_type']
+            description = body['description']
+            roles_data = body['roles']
         except KeyError:
             return {"statusCode":400, "body":dumps({"error":True, "message":"Params invalid"}),
                 "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
 
         content = "ok"
-        # insert_role(role_type, policy_data)
+        update_role(role_type, description, roles_data)
         return {"statusCode":200, "body":dumps({"error":False, "message":content}),
                 "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}            
     
