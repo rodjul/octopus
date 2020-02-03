@@ -22,10 +22,10 @@ const NavbarApp = () =>
     <Nav className="mr-auto">
       <NavLink to="/login" className="nav-link" activeClassName="nav_clicked">Login</NavLink>
       <NavLink to="/create-account" className="nav-link" activeClassName="nav_clicked">Criar conta</NavLink>
-      <NavLink to="/manage-roles-accounts" className="nav-link" activeClassName="nav_clicked">Gerenciar roles para criação</NavLink>
+      <NavLink to="/manage-roles-accounts" className="nav-link" activeClassName="nav_clicked">Gerenciar tipos de conta</NavLink>
       <NavLink to="/manage-policies" className="nav-link" activeClassName="nav_clicked">Gerenciar policies</NavLink>
       <NavLink to="/accounts-compliance" className="nav-link" activeClassName="nav_clicked">Compliance das contas</NavLink>
-      <NavLink to="/RolesExample" className="nav-link" activeClassName="nav_clicked">RolesExample</NavLink>
+      {/* <NavLink to="/RolesExample" className="nav-link" activeClassName="nav_clicked">RolesExample</NavLink> */}
 
       {/* <NavDropdown title="Dropdown" id="basic-nav-dropdown">
         <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
@@ -62,7 +62,7 @@ class App  extends React.Component {
               <Route path="/manage-roles-accounts" component={RolesAccounts} />
               <Route path="/manage-policies" component={Policies} />
               <Route path="/accounts-compliance" component={AccountsCompliance} />
-              <Route path="/RolesExample" component={RolesExample} />
+              {/* <Route path="/RolesExample" component={RolesExample} /> */}
           </Switch>
         </BrowserRouter>
         
