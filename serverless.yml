@@ -206,21 +206,33 @@ functions:
       #- "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
     events:
       - http:
-          path: /policy/available
+          path: /policy/content
           method: get
           cors: true
       - http:
-          path: /policy/{policy_name}
+          path: /policy/available/trust
+          method: get
+          cors: true
+      - http:
+          path: /policy/available/iam
           method: get
           cors: true
       - http:
           path: /policy/update
-          method: put
+          method: post
           cors: true
-      - http:
-          path: /policy/delete
-          method: delete
-          cors: true
+      # - http:
+      #     path: /policy/{policy_name}
+      #     method: get
+      #     cors: true
+      # - http:
+      #     path: /policy/update
+      #     method: put
+      #     cors: true
+      # - http:
+      #     path: /policy/delete
+      #     method: delete
+      #     cors: true
 
   request_get_default_role_policy:
     handler: src/lambda_get_default_role_policy.lambda_handler

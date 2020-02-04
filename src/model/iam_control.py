@@ -2,6 +2,7 @@ import boto3
 import json
 import botocore
 from os import environ
+from boto3.dynamodb.conditions import Attr
 
 if __name__ == '__main__':
     from octopus import get_creds, my_logging
@@ -59,7 +60,6 @@ class IamControl:
         except botocore.exceptions.ClientError as e:
             return e
 
-
     def create_role(self, role_name ,assume_role_policy_document):
         try:
             response = self.iam_client.create_role(
@@ -70,7 +70,6 @@ class IamControl:
         except botocore.exceptions.ClientError as e:
             return e
 
-
     def update_policy(self, policy_name, policy_document):
         policy_arn = self.get_policy_arn(policy_name)
         if policy_arn != "Not found":
@@ -80,20 +79,17 @@ class IamControl:
                     SetAsDefault=True)
         return "Not found"
 
-
     def delete_policy(self, policy_name):
         policy_arn = self.get_policy_arn(policy_name)
         if policy_arn != "Not found":
             return self.iam_client.delete_policy(PolicyArn=policy_arn)
         return "Not found"
-
-    
+  
     def delete_role(self, role_name):
         try:
             return self.iam_client.delete_role(RoleName=role_name)
         except botocore.exceptions.ClientError as e:
             return e
-
 
     def attach_role_policy(self, role_name, policy_name):
         policy_arn = self.get_policy_arn(policy_name)
@@ -101,13 +97,15 @@ class IamControl:
             return self.iam_client.attach_role_policy(PolicyArn=policy_arn, RoleName=role_name)
         return "Not found"
 
-
     def detach_role_policy(self, role_name, policy_name):
         policy_arn = self.get_policy_arn(policy_name)
         if policy_arn != "Not found":
             return self.iam_client.detach_role_policy(PolicyArn=policy_arn, RoleName=role_name)
         return "Not found"
 
+    def get_role_structure(self, role_type):
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table("octopus_role_type")
 
     def setup_iam_account(self, file_key):
         s3 = boto3.resource('s3')

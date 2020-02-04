@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, FormGroup, FormLabel, Form, Tab,Tabs } from "react-bootstrap";
+import { Button, FormGroup, FormLabel, Form, Modal, Tab, Tabs } from "react-bootstrap";
 import './Policies.css';
 
 import JSONInput from 'react-json-editor-ajrm';
@@ -11,15 +11,17 @@ export default class Login extends React.Component {
     constructor(props) {
       super(props);
       this.state = {
-          document_name: "",
           showModal: false,
-        //   description:"",
           trusts:[],
           policies:[],
-          roles:[],
-          policies_available: [],
-          delete_policy: "não declarado",
-          test:""
+          actionModal: "",
+          modalMessage: ""
+        //   document_name: "",
+        //   description:"",
+        //   roles:[],
+        //   policies_available: [],
+        //   delete_policy: "não declarado",
+        //   test:""
       };
     }
     
@@ -31,21 +33,30 @@ export default class Login extends React.Component {
         // Policies - Name, Description, Path, PolicyDocument
         // Roles  - Name, Policies[], PolicyArnAWS[] , TrustRelationship
         // TrustRelationships - Name, AssumeRolePolicyDocument
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
+        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/content")
         .then(resp => resp.json())
         .then(data => {
             if(data.message === "Internal server error"){
                 console.error("Error in fetching data");
             }else{
                 // console.log(data);
-                this.setState({ description: data.message.Description,
-                                trusts: data.message.TrustRelationships,
-                                policies: data.message.Policies,
-                                roles:  data.message.Roles});
-                }
+                let policies_json = JSON.parse(data['policies']);
+                let trusts_json = JSON.parse(data['trusts']);
+                let tmp_trusts = [];
+                let tmp_policies =[];
+                policies_json.map( elem => tmp_policies.push( JSON.parse(elem['Data']) ) );
+                trusts_json.map(elem => tmp_trusts.push( JSON.parse(elem['Data']) ) );
+                
+                console.log(tmp_trusts);
+                this.setState({ 
+                    // trusts: data.message.TrustRelationships,
+                    // policies: data.message.Policies
+                    trusts: tmp_trusts,
+                    policies: tmp_policies
+                });
             }
-        )
-        
+        })
     }
 
    /**
@@ -72,17 +83,6 @@ export default class Login extends React.Component {
     };
 
     /**
-     * Handle the modal 
-     */
-    handleClose = () => this.setState({showModal:false}) ;
-
-    /**
-     * Handle the modal 
-     */
-    handleShow = () => this.setState({showModal:true});
-    
-
-    /**
      * Dynamic form which removes dynamically the part of the form
      */
     handleRemoveFields = (index,type) => {
@@ -91,11 +91,16 @@ export default class Login extends React.Component {
             values.splice(index, 1);
             this.setState({trusts : values});
         }else if(type === "policy"){
-            const values = [...this.state.trusts];
+            const values = [...this.state.policies];
             values.splice(index, 1);
-            this.setState({trusts : values});
+            this.setState({policies : values});
         }
     };
+
+    /**
+     * Handle the general modal. This function close the modal
+     */
+    handleModalCloseActions = () => this.setState({showModal:false}) ;
 
     /**
      * Handle the input change for the json field
@@ -113,9 +118,10 @@ export default class Login extends React.Component {
         }
         else if(type === "policy"){
             let tmp_policies = this.state.policies;
-            tmp_policies[index]['AssumeRolePolicyDocument'] = event.jsObject;
+            tmp_policies[index]['PolicyDocument'] = event.jsObject;
             this.setState({ policies: tmp_policies });
         }
+        // console.log(this.state);
     }
 
     /**
@@ -126,28 +132,21 @@ export default class Login extends React.Component {
      */    
     onChangeForms = (type, index, event) => {
         if(type==="trust"){
-            let tmp_trusts = this.state.trusts;
-            tmp_trusts[index][event.target.name] = event.target.value;
-            this.setState( { trusts: tmp_trusts } );
+            // let tmp_trusts = this.state.trusts;
+            // tmp_trusts[index][event.target.name] = event.target.value;
+            // this.setState( { trusts: tmp_trusts } );
+            this.state.trusts[index][event.target.name] = event.target.value;
         }else if(type==="policy"){
-            let tmp_policies = this.state.policies;
-            tmp_policies[index][event.target.name] = event.target.value;
-            this.setState( { policies: tmp_policies } );
-            // this.state.policies[index][event.target.name] = event.target.value;
+            // let tmp_policies = this.state.policies;
+            // tmp_policies[index][event.target.name] = event.target.value;
+            // this.setState( { policies: tmp_policies } );
+            this.state.policies[index][event.target.name] = event.target.value;
         }
-        // else if(type==="description"){
-        //     let tmp_description = this.state.description;
-        //     tmp_policies[index][event.target.name] = event.target.value;
-        //     this.setState( { policies: tmp_policies } );
-        //     // this.state.description = event.target.value;
-        // }
         
     }
 
     /**
      * Handle the input changes for each field
-     * @param {str} type 
-     * @param {int} index
      * @param {Object} event
      */
     onSubmitForm(event){
@@ -155,24 +154,46 @@ export default class Login extends React.Component {
         // console.log(event.target);
         // console.log(event.target[0].value);
         // console.log(this.state.document_name);
-        let format = {
-            Name: this.state.document_name,
-            Description: this.state.description,
-            TrustRelationships: this.state.trusts,
-            Policies: this.state.policies,
-            Roles: this.state.roles,
-        };
-        //console.log(JSON.stringify(format));
+        //let format = {
+            //Name: this.state.document_name,
+            //Description: this.state.description,
+            //TrustRelationships: this.state.trusts,
+            //Policies: this.state.policies
+            //Roles: this.state.roles,
+        //};
+        
+        // return ;
         fetch(process.env.REACT_APP_ENDPOINT+"/policy/update",{
             method:"POST", mode:"cors",
-            body: JSON.stringify( {"policy_name":this.state.document_name, "policy_data":format} )
+            body: JSON.stringify( {"policies":this.state.policies, "trusts_relationship":this.state.trusts} )
         })
-        .then(resp => resp.json())
+        .then(resp => {
+            if( resp.status === 502 ){
+                this.setState({
+                    showModal: true,
+                    actionModal: "Erro ao atualizar",
+                    modalMessage: "Ocorreu um erro ao executar essa ação"
+                });
+            }else if( resp.status === 400 ){
+                this.setState({
+                    showModal: true,
+                    actionModal: "Erro ao atualizar",
+                    modalMessage: "Todos os campos precisam ser preenchidos"
+                });
+            }else if( resp.status === 200 ){
+                this.setState({
+                    showModal: true,
+                    actionModal: "Atualizar",
+                    modalMessage: "Executado com sucesso"
+                });
+            }
+        })
+        
     }    
 
     render(){
         //console.log(this.state.data);
-        const { trusts, policies } = this.state;
+        const { trusts, policies, showModal, actionModal, modalMessage } = this.state;
         
         return (
             <section className="">
@@ -216,7 +237,7 @@ export default class Login extends React.Component {
 
                                         <div className="form_margin_bottom">
                                             <FormGroup controlId="email2" bssize="large">
-                                                <FormLabel className="bolder">AssumeRolePolicyDocument: </FormLabel>
+                                                <FormLabel className="bolder">PolicyDocument: </FormLabel>
                                                 {/* <FormControl name={"textarea_"+ policy['Name']} as="textarea" rows="12" defaultValue={JSON.stringify( policy['PolicyDocument'], null, '\t' )} /> */}
                                             </FormGroup>
                                             <JSONInput onChange={(e) => this.onChangeJson("policy", index, e)} className="custom-rod"
@@ -230,7 +251,7 @@ export default class Login extends React.Component {
 
                                         <div className="form-group col-sm-2">
                                             <button className="btn btn-danger" type="button"
-                                            onClick={() => this.handleRemoveFields(index, "trustrelationships")} 
+                                            onClick={() => this.handleRemoveFields(index, "policy")} 
                                             >Remover</button>
                                         </div>
 
@@ -315,6 +336,19 @@ export default class Login extends React.Component {
                     
                     <Button block className="button_small_central" type="submit">Atualizar</Button>
                 </Form>
+
+                <Modal show={showModal} onHide={this.handleModalCloseActions.bind(this)} animation={false}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>{actionModal} documento</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>{modalMessage}</Modal.Body>
+                    <Modal.Footer>
+                        <Button className="centralize-elements" variant="info" onClick={this.handleModalCloseActions.bind(this)}>
+                            OK
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+                
                 
             </section>
         );
