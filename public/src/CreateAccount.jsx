@@ -1,6 +1,6 @@
 import React, { Component, useState } from 'react';
 import { Button, FormGroup, Form, FormControl, FormLabel, Table } from "react-bootstrap";
-import "./CreateAccount.css";
+// import "./CreateAccount.css";
 
 export default class CreateAccount extends Component {
     constructor(props) {

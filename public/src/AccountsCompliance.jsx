@@ -257,12 +257,11 @@ export default class AccountsCompliance extends React.Component {
                         </Button>
                     </Modal.Footer>
                 </Modal>                
-
-                
                 <Form className="form_select" >
                     <Form.Group controlId="exampleForm.ControlSelect1">
                         <Form.Label>Data do compliance</Form.Label>
                         <Form.Control as="select" onChange={this.getCompliance.bind(this)} >
+                            <option className="filter_selected" key='selected'>Cloud210398</option>
                             {accounts && accounts.slice(0,1).map((elem,index) =>{
                                 return <option className="filter_selected" key='selected'>{elem['DateAction']}</option>;
                             })}
@@ -272,6 +271,22 @@ export default class AccountsCompliance extends React.Component {
                         </Form.Control>
                     </Form.Group>
                 </Form>
+
+                <Form className="form_select" >
+                    <Form.Group controlId="exampleForm.ControlSelect2">
+                        <Form.Label>Tipo de conta</Form.Label>
+                        <Form.Control as="select" onChange={this.getCompliance.bind(this)} >
+                            <option className="filter_selected" key='selected'>Cloud</option>
+                            {accounts && accounts.slice(0,1).map((elem,index) =>{
+                                return <option className="filter_selected" key='selected'>{elem['DateAction']}</option>;
+                            })}
+                            {dates_available && dates_available.map((elem,index) =>{
+                                return <option key={elem} value={elem} >{elem}</option>;
+                            })}
+                        </Form.Control>
+                    </Form.Group>
+                </Form>
+                
                 
 
                 <span className="total_results">Total de resultados: {total_rows}</span>
