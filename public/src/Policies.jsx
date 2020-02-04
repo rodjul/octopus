@@ -6,8 +6,12 @@ import JSONInput from 'react-json-editor-ajrm';
 import locale    from 'react-json-editor-ajrm/locale/en';
 
 
-
-export default class Login extends React.Component {
+/**
+ * The PureComponente is almost equal to shouldComponentUpdate() which do a comparation in each component
+ * for what has changed their values
+ * @see see https://pt-br.reactjs.org/docs/optimizing-performance.html#examples
+ */
+export default class Policies extends React.PureComponent {
     constructor(props) {
       super(props);
       this.state = {
@@ -16,12 +20,6 @@ export default class Login extends React.Component {
           policies:[],
           actionModal: "",
           modalMessage: ""
-        //   document_name: "",
-        //   description:"",
-        //   roles:[],
-        //   policies_available: [],
-        //   delete_policy: "não declarado",
-        //   test:""
       };
     }
     
@@ -132,6 +130,16 @@ export default class Login extends React.Component {
      */    
     onChangeForms = (type, index, event) => {
         if(type==="trust"){
+            let regex = new RegExp("\\s+|[.,/#!$%^&*;:{}=_`~()@¨'\"+[\\]`´?><]");
+            // if does not contains space, set the state
+            if(!regex.test(event.target.value)){
+                let tmp_trusts = this.state.trusts;
+                tmp_trusts[index][event.target.name] = event.target.value
+                this.setState({ trusts: tmp_trusts });
+            }else{
+                // if it does, set the value of the state (not from the event input)
+                event.target.value = this.state.trusts[index][event.target.name];
+            }
             // let tmp_trusts = this.state.trusts;
             // tmp_trusts[index][event.target.name] = event.target.value;
             // this.setState( { trusts: tmp_trusts } );
@@ -141,6 +149,17 @@ export default class Login extends React.Component {
             // tmp_policies[index][event.target.name] = event.target.value;
             // this.setState( { policies: tmp_policies } );
             this.state.policies[index][event.target.name] = event.target.value;
+        }else if(type==="policy_name"){
+            let regex = new RegExp("\\s+|[.,/#!$%^&*;:{}=_`~()@¨'\"+[\\]`´?><]");
+            // if does not contains space, set the state
+            if(!regex.test(event.target.value)){
+                let tmp_policies = this.state.policies;
+                tmp_policies[index][event.target.name] = event.target.value
+                this.setState({ policies: tmp_policies });
+            }else{
+                // if it does, set the value of the state (not from the event input)
+                event.target.value = this.state.policies[index][event.target.name];
+            }
         }
         
     }
@@ -214,7 +233,7 @@ export default class Login extends React.Component {
                                             <label htmlFor="name_policy" className="col-sm-2 col-form-label bolder">Name: </label>
                                             <div className="col-sm-10">
                                                 <input type="text" name="Name"
-                                                onChange={(e) => this.onChangeForms("policy",index,e)}
+                                                onChange={(e) => this.onChangeForms("policy_name",index,e)}
                                                 className="form-control" placeholder="policy-seginfo" defaultValue={policy['Name']} />
                                             </div>
                                         </div>
@@ -230,7 +249,7 @@ export default class Login extends React.Component {
                                             <label htmlFor="path_policy" className="col-sm-2 col-form-label bolder">Path: </label>
                                             <div className="col-sm-10">
                                                 <input type="text" name="Path"
-                                                onChange={(e) => this.onChangeForms("policy",index,e)}
+                                                onChange={(e) => this.onChangeForms("policy_path",index,e)}
                                                 className="form-control" placeholder="/" defaultValue={policy['Path']} />
                                             </div>
                                         </div>

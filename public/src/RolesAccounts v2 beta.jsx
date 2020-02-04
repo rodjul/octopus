@@ -3,13 +3,173 @@ import { Button, Form, Modal } from "react-bootstrap";
 //import './Policies.css';
 import Select from 'react-select';
 
+class RolesForm extends React.PureComponent {
+    constructor(props){
+        super(props); 
+        this.states = {
+            selectedOption: null
+        }
+    }
 
+    /**
+     * Handle the policyArnAWS input and do a match regex if the value does not contains spaces
+     */
+    handleChangePolicyARN = (event, index) => {
+        event.preventDefault();
+        const { value } = event.target;
+        //console.log(name,value);
+        //let term = "arn:aws:iam::aws:policy/ReadOnlyAccess";
+        //let regex = new RegExp("(arn:aws:iam::(aws|([0-9]+)):policy\/[A-Za-z0-9-]+\/*[A-Za-z0-9-]*$,*)");
+        // let regex = new RegExp("\\s+");
+        let regex = new RegExp("\\s+|[.#!$%^&*;{}=_`~()@¨'\"+[\\]`´]");
+        
+        if(!regex.test(value)){
+            let roles_tmp = this.props.roles;
+            roles_tmp[index]['policy_arn_aws'] = value;
+            this.setState({roles: roles_tmp});
+        }else{
+            event.target.value = this.props.roles[index]['policy_arn_aws'];
+            //this.setState({test: this.state.test});
+        }
+    }
+    
+    /**
+     * Handle the select tag in the form (policies, trust relationshops)
+     * @param {str/Array} selectedOption
+     * @param {str} type
+     * @param {int} index
+     */
+    onChangeSelect = (selectedOption, type, index) => {
+        if(type === "policies"){
+            if( selectedOption !== null) this.props.roles[index][type].push(selectedOption[0].value);
+        }else{
+            // if the value is an array, we get the index with the value
+            let value = selectedOption[0].value;
+            // but if not an array, just get the value
+            if(type === "trust_relationship"){
+                value = selectedOption;
+            }
+            this.props.roles[index][type] = value;
+        }
+    };
 
-export default class RolesAccount extends React.Component {
+    /**
+     * Handle the input changes for each field
+     * @param {str} type 
+     * @param {int} index
+     * @param {Object} event
+     */
+    onChangeForms = (type, index, event) => {
+        if(type === "role_type"){
+            //TODO: how to use setState when the unser input frozen each time a key is pressed?
+            // this.setState({role_type: event.target.value}, () => this.handleTest());
+            this.state.role_type = event.target.value;
+
+        }else if(type === "description"){
+            this.setState({description: event.target.value});
+            // this.state.description = event.target.value;
+
+        }else if(type === "role_name"){
+            console.log("Index: ",index);
+            let regex = new RegExp("\\s+|[.,/#!$%^&*;:{}=_`~()@¨'\"+[\\]`´?><]");
+            // if does not contains space, set the state
+            if(!regex.test(event.target.value)){
+                let tmp_roles = this.props.roles;
+                tmp_roles[index]['role_name'] = event.target.value
+                this.setState({ roles: tmp_roles });
+            }else{
+                // if it does, set the value of the state (not from the event input)
+                event.target.value = this.state.roles[index]['role_name'];
+            }
+
+        }else{
+            this.state.roles[index][event.target.name] = event.target.value;
+        }
+        console.log(this.state);
+    }
+
+    render(){
+        const {roles, policies_select, trusts_select} = this.props;
+        return (
+            roles.map((role, index) => {
+                return (
+                    <div className="form_margin_bottom shadow" key={`${role['Name']}~${index}`}>
+                        <div className="form-group row">
+                            <label htmlFor="role_name" className="col-sm-2 col-form-label bolder">Name: </label>
+                            <div className="col-sm-10">
+                                <input key={`${role['role_name']}~${index}`} type="text" name="role_name" 
+                                onChange={(e) => this.onChangeForms("role_name",index,e)}
+                                className="form-control" placeholder="accessmngt" 
+                                defaultValue={role['role_name']}
+                                />
+                            </div>
+                        </div>
+                        <div className="form-group row">
+                            <label htmlFor="name_role" className="col-sm-2 col-form-label bolder">Description: </label>
+                            <div className="col-sm-10">
+                                <input key={`${role['role_description']}~${index}`} type="text" name="role_description"
+                                onChange={(e) => this.onChangeForms("role_description",index,e)}
+                                className="form-control" placeholder="" defaultValue={role['role_description']} />
+                            </div>
+                        </div>                            
+                        <div className="form-group row">
+                            <label htmlFor="policies_role" className="col-sm-2 col-form-label bolder">Policies: </label>
+                            <div className="col-sm-10">
+                                <Select key={`${role['role_name']}~${index}`} className="policies" closeMenuOnSelect={false} isMulti 
+                                options={policies_select} 
+                                defaultValue={ 
+                                    role['policies'].map(elem => {
+                                        return { "value":elem ,"label":elem }
+                                    }) 
+                                }
+                                onChange={e_arr => this.onChangeSelect(e_arr, "policies", index)}
+                                />
+                            </div>
+                        </div>
+                        <div className="form-group row">
+                            <label htmlFor="policyArnAws_role" className="col-sm-2 col-form-label bolder">PolicyArnAWS: </label>
+                            <div className="col-sm-10">
+                                <input key={`${role['policy_arn_aws']}~${index}`} type="text" name="policy_arn_aws" 
+                                // onChange={this.handleInputChange}
+                                //onChange={(e) => this.onChangeForms("policy_arn_aws",index,e)}
+                                className="form-control" 
+                                placeholder="arn:aws:iam::aws:policy/aws-service-role/AccessAnalyzerServiceRolePolicy,arn:aws:iam::0123456789:policy/policy-accessmngt" 
+                                defaultValue={role['policy_arn_aws']}
+                                //onChange={e => this.handleChangePolicyARN(e.value, "policy_arn", index)}
+                                onChange={e => this.handleChangePolicyARN(e, index)}
+                                />
+                                <span className="text-note">Separar por vírgula se tiver mais de uma ARN</span>
+                            </div>
+                        </div>
+                        <div className="form-group row">
+                            <label htmlFor="trustRelationship_role" className="col-sm-2 col-form-label bolder">TrustRelationship: </label>
+                            <div className="col-sm-10">
+                                <Select key={`${role['role_name']}~${index}`} 
+                                className="trust_relationship" closeMenuOnSelect={true} options={trusts_select} 
+                                defaultValue={ { "value":role['trust_relationship'] ,"label":role['trust_relationship'] } }
+                                onChange={e => this.onChangeSelect(e.value, "trust_relationship", index)}
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="form-group col-sm-2">
+                            <button className="btn btn-danger" type="button"
+                            onClick={() => this.props.handleRemoveFields(index, "role")} 
+                            >Remover</button>
+                        </div>
+
+                    </div>
+                );
+            
+            })
+        );
+    }
+}
+
+export default class RolesAccounts extends React.PureComponent {
     constructor(props) {
       super(props);
       this.state = {
-          document_name: "",
           showModalDelete: false,
           actionModal: "",
           showModal: false,
@@ -23,8 +183,7 @@ export default class RolesAccount extends React.Component {
           roles_select:[],
           roles_available: [],
           delete_roletype: "não declarado",
-          role_type:"",
-          selectedOption: null
+          role_type:""
       };
     }
     
@@ -44,39 +203,32 @@ export default class RolesAccount extends React.Component {
                 this.setState({ roles_available: data.type_roles});
             }
 
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/available/iam")
+            fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
             .then(resp => resp.json())
             .then(data => {
-                if(data.error === true){
+                if(data.message === "Internal server error"){
                     console.error("Error in fetching data");
                 }else{
-                    let policy_ar = [];
-                    data.policies.map( (elem,index) => policy_ar[index] = { "value":elem, "label":elem } );
+                    //console.log(data);
+                    let trust_ar = []; let policy_ar = []; let role_ar = [];
+                    data.message.TrustRelationships
+                    .map( (elem, index) => trust_ar[index] = { "value":elem['Name'] ,"label":elem['Name'] });
                     
+                    data.message.Policies
+                    .map( (elem,index) => policy_ar[index] = { "value":elem['Name'], "label":elem['Name'] } );
+                    
+                    data.message.Roles
+                    .map( (elem,index) => role_ar[index] = { "value":elem['Name'], "label":elem['Name'] } );
+
                     this.setState({ 
+                        trusts: trust_ar,
                         policies: policy_ar,
+                        trusts_select: trust_ar,
+                        roles_select: role_ar,
                         policies_select: policy_ar
                     });
                 }
             })
-
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/available/trust")
-            .then(resp => resp.json())
-            .then(data => {
-                if(data.error === true){
-                    console.error("Error in fetching data");
-                }else{
-                    let trust_ar = [];
-                    data.policies.map( (elem,index) => trust_ar[index] = { "value":elem, "label":elem } );
-                    
-                    this.setState({ 
-                        trusts: trust_ar,
-                        trusts_select: trust_ar
-                    });
-                }
-            })
-
-
         })
     }
     
@@ -113,7 +265,6 @@ export default class RolesAccount extends React.Component {
             new_available.splice(index, 1);
             this.setState({ 
                 roles_available: new_available,
-                document_name: "",
                 description:"",
                 trusts:[],
                 policies:[],
@@ -186,84 +337,6 @@ export default class RolesAccount extends React.Component {
      * Handle the modal at the delete button. This closes the modal
      */
     handleShow = () => this.setState({showModalDelete:true});
-
-    /**
-     * Handle the policyArnAWS input and do a match regex if the value does not contains spaces
-     * 
-     */
-    handleChangePolicyARN = (event, index) => {
-        event.preventDefault();
-        const { value } = event.target;
-        //console.log(name,value);
-        //let term = "arn:aws:iam::aws:policy/ReadOnlyAccess";
-        //let regex = new RegExp("(arn:aws:iam::(aws|([0-9]+)):policy\/[A-Za-z0-9-]+\/*[A-Za-z0-9-]*$,*)");
-        // let regex = new RegExp("\\s+");
-        let regex = new RegExp("\\s+|[.#!$%^&*;{}=_`~()@¨'\"+[\\]`´]");
-        
-        if(!regex.test(value)){
-            let roles_tmp = this.state.roles;
-            roles_tmp[index]['policy_arn_aws'] = value;
-            // this.setState({roles: roles_tmp});
-            this.state.roles[index]['policy_arn_aws'] = value;
-        }else{
-            event.target.value = this.state.roles[index]['policy_arn_aws'];
-            //this.setState({test: this.state.test});
-        }
-    }
-
-    /**
-     * Handle the input changes for each field
-     * @param {str} type 
-     * @param {int} index
-     * @param {Object} event
-     */
-    onChangeForms = (type, index, event) => {
-        if(type === "role_type"){
-            //TODO: how to use setState when the unser input frozen each time a key is pressed?
-            // this.setState({role_type: event.target.value});
-            this.state.role_type = event.target.value;
-
-        }else if(type === "description"){
-            // this.setState({description: event.target.value});
-            this.state.description = event.target.value;
-
-        }else if(type === "role_name"){
-            let regex = new RegExp("\\s+|[.,/#!$%^&*;:{}=_`~()@¨'\"+[\\]`´]");
-            // if does not contains space, set the state
-            if(!regex.test(event.target.value)){
-                let tmp_roles = this.state.roles;
-                tmp_roles[index]['role_name'] = event.target.value
-                this.setState({ roles: tmp_roles });
-                // this.state.roles[index]['role_name'] = event.target.value;
-            }else{
-                // if it does, set the value of the state (not from the event input)
-                event.target.value = this.state.roles[index]['role_name'];
-            }
-
-        }else{
-            this.state.roles[index][event.target.name] = event.target.value;
-        }
-    }
-
-    /**
-     * Handle the select tag in the form (policies, trust relationshops)
-     * @param {str/Array} selectedOption
-     * @param {str} type
-     * @param {int} index
-     */
-    onChangeSelect = (selectedOption, type, index) => {
-        if(type === "policies"){
-            if( selectedOption !== null) this.state.roles[index][type].push(selectedOption[0].value);
-        }else{
-            // if the value is an array, we get the index with the value
-            let value = selectedOption[0].value;
-            // but if not an array, just get the value
-            if(type === "trust_relationship"){
-                value = selectedOption;
-            }
-            this.state.roles[index][type] = value;
-        }
-    };
 
     /**
      * Handle the submit form when doing the update or new document role
@@ -367,7 +440,6 @@ export default class RolesAccount extends React.Component {
                     let roles =  JSON.parse( type_role_json.Roles ) ;
 
                     this.setState({ 
-                        //document_name: type_role_json.RoleType,
                         role_type: type_role_json.RoleType,
                         description: type_role_json.Description,
                         roles: roles,
@@ -421,7 +493,7 @@ export default class RolesAccount extends React.Component {
         if(delete_roletype !== "não declarado"){
             html_delete_button = <Button variant="danger" className="" onClick={this.handleShow.bind(this)} >Deletar "{delete_roletype}"</Button>;
         }
-        
+        console.log("Roles: ",this.state.roles);
         return (
             <section className="margin_header_forms">
                 {/* <h1>Gerenciar policies</h1> */}
@@ -467,7 +539,7 @@ export default class RolesAccount extends React.Component {
                         <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Tipo da conta: </label>
                         <div className="col-sm-12">
                             <input key={role_type} required type="text" name="role_type" 
-                            onKeyUp={(e) => this.onChangeForms("role_type",null,e)}
+                            onChange={(e) => this.onChangeForms("role_type",null,e)}
                             className="form-control" placeholder="policies-cloud" defaultValue={role_type} />
                         </div>
                     </div>
@@ -482,78 +554,11 @@ export default class RolesAccount extends React.Component {
                     </div>
                     <h1 id="policy_titles">Roles</h1>
 
-                    {roles.map((role, index) => {
-                        return (
-                            <div className="form_margin_bottom shadow" key={`${role['Name']}~${index}`}>
-                                <div className="form-group row">
-                                    <label htmlFor="role_name" className="col-sm-2 col-form-label bolder">Name: </label>
-                                    <div className="col-sm-10">
-                                        <input key={`${role['role_name']}~${index}`} type="text" name="role_name" 
-                                        onChange={(e) => this.onChangeForms("role_name",index,e)}
-                                        className="form-control" placeholder="accessmngt" 
-                                        defaultValue={role['role_name']}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group row">
-                                    <label htmlFor="name_role" className="col-sm-2 col-form-label bolder">Description: </label>
-                                    <div className="col-sm-10">
-                                        <input key={`${role['role_description']}~${index}`} type="text" name="role_description"
-                                        onChange={(e) => this.onChangeForms("role_description",index,e)}
-                                        className="form-control" placeholder="" defaultValue={role['role_description']} />
-                                    </div>
-                                </div>                            
-                                <div className="form-group row">
-                                    <label htmlFor="policies_role" className="col-sm-2 col-form-label bolder">Policies: </label>
-                                    <div className="col-sm-10">
-                                        <Select key={`${role['role_name']}~${index}`} className="policies" closeMenuOnSelect={false} isMulti 
-                                        options={policies_select} 
-                                        defaultValue={ 
-                                            role['policies'].map(elem => {
-                                                return { "value":elem ,"label":elem }
-                                            }) 
-                                        }
-                                        onChange={e_arr => this.onChangeSelect(e_arr, "policies", index)}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-group row">
-                                    <label htmlFor="policyArnAws_role" className="col-sm-2 col-form-label bolder">PolicyArnAWS: </label>
-                                    <div className="col-sm-10">
-                                        <input key={`${role['policy_arn_aws']}~${index}`} type="text" name="policy_arn_aws" 
-                                        // onChange={this.handleInputChange}
-                                        //onChange={(e) => this.onChangeForms("policy_arn_aws",index,e)}
-                                        className="form-control" 
-                                        placeholder="arn:aws:iam::aws:policy/aws-service-role/AccessAnalyzerServiceRolePolicy,arn:aws:iam::0123456789:policy/policy-accessmngt" 
-                                        defaultValue={role['policy_arn_aws']}
-                                        //onChange={e => this.handleChangePolicyARN(e.value, "policy_arn", index)}
-                                        onChange={e => this.handleChangePolicyARN(e, index)}
-                                        />
-                                        <span className="text-note">Separar por vírgula se tiver mais de uma ARN</span>
-                                    </div>
-                                </div>
-                                <div className="form-group row">
-                                    <label htmlFor="trustRelationship_role" className="col-sm-2 col-form-label bolder">TrustRelationship: </label>
-                                    <div className="col-sm-10">
-                                        <Select key={`${role['role_name']}~${index}`} 
-                                        className="trust_relationship" closeMenuOnSelect={true} options={trusts_select} 
-                                        defaultValue={ { "value":role['trust_relationship'] ,"label":role['trust_relationship'] } }
-                                        onChange={e => this.onChangeSelect(e.value, "trust_relationship", index)}
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div className="form-group col-sm-2">
-                                    <button className="btn btn-danger" type="button"
-                                    onClick={() => this.handleRemoveFields(index, "role")} 
-                                    >Remover</button>
-                                </div>
+                        <RolesForm roles={roles} trusts_select={trusts_select} policies_select={policies_select} 
+                            handleRemoveFields={this.handleRemoveFields}
+                        />
 
-                            </div>
-                        );
-                    
-                    })}
-                     <button className="btn btn-primary form_margin_bottom" type="button"
+                        <button className="btn btn-primary form_margin_bottom" type="button"
                         onClick={() => this.handleAddFields("role")}
                         >Adicionar nova Policy</button>
                    

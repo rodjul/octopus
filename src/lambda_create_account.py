@@ -105,10 +105,9 @@ def create_adfs(iam_client):
 # ============================================================================#
 #                        CREATE STANDARD ROLES AND POLICIES                   #
 # ============================================================================#
-def setup_roles_account(account_id, file_s3):
+def setup_roles_account(account_id, account_type):
     iamcontrol = IamControl(account_id)
-    #path_json = "https://{0}.s3.us-east-2.amazonaws.com/{1}_without_octopusmngt.json".format(environ['octopus_resource'],file_s3)
-    iamcontrol.setup_iam_account(file_s3)
+    iamcontrol.setup_iam_account(account_type)
 
 
 # ============================================================================#
@@ -172,9 +171,8 @@ def main_function(event):
         create_adfs(iam_client)
         
         # given a cloudformation file, this cloudformation will create the necessay roles for the account
-        file_s3 = event['cloudformation'].lower()
-        file_s3 = "roles_policies_trusts.json"
-        setup_roles_account(status["AccountId"], file_s3)
+        account_type = event['account_type'].lower()
+        setup_roles_account(status["AccountId"], account_type)
 
     else:
         my_logging("Error on Account Creation: {}".format(status))

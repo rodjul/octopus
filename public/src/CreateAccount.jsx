@@ -2,13 +2,13 @@ import React, { Component, useState } from 'react';
 import { Button, FormGroup, Form, FormControl, FormLabel, Table } from "react-bootstrap";
 import "./CreateAccount.css";
 
-export default class Login extends Component {
+export default class CreateAccount extends Component {
     constructor(props) {
         super(props)
         this.state = {
             email: 'octopus.teste-20@cloudtotvs.com.br',
             name: 'octopus.teste-20',
-            cloudformation: 'tcloud',
+            account_type: "",
             type_roles: [],
             lists: [],
             load_table: false,
@@ -25,7 +25,10 @@ export default class Login extends Component {
             if(data.message === "Internal server error"){
                 console.error("Error in fetching data");
             }else{
-                this.setState({ type_roles: data.type_roles});
+                this.setState({ 
+                    type_roles: data.type_roles,
+                    account_type: data.type_roles[0]
+                });
             }
         });
     }
@@ -41,6 +44,8 @@ export default class Login extends Component {
             [name]: value.toLowerCase()
         });
     }
+
+    handleSelectAccountType = event => this.setState({ account_type:  event.target.value });
 
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -64,7 +69,7 @@ export default class Login extends Component {
             if(!this.state.load_table) this.setState({load_table : true})
         });
         
-        //console.log("Event:",this.state);
+        // console.log("Event:",this.state);
         
 
         return ;
@@ -165,7 +170,9 @@ export default class Login extends Component {
                     {/* <Button block bsSize="large" disabled={!validateForm()} type="submit"> */}
                     <FormGroup controlId="conta.controlSelect">
                         <FormLabel>Tipo da conta</FormLabel>
-                        <Form.Control as="select" className="role_cloudformation">
+                        <Form.Control as="select" className="role_cloudformation"
+                        onChange={e => this.handleSelectAccountType(e)}
+                        >
                             {type_roles && type_roles.map((elem, index) => {
                                 return <option key={elem} value={elem} >{elem}</option>;
                             })}

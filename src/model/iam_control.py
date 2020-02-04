@@ -103,45 +103,78 @@ class IamControl:
             return self.iam_client.detach_role_policy(PolicyArn=policy_arn, RoleName=role_name)
         return "Not found"
 
-    def get_role_structure(self, role_type):
+    def get_document_of_roles(self, role_type):
+        '''
+        Returns a dict of IAM policies, roles and trustrelationship
+        '''
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table("octopus_role_type")
 
-    def setup_iam_account(self, file_key):
-        s3 = boto3.resource('s3')
-        try:
-            obj = s3.Object(environ['octopus_resource'], file_key)
-            content_json = json.loads( obj.get()['Body'].read().decode('utf-8') )
-        except botocore.exceptions.ClientError as e:
-            my_logging("Could not create account: {}".format(e),"error")
-            return e
+        roles_json = []
+        policy_json = []
+        trusts_json = []
+
+        results = table.scan()
+        for row in results['Items']:
+            if row['RoleType'].lower() == role_type.lower():
+                roles_json = row
+                break
+        
+        table = dynamodb.Table("octopus_policy")
+        policies =  table.scan()['Items']
+        
+        for policy in policies:
+            if policy['Type'] == "IAM":
+                policy_json.append(policy)
+            elif policy['Type'] == "TRUST":
+                trusts_json.append(policy)
+        
+        return {"roles_json":roles_json, "policy_json":policy_json, "trusts_json":trusts_json}
+
+    def setup_iam_account(self, type_role):
+        '''
+        Setup the policies, roles, and trustrelationship in the account.
+        '''
+        content_json = self.get_document_of_roles(type_role)
+        roles_json  = json.loads( content_json["roles_json"]['Roles'] )
+        policy_json = content_json["policy_json"]
+        trusts_json = content_json["trusts_json"]
 
         # for each role, we will create the trust and policy
-        for role in content_json['Roles']:
+        for role in roles_json:
             #Policies - Name, Description, Path, PolicyDocument
             #Roles  - Name, Policies[], PolicyArnAWS[] , TrustRelationship
             #TrustRelationships - Name, AssumeRolePolicyDocument
-            role_name = role['Name']
+            role_name = role['role_name']
             
-            for trust_rel in content_json['TrustRelationships']:
+            for trust_rel in trusts_json:
+                trust_rel = json.loads(trust_rel['Data'])
+
                 # after we find the trust, we create the role
-                if trust_rel['Name'] == role['TrustRelationship']:
+                if trust_rel['Name'] == role['trust_relationship']:
                     # doing replace in the SAML ADFS
                     if "Federated" in trust_rel['AssumeRolePolicyDocument']['Statement'][0]['Principal'] \
                         and "ACCOUNT_ID" in trust_rel['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated']:
                         trust_rel['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'] = \
                             trust_rel['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'].replace("ACCOUNT_ID",self.account_id)
                     
-                    response = self.iam_client.create_role(
-                        RoleName=role_name,
-                        AssumeRolePolicyDocument=json.dumps(trust_rel['AssumeRolePolicyDocument'])
-                    )
+                    try:
+                        self.iam_client.create_role(
+                            RoleName=role_name,
+                            AssumeRolePolicyDocument=json.dumps(trust_rel['AssumeRolePolicyDocument'])
+                        )
+                        print("Role created: ",role_name)
+                    except botocore.exceptions.ClientError as e:
+                        if e.response['Error']['Code'] == 'EntityAlreadyExists':
+                            print("EntityAlreadyExists Role - ",role_name)
                     #role_arn = response['Role']['Arn'] #arn:aws:iam::914035169037:role/accessmngt
                     
                     # if there are policies associated with the role, we find and create
-                    if role['Policies']:
-                        for role_policy in role['Policies']:
-                            for policy in content_json['Policies']:
+                    if role['policies']:
+                        for role_policy in role['policies']:
+                            for policy in policy_json:
+                                policy = json.loads( policy['Data'] )
+
                                 # creating policy
                                 if policy['Name'] == role_policy:
                                     try:
@@ -150,7 +183,7 @@ class IamControl:
                                             PolicyName=policy['Name'],
                                             PolicyDocument=json.dumps(policy['PolicyDocument'])
                                         )
-                                        print(response)
+                                        #print(response)
                                         self.iam_client.attach_role_policy(PolicyArn=response['Policy']['Arn'], RoleName=role_name)
 
                                     except botocore.exceptions.ClientError as e:
@@ -159,8 +192,9 @@ class IamControl:
                                             self.iam_client.attach_role_policy(PolicyArn=arn_already_created, RoleName=role_name)
                     
                     # if there are standard policies from aws associated with the role, we create
-                    if role['PolicyArnAWS']:
-                        for policy_arn in role['PolicyArnAWS']:
+                    policy_arn_aws = role['policy_arn_aws'].split(",")
+                    if policy_arn_aws and policy_arn_aws[0] != "":
+                        for policy_arn in role['policy_arn_aws']:
                             self.iam_client.attach_role_policy(PolicyArn=policy_arn, RoleName=role_name)
 
 
