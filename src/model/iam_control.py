@@ -10,11 +10,12 @@ else:
     from model.octopus import get_creds, my_logging
 
 class IamControl:
-    def __init__(self, account_id):
+    def __init__(self, account_id, do_sts=True):
         # session = boto3.Session(profile_name="temp")
         # self.iam_client = session.client("iam")
-        self.account_id = account_id
-        self.iam_client = get_creds("iam",Id=account_id)
+        if do_sts:
+            self.account_id = account_id
+            self.iam_client = get_creds("iam",Id=account_id)
 
     def list_policies(self):
         return self.iam_client.list_policies()

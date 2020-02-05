@@ -8,48 +8,20 @@ import datetime
 from boto3.dynamodb.conditions import Attr
 
 
-def get_file_master_compliance(file_key):
-    s3 = boto3.resource('s3')
-    try:
-        obj = s3.Object(environ['octopus_resource'], file_key)
-        return loads( obj.get()['Body'].read().decode('utf-8') )
-    except botocore.exceptions.ClientError as e:
-        print("Could not create account: {0}".format(e))
-        return e
-
-
-def save_to_s3(s3_key, content):
-    '''
-    :param s3_key: nome do arquivo
-    :param content: conteudo do arquivo
-    '''
-    s3 = boto3.client('s3')
-    kwargs = {
-        #'ContentType':'text/plain; charset=utf-8',
-        'Bucket': environ['octopus_resource'],
-        'Key':  "compliance/"+s3_key,
-        'Body': content,
-        'ACL': 'private'
-    }
-    
-    try:
-        s3.put_object(**kwargs)
-    except Exception as e:
-        #print( e)
-        raise e
-
-
-def insert_data(account_id, account_name, data_json, date_action):
+def insert_data(account_id, account_name, data_json, date_action, type_role):
     '''
     Insert the name account create to make the index
     '''
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_account_compliance")
 
-    item = {"DateAction": date_action,
-            "Account": account_id,
-            "Name": account_name,
-            "DataCompliance": dumps(data_json, ensure_ascii=False)}
+    item = {
+        "DateAction": date_action,
+        "Account": account_id,
+        "Name": account_name,
+        "DataCompliance": dumps(data_json, ensure_ascii=False),
+        "TypeRole": type_role
+        }
 
     table.put_item( Item=item )
 
@@ -59,22 +31,19 @@ def check_compliance(event):
         account_id  = event['AccountId']
         date_action = event['DateAction']
         account_name = event['AccountName']
+        type_role = event['TypeRole']
     except KeyError:
         return 400
 
-    file_key = "roles_policies_trusts.json"
-    file_master = get_file_master_compliance(file_key)
+    iam = IamControl(None, do_sts=False)
+    file_master = iam.get_document_of_roles(type_role)
     
     iam_cont = IamControl(account_id)
-        
-    # 1- comparar quantidade de policies atachadas 
-    # 2- comparar com cada policy para ver o md5
-    # 3- 
-
     
     lista_compliance = []
-
-    for role_master in file_master['Roles']:
+    
+    # obtendo os valores do banco (master) IAM Role (role name, policy name, trust relationship)
+    for role_master in loads( file_master['roles_json']['Roles'] ):
         try:
             roles_account = iam_cont.list_roles()
         except Exception as e:
@@ -86,6 +55,7 @@ def check_compliance(event):
 
         role_compliance_found = False
 
+        # obtendo os valores de IAM Role da conta filha
         for role_account in roles_account['Roles']:
 
             # pegando as policies da role que queremos comparar
@@ -93,17 +63,16 @@ def check_compliance(event):
             role_child = iam_cont.list_attached_role_policies(role_compare)
             #print(role)
             
-            # obtendo o arquivo master (json que contem as policies, roles)
-            role_count_attached = len(role_child['AttachedPolicies'])
-
-            # com a role que encontramos
-            if role_master['Name'] == role_compare:
+            # se encontrarmos a role na conta filha
+            if role_master['role_name'] == role_compare:
                 role_compliance_found = True
 
                 # fazendo a contagem se há policies attachadas a mais
                 policies_adicionais         = []
                 policies_adicionais_status  = False
-                master_count_attached       = len( role_master['PolicyArnAWS'] ) + len(role_master['Policies'])              
+                # obtendo a quantidade de roles attached
+                role_count_attached         = len( role_child['AttachedPolicies'] )
+                master_count_attached       = len( role_master['policy_arn_aws'] ) + len(role_master['policies'])              
                 
                 if master_count_attached != role_count_attached:
                     policies_adicionais =  [policy['PolicyName'] for policy in role_child['AttachedPolicies']]
@@ -111,8 +80,8 @@ def check_compliance(event):
 
                 # para cada policy da role, fazemos a comparacao de hash se a policy 
                 # esta de acordo ou desatualizada
-                for policy_master in role_master['Policies']:
-                    
+                for policy_master in role_master['policies']:
+
                     policy_child_found = False
                     for policy_child in role_child['AttachedPolicies']:
                         
@@ -128,7 +97,9 @@ def check_compliance(event):
                             
                             #pegando a policy do master
                             policy_master_content = ""
-                            for policy_file in file_master['Policies']:
+                            for policy_file in file_master['policy_json']:
+                                policy_file = loads(policy_file['Data'])
+
                                 if policy_file['Name'] == policy_master:
                                     policy_master_content = policy_file
                             
@@ -141,28 +112,27 @@ def check_compliance(event):
                             
                             
                             if hash_master != hash_child or policies_adicionais_status:
-                                lista_compliance.append({"name":role_master['Name'],"policy":policy_child['PolicyName'], "compliance":False,
+                                lista_compliance.append({"name":role_master['role_name'],"policy":policy_child['PolicyName'], "compliance":False,
                                                 "status":"Policy com o nome informado não encontrado", "policies_adicionais":policies_adicionais })
                                 
                             else:
-                                lista_compliance.append({"name":role_master['Name'],"policy":policy_child['PolicyName'], "compliance":True,
+                                lista_compliance.append({"name":role_master['role_name'],"policy":policy_child['PolicyName'], "compliance":True,
                                                 "status":"" })
                
                             # print(lista_compliance)
                     
                     # se nao encontrou a policy nessa role, adicionamos uma observacao
                     if not policy_child_found:
-                        lista_compliance.append({"name":role_master['Name'],"policy":policy_master, "compliance":False,
+                        lista_compliance.append({"name":role_master['role_name'],"policy":policy_master, "compliance":False,
                                                 "status":"Policy com o nome informado não encontrado" })
 
         if not role_compliance_found:
-            lista_compliance.append({"name":role_master['Name'],"policy":role_master['Policies'], "compliance":False,
+            lista_compliance.append({"name":role_master['role_name'],"policy":role_master['Policies'], "compliance":False,
                                     "status":"Não encontrado"})        
     
     print(lista_compliance)
-    #s3_key = account_id +"_"+ datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    #save_to_s3(s3_key, dumps(lista_compliance, ensure_ascii=False))
-    insert_data(account_id, account_name, lista_compliance, date_action)
+
+    insert_data(account_id, account_name, lista_compliance, date_action, type_role)
 
     return 200
 
@@ -206,6 +176,7 @@ def get_date_actions():
 def get_compliance(event):
     try:
         date_input = event['queryStringParameters']['date_action']
+        type_role = event['queryStringParameters']['type_role']
     except KeyError as e:
         print("Error in get param: ",e)
         date_input = ""
@@ -223,7 +194,7 @@ def get_compliance(event):
     content = ""
     if date_input != "":
         try:
-            content = table.scan(FilterExpression=Attr("DateAction").eq(date_input))['Items']
+            content = table.scan(FilterExpression=Attr("DateAction").eq(date_input) & Attr("TypeRole").eq(type_role))['Items']
         except KeyError as e:
             print(e)
             content = ""
@@ -238,7 +209,8 @@ def lambda_handler(event, context):
         for msg in event['Records']:
             event2 = {"AccountId": loads(msg['body'])['account_id'],
                      "DateAction": loads(msg['body'])['date_action'],
-                     "AccountName": loads(msg['body'])['account_name']  }
+                     "AccountName": loads(msg['body'])['account_name'],  
+                     "TypeRole": loads(msg['body'])['type_role']  }
             check_compliance(event2)
             
     elif "httpMethod" in event and event['httpMethod'] == "GET":

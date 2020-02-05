@@ -12,6 +12,7 @@ def lambda_handler(event,context):
         body = loads(event['body'])
         # "name","email":json_data[1].value,"cloudformation":json_data[2].value
         date_action = body['date_action']
+        type_role = body['type_role']
     except KeyError:
         return {"statusCode":400,"body":dumps({"error":True, "message":"params invalid"}),
             "headers":{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}}
@@ -34,7 +35,12 @@ def lambda_handler(event,context):
     
         sqs_client.send_message(
             QueueUrl=environ['URL_SQS'],
-            MessageBody=dumps({"account_id": account['Id'], "account_name":account['Name'], "date_action": date_action})
+            MessageBody=dumps({
+                "account_id": account['Id'], 
+                "account_name":account['Name'], 
+                "date_action": date_action,
+                "type_role":type_role
+                })
         )   
     
     return {"statusCode":200, "body":dumps({"error":False, "message":"Checking..."}),

@@ -231,10 +231,10 @@ export default class RolesAccount extends React.Component {
             let regex = new RegExp("\\s+|[.,/#!$%^&*;:{}=_`~()@¨'\"+[\\]`´]");
             // if does not contains space, set the state
             if(!regex.test(event.target.value)){
-                let tmp_roles = this.state.roles;
-                tmp_roles[index]['role_name'] = event.target.value
-                this.setState({ roles: tmp_roles });
-                // this.state.roles[index]['role_name'] = event.target.value;
+                // let tmp_roles = this.state.roles;
+                // tmp_roles[index]['role_name'] = event.target.value
+                // this.setState({ roles: tmp_roles });
+                this.state.roles[index]['role_name'] = event.target.value;
             }else{
                 // if it does, set the value of the state (not from the event input)
                 event.target.value = this.state.roles[index]['role_name'];

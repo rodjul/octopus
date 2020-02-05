@@ -64,7 +64,7 @@ functions:
         - src/lambda_create_account.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"
     events:
       - sqs:
          arn: 
@@ -133,7 +133,7 @@ functions:
         - src/model/*.py
         - src/lambda_get_accounts_organizations.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"        
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"        
     events:
       - http:
           path: /account/organizations
@@ -155,7 +155,7 @@ functions:
         - src/model/*.py
         - src/lambda_compliance_iam.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"        
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"        
     events:
       - http:
           path: /policy/compliance/check
@@ -181,7 +181,7 @@ functions:
         - src/lambda_controller_compliance_iam.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"
       - "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
     events:
       - http:
@@ -202,7 +202,7 @@ functions:
         - src/lambda_manage_policy.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:8"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"
       #- "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
     events:
       - http:
@@ -234,23 +234,23 @@ functions:
       #     method: delete
       #     cors: true
 
-  request_get_default_role_policy:
-    handler: src/lambda_get_default_role_policy.lambda_handler
-    environment:
-      octopus_resource: "totvs-cloudformation-templates"
-    runtime: python3.6
-    memorySize: 256
-    timeout: 30 # 30 seconds
-    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
-    name: ${self:service}-get_default_role_policy-${self:provider.stage}
-    package:
-      include:
-        - src/lambda_get_default_role_policy.py
-    events:
-      - http:
-          path: /policy/default
-          method: get
-          cors: true
+  # request_get_default_role_policy:
+  #   handler: src/lambda_get_default_role_policy.lambda_handler
+  #   environment:
+  #     octopus_resource: "totvs-cloudformation-templates"
+  #   runtime: python3.6
+  #   memorySize: 256
+  #   timeout: 30 # 30 seconds
+  #   role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+  #   name: ${self:service}-get_default_role_policy-${self:provider.stage}
+  #   package:
+  #     include:
+  #       - src/lambda_get_default_role_policy.py
+  #   events:
+  #     - http:
+  #         path: /policy/default
+  #         method: get
+  #         cors: true
 
   request_manage_roles:
     handler: src/lambda_manage_role.lambda_handler

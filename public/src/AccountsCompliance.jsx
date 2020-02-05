@@ -11,6 +11,8 @@ export default class AccountsCompliance extends React.Component {
       this.state = {
         accounts: [],
         dates_available: [],
+        type_roles: [],
+        type_role_selected: "",
         loading: true,
         showModal: false,
         filter_text: {
@@ -24,23 +26,49 @@ export default class AccountsCompliance extends React.Component {
             },
         };
     }
-  
+    
+    /**
+     * Request the type role available and dates from the checks
+     */
     componentDidMount(){
-        // after finishing mounting the elements (by react), the first thing to do is a GET
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action=", {
-            method:"GET", mode:"cors"
-        })
+        fetch(process.env.REACT_APP_ENDPOINT+"/role/available")
+        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/available")
         .then(resp => resp.json())
         .then(data => {
-            this.setState( {accounts:data['content'],
-                            dates_available: data['dates_available'],
-                            loading:false } );
-             console.log(this.state.accounts);
+            if(data.message === "Internal server error"){
+                console.error("Error in fetching data");
+            }else{
+                this.setState({ 
+                    type_roles: data.type_roles,
+                    type_role_selected: data.type_roles[0]
+                });
+            }
+
+            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action=", {
+                method:"GET", mode:"cors"
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                this.setState( {accounts:data['content'],
+                                dates_available: data['dates_available'],
+                                loading:false } );
+                //  console.log(this.state.accounts);
+            })
+
         })
     }
 
+    /**
+     * When select the type role in the select, set the new value on the state
+     */
+    onChangeTypeRole = event => this.setState({ type_role_selected: event.target.value })
+
+    /**
+     * When change the date of check compliance, request the data from this specfic date and account type.
+     * @param {Object} e 
+     */
     getCompliance(e){
-        fetch("https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev/policy/compliance/check?date_action="+e.target.value, {
+        fetch("https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev/policy/compliance/check?date_action="+e.target.value+"&type_role="+this.state.type_role_selected, {
             method:"GET", mode:"cors"
         })
         .then(resp => resp.json())
@@ -51,7 +79,10 @@ export default class AccountsCompliance extends React.Component {
             // console.log(this.state.accounts);
         })   
     }
-    
+
+    /**
+     * Request a new check from a specfic account/role type. Pass as parameters the date and account type
+     */
     requestNewCompliance(){
         let today = new Date();
         let dd = String(today.getDate()).padStart(2, '0');
@@ -61,7 +92,7 @@ export default class AccountsCompliance extends React.Component {
 
         fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/new",{
             method:"POST", mode:"cors",
-            body: JSON.stringify( {"date_action":date_format} )
+            body: JSON.stringify( {"date_action":date_format, "type_role": this.state.type_role_selected} )
         })
         .then( resp => resp.json())
         .then( _ => {
@@ -70,6 +101,10 @@ export default class AccountsCompliance extends React.Component {
         })
     }
     
+    /**
+     * Handle the buttons/selects when filter data of columns
+     * @param {str} e 
+     */
     handleFilterSelection(e){
         // console.log(e);
         if(e !== undefined){
@@ -110,7 +145,10 @@ export default class AccountsCompliance extends React.Component {
         }
     }
     
-    /* MODAL NOVO CHECK*/
+    /**
+     * Handle the modal at the new check button. If user accept the action, calls requestNewCompliance()
+     * @param {Object} e 
+     */
     handleClose(e){ 
         //console.log(e, e.target);
         if(e != undefined && e.target.value === "new_check"){
@@ -118,11 +156,19 @@ export default class AccountsCompliance extends React.Component {
         }
         this.setState({showModal:false}) ;
     }
+    
+    /**
+     * Handle the modal at the delete button. This closes the modal
+     */
     handleShow(){ 
         this.setState({showModal:true}); 
     }
-    /* -- */
 
+    /**
+     * Handle the input user when searching the value. 
+     * If value searched is found, set the other values as hidden (none)
+     * @param {str} e 
+     */
     handleUserInputSearchColumn(e){
         console.log(e.target.value,e.target.value.length);
         let target = e.target.name.split("filter_")[1]
@@ -146,8 +192,12 @@ export default class AccountsCompliance extends React.Component {
         }
         
     }
-
-    // source https://stackoverflow.com/a/56370447
+    
+    /**
+     * Parser the table and make a CSV file to download
+     * @see see https://stackoverflow.com/a/56370447
+     * @param {Object} e 
+     */
     download_table_as_csv(e) {
         let table_id = e.target.value;
 
@@ -183,7 +233,7 @@ export default class AccountsCompliance extends React.Component {
 
 
     render(){
-        const { showModal, filter_text, accounts, loading, dates_available} = this.state;
+        const { showModal, filter_text, accounts, loading, dates_available, type_roles, type_role_selected} = this.state;
         let img_loading = "";
         if(loading) img_loading = <img className="centralize-img" src="images/loading-spinning-bubbles.svg" /> ;
         //img_loading = <img src="images/loading-spinning-bubbles.svg" /> ;
@@ -247,7 +297,9 @@ export default class AccountsCompliance extends React.Component {
                     <Modal.Header closeButton>
                         <Modal.Title>Novo check</Modal.Title>
                     </Modal.Header>
-                    <Modal.Body>Essa ação irá acessar as contas do Organizations e fazer os checks para gerar um novo relatório de compliance, poderá demorar alguns minutos. Deseja continuar?</Modal.Body>
+                    <Modal.Body>Essa ação irá acessar as contas do Organizations utilizando o tipo de conta "{type_role_selected}" 
+                    e fazer os checks para gerar um novo relatório de compliance. Poderá demorar alguns minutos, deseja continuar?
+                    </Modal.Body>
                     <Modal.Footer>
                         <Button variant="success" value="new_check" onClick={this.handleClose.bind(this)}>
                             Sim
@@ -261,10 +313,12 @@ export default class AccountsCompliance extends React.Component {
                     <Form.Group controlId="exampleForm.ControlSelect1">
                         <Form.Label>Data do compliance</Form.Label>
                         <Form.Control as="select" onChange={this.getCompliance.bind(this)} >
-                            <option className="filter_selected" key='selected'>Cloud210398</option>
+                            {/* <option className="filter_selected" key='selected'>Cloud210398</option> */}
+                            {/* filter selecte */}
                             {accounts && accounts.slice(0,1).map((elem,index) =>{
                                 return <option className="filter_selected" key='selected'>{elem['DateAction']}</option>;
                             })}
+                            {/* available values */}
                             {dates_available && dates_available.map((elem,index) =>{
                                 return <option key={elem} value={elem} >{elem}</option>;
                             })}
@@ -275,12 +329,8 @@ export default class AccountsCompliance extends React.Component {
                 <Form className="form_select" >
                     <Form.Group controlId="exampleForm.ControlSelect2">
                         <Form.Label>Tipo de conta</Form.Label>
-                        <Form.Control as="select" onChange={this.getCompliance.bind(this)} >
-                            <option className="filter_selected" key='selected'>Cloud</option>
-                            {accounts && accounts.slice(0,1).map((elem,index) =>{
-                                return <option className="filter_selected" key='selected'>{elem['DateAction']}</option>;
-                            })}
-                            {dates_available && dates_available.map((elem,index) =>{
+                        <Form.Control as="select" onChange={this.onChangeTypeRole.bind(this)} >
+                            {type_roles && type_roles.map((elem,index) =>{
                                 return <option key={elem} value={elem} >{elem}</option>;
                             })}
                         </Form.Control>
