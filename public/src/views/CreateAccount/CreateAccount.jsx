@@ -1,13 +1,14 @@
 import React, { Component, useState } from 'react';
-import { Button, FormGroup, Form, FormControl, FormLabel, Table } from "react-bootstrap";
 // import "./CreateAccount.css";
+import CreateAccountForm from "../../components/CreateAccountForm";
+
 
 export default class CreateAccount extends Component {
     constructor(props) {
         super(props)
         this.state = {
-            email: 'octopus.teste-20@cloudtotvs.com.br',
-            name: 'octopus.teste-20',
+            email: '',
+            name: '',
             account_type: "",
             type_roles: [],
             lists: [],
@@ -16,6 +17,8 @@ export default class CreateAccount extends Component {
         };
 
     }
+
+    
 
     componentDidMount(){
         fetch(process.env.REACT_APP_ENDPOINT+"/role/available")
@@ -63,16 +66,16 @@ export default class CreateAccount extends Component {
         document.getElementById("output").innerHTML = render_html;
         
         // // remover isso
-        this.sleep(1000).then( () =>{ document.getElementById("output_text").textContent = "Criando a conta...";  }  );
-        this.sleep(2000).then( () =>{ document.getElementById("temporary").remove(); }  );
-        this.sleep(3000).then( () =>{ 
-            if(!this.state.load_table) this.setState({load_table : true})
-        });
+        // this.sleep(1000).then( () =>{ document.getElementById("output_text").textContent = "Criando a conta...";  }  );
+        // this.sleep(2000).then( () =>{ document.getElementById("temporary").remove(); }  );
+        // this.sleep(3000).then( () =>{ 
+        //     if(!this.state.load_table) this.setState({load_table : true})
+        // });
         
         // console.log("Event:",this.state);
         
 
-        return ;
+        // return ;
         //fetch('/api/authenticate', {
         //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
         const self = this;
@@ -155,78 +158,21 @@ export default class CreateAccount extends Component {
         const {type_roles, load_table} = this.state;
         // let load_table = true;
 
+
         return (
-            <section className="forms margin_header_forms">
-                <form className="shadow space_y" onSubmit={this.onSubmit} >
-                    <FormGroup controlId="email" bssize="large">
-                        <FormLabel>Email</FormLabel>
-                        <FormControl autoFocus name="email" type="email" defaultValue={this.state.email} onChange={this.handleInputChange}></FormControl>
-                    </FormGroup>
-
-                    <FormGroup controlId="name" bssize="large">
-                        <FormLabel>Nome da conta</FormLabel>
-                        <FormControl autoFocus name="name" type="name" defaultValue={this.state.name} onChange={this.handleInputChange}></FormControl>
-                    </FormGroup>
-                    {/* <Button block bsSize="large" disabled={!validateForm()} type="submit"> */}
-                    <FormGroup controlId="conta.controlSelect">
-                        <FormLabel>Tipo da conta</FormLabel>
-                        <Form.Control as="select" className="role_cloudformation"
-                        onChange={e => this.handleSelectAccountType(e)}
-                        >
-                            {type_roles && type_roles.map((elem, index) => {
-                                return <option key={elem} value={elem} >{elem}</option>;
-                            })}
-                        </Form.Control>
-                    </FormGroup>
-                    <Button block bssize="large" disabled={!this.validateForm()} type="submit">
-                        Criar conta
-                </Button>
-                    <div id="output"></div>
-                </form>
-
+            <>
+                <CreateAccountForm 
+                email_form={this.state.email} 
+                name_form={this.state.name} 
+                type_roles={type_roles}
+                onSubmit={this.onSubmit.bind(this)}
+                handleSelectAccountType={this.handleSelectAccountType.bind(this)}
+                handleForm={this.handleInputChange.bind(this)}
+                validateForm={this.validateForm.bind(this)}
+                load_table={false}
                 
-                {load_table ? (
-                    <Table striped bordered hover className="margin_header_forms">
-                        <thead>
-                            <tr>
-                                <th>Nome da conta</th>
-                                <th>Email da conta</th>
-                                <th>Account Id</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>nome da conta A</td>
-                                <td>nome-da-conta-a@cloudtotvs.com.br</td>
-                                <td>987598715987</td>
-                            </tr>
-                            {this.state.lists.map((field, idx) => {
-
-                                return (
-                                    <tr key={`${field}-${idx}`}>
-                                        <td>{field.name}</td>
-                                        <td>{field.email}</td>
-                                        <td>{field.accountid}</td>
-                                    </tr>
-
-                                );
-                            })}
-
-                        </tbody>
-                    </Table>
-                    ) 
-                    : null
-                }
-                
-                
-            </section>
-            //   <div key={`${field}-${idx}`}>
-            //   {/* <input type="text" placeholder="Enter text" value={field} {#onChange={e => handleChange(idx, e)}#} /> */}
-            //   <input type="text" placeholder="Enter text" value={field} />
-            //   {/* <button type="button" onClick={() => handleRemove(idx)}>X</button> */}
-            //  <p>{field}</p>
-            // </div>
-
+                />
+            </>
         );
     }
 }

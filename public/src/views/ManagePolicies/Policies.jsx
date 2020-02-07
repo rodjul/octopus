@@ -2,9 +2,8 @@ import React from 'react';
 import { Button, FormGroup, FormLabel, Form, Modal, Tab, Tabs } from "react-bootstrap";
 import './Policies.css';
 
-import JSONInput from 'react-json-editor-ajrm';
-import locale    from 'react-json-editor-ajrm/locale/en';
-
+import PoliciesItem from "../../components/PoliciesItem";
+import TrustItem    from "../../components/TrustsItem";
 
 /**
  * The PureComponente is almost equal to shouldComponentUpdate() which do a comparation in each component
@@ -65,17 +64,12 @@ export default class Policies extends React.PureComponent {
         //console.log(tipo);
         if(tipo === "trustrelationships"){
             const values = [...this.state.trusts];
-            values.push({ Name: 'New Trust Relationship', AssumeRolePolicyDocument: {"null":true} });
+            values.push({ Name: 'New-Trust-Relationship', AssumeRolePolicyDocument: {"null":true} });
             this.setState({trusts : values});
-
-        }else if(tipo === "role"){
-            const values = [...this.state.roles];
-            values.push({ Name: 'New Role',Policies:"", PolicyArnAWS:"" , TrustRelationship:""});
-            this.setState({roles : values});
 
         }else if(tipo === "policy"){
             const values = [...this.state.policies];
-            values.push({ Name: 'New Policy', Description:"", Path:"", PolicyDocument:{"null":true} });
+            values.push({ Name: 'New-Policy', Description:"", Path:"", PolicyDocument:{"null":true} });
             this.setState({policies : values});
         }
     };
@@ -228,130 +222,44 @@ export default class Policies extends React.PureComponent {
                         
                             {policies.map((policy, index) => {
                                 return (
-                                    <div className="form_margin_bottom shadow" key={policy['Name']}>
-                                        <div className="form-group row">
-                                            <label htmlFor="name_policy" className="col-sm-2 col-form-label bolder">Name: </label>
-                                            <div className="col-sm-10">
-                                                <input type="text" name="Name"
-                                                onChange={(e) => this.onChangeForms("policy_name",index,e)}
-                                                className="form-control" placeholder="policy-seginfo" defaultValue={policy['Name']} />
-                                            </div>
-                                        </div>
-                                        <div className="form-group row">
-                                            <label htmlFor="description_policy" className="col-sm-2 col-form-label bolder">Description: </label>
-                                            <div className="col-sm-10">
-                                                <input type="text" name="Description"
-                                                onChange={(e) => this.onChangeForms("policy",index,e)}
-                                                className="form-control" placeholder="Policy with read only" defaultValue={policy['Description']} />
-                                            </div>
-                                        </div>
-                                        <div className="form-group row">
-                                            <label htmlFor="path_policy" className="col-sm-2 col-form-label bolder">Path: </label>
-                                            <div className="col-sm-10">
-                                                <input type="text" name="Path"
-                                                onChange={(e) => this.onChangeForms("policy_path",index,e)}
-                                                className="form-control" placeholder="/" defaultValue={policy['Path']} />
-                                            </div>
-                                        </div>
-
-                                        <div className="form_margin_bottom">
-                                            <FormGroup controlId="email2" bssize="large">
-                                                <FormLabel className="bolder">PolicyDocument: </FormLabel>
-                                                {/* <FormControl name={"textarea_"+ policy['Name']} as="textarea" rows="12" defaultValue={JSON.stringify( policy['PolicyDocument'], null, '\t' )} /> */}
-                                            </FormGroup>
-                                            <JSONInput onChange={(e) => this.onChangeJson("policy", index, e)} className="custom-rod"
-                                                    id          = 'json_editor'
-                                                    placeholder = { policy['PolicyDocument'] }
-                                                    locale      = { locale }
-                                                    height      = 'auto'
-                                                    width       = 'auto'
-                                            /> 
-                                        </div>
-
-                                        <div className="form-group col-sm-2">
-                                            <button className="btn btn-danger" type="button"
-                                            onClick={() => this.handleRemoveFields(index, "policy")} 
-                                            >Remover</button>
-                                        </div>
-
-                                    </div>
-                                );
+                                    <PoliciesItem key={`${policy['Name']}~${index}`}
+                                    policy_name={policy['Name']}
+                                    description={policy['Description']}
+                                    path={policy['Path']}
+                                    policy_document={policy['PolicyDocument']}
+                                    index={index}
+                                    handleJson={this.onChangeJson.bind(this)}
+                                    handleForm={this.onChangeForms.bind(this)}
+                                    handleRemoveFields={this.handleRemoveFields.bind(this)}
+                                    />
+                                )
                             })}
 
                             <button className="btn btn-primary form_margin_bottom" type="button"
                             onClick={() => this.handleAddFields("policy")}
                             >Adicionar nova Policy</button>
                         </Tab>
-
                         <Tab eventKey="Trust" title="Trust Relationships">
                             <h1 id="policy_titles">Trust Relationships</h1>
 
                             <p className="disclaimer">OBS: os documentos que possuírem "ACCOUNT_ID" no lugar da Account ID, irão ser interpretados pelo código para serem substituídos pelo valor do Account ID.</p>
                             {trusts.map((trust, index) => {
-                                //console.log(trust['AssumeRolePolicyDocument']);
-                                //console.log(trust['Name']);
-                                return (
-                                    <div className="form_margin_bottom shadow" key={`${trust['Name']}~${index}`}>
-                                        <div className="form-group row">
-                                            <label htmlFor="name_trust" className="col-sm-1 col-form-label bolder">Name: </label>
-                                            <div className="col-sm-11">
-                                                <input type="text" id="name_trust" name="Name" 
-                                                onChange={(e) => this.onChangeForms("trust",index,e)}
-                                                className="form-control" placeholder="Readonly" defaultValue={trust['Name']} />
-                                            </div>
-                                            {/* <label htmlFor="name_trust" className="col-sm-1 col-form-label bolder">Description: </label>
-                                            <div className="col-sm-11">
-                                                <input type="text" id="name_trust" name={"name_"+ trust['Name']} className="form-control" placeholder="Readonly" defaultValue={trust['Name']} />
-                                            </div> */}
-                                        </div>
-                                        <div className="form_margin_bottom">
-                                            <FormGroup>
-                                                <FormLabel htmlFor="assumerolepolicydocument_" className="bolder">AssumeRolePolicyDocument: </FormLabel>
-                                                {/* <FormControl name={"assumerolepolicydocument_"+ trust['Name']} as="textarea" rows="12" defaultValue={JSON.stringify( trust['AssumeRolePolicyDocument'], "", '\t' )} /> */}
-                                            </FormGroup>
-                                            
-                                            <Tabs defaultActiveKey="json" id="uncontrolled-tab-example">
-
-                                                <Tab eventKey="json" title="JSON">
-
-                                                    {/* https://github.com/AndrewRedican/react-json-editor-ajrm */}
-                                                    <JSONInput onChange={(e) => this.onChangeJson("trust",index,e)} className="custom-rod" name="teste"
-                                                        id          = 'json_editor'
-                                                        placeholder = { trust['AssumeRolePolicyDocument'] }
-                                                        //theme="light_mitsuketa_tribute"
-                                                        // colors      = { {
-                                                        //     string: "#DAA520" // overrides theme colors with whatever color value you want
-                                                        //   }}
-                                                        locale      = { locale }
-                                                        height      = 'auto'
-                                                        width       = 'auto'
-                                                    />
-
-                                                </Tab>
-                                                <Tab eventKey="editor" title="Editor">
-                                                    <p>item 2</p>
-                                                </Tab>
-                                            </Tabs>
-
-                                            
-                                        </div>
-
-                                        
-                                        <div className="form-group col-sm-2">
-                                            <button className="btn btn-danger" type="button"
-                                            onClick={() => this.handleRemoveFields(index, "trustrelationships")} 
-                                            >Remover</button>
-                                        </div>
-
-                                    </div>
-                                );
+                                 return (
+                                    <TrustItem key={`${trusts['Name']}~${index}`}
+                                    policy_name={trusts['Name']} 
+                                    policy_document={trust['AssumeRolePolicyDocument']} 
+                                    index={index} 
+                                    handleJson={this.onChangeJson.bind(this)} 
+                                    handleForm={this.onChangeForms.bind(this)} 
+                                    handleRemoveFields={this.handleRemoveFields.bind(this)}
+                                    />
+                                )
                             })}
-                            <button className="btn btn-primary form_margin_bottom" type="button"
-                            onClick={() => this.handleAddFields("trustrelationships")}
-                            >Adicionar novo Trust Relationship</button>
                         </Tab>
 
                     </Tabs>
+
+
                     
                     <Button block className="button_small_central" type="submit">Atualizar</Button>
                 </Form>
