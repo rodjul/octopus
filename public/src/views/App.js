@@ -45,7 +45,7 @@ class App  extends React.Component {
                 <Switch>
                     {logged ? (
                         <>
-                            <NavbarApp history={hist} appbarTitle={window.location.pathname} />
+                            <NavbarApp history={hist} appbarTitle={window.location.pathname}/>
                             {/* <TesteBar /> */}
                             <Route path="/create-account" component={(CreateAccount)} />
                             <Route path="/manage-roles-accounts" component={RolesAccounts} />

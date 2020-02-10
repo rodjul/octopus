@@ -110,8 +110,6 @@ const NavbarApp2 = (props) => {
     const classes = useStyles();
     const theme = useTheme();
     const [mobileOpen, setMobileOpen] = React.useState(false);
-    const [titleLocationDrawer, setTitleLocationDrawer] = React.useState("Dashboard");
-    
     const titleLocationText = {
         "/login": "Dashboard",
         "/create-account": "Criar conta",
@@ -119,6 +117,9 @@ const NavbarApp2 = (props) => {
         "/manage-policies": "Gerenciar policies",
         "/accounts-compliance": "Compliance das contas",
     }
+    
+    const [appbarTitle, setAppbarTitle] = React.useState( titleLocationText[props.appbarTitle] );
+    
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
@@ -128,7 +129,9 @@ const NavbarApp2 = (props) => {
         props.history.push(e);
     }
 
-    console.log(props);
+    React.useEffect(() => {
+        console.log("Mudou: ",props.history);
+    }, [props.history.location['pathname']]);
 
     const drawer = (
         <div>
@@ -167,7 +170,7 @@ const NavbarApp2 = (props) => {
         </List> */}
         </div>
     );
-
+    // console.log(props);
     return (
         <div className={classes.root}>
             <CssBaseline />
@@ -183,7 +186,7 @@ const NavbarApp2 = (props) => {
                         <MenuIcon />
                     </IconButton>
                     <Typography variant="h6" noWrap>
-                        MUDAR AQUI{ props.appbarTitle}
+                        MUDAR AQUI{ appbarTitle } {props.appbarTitle}
                     </Typography>
                 </Toolbar>
             </AppBar>
