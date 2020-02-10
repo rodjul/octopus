@@ -169,7 +169,7 @@ export default class CreateAccount extends Component {
                 handleSelectAccountType={this.handleSelectAccountType.bind(this)}
                 handleForm={this.handleInputChange.bind(this)}
                 validateForm={this.validateForm.bind(this)}
-                load_table={false}
+                load_table={true}
                 
                 />
             </>

@@ -27,13 +27,15 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 
-//https://material-ui.com/pt/components/material-icons/
+
+
+import image from "../../assets/img/landing-bg.jpg";
 
 const drawerWidth = 240;
 
 const useStyles = makeStyles(theme => ({
     root: {
-      display: 'flex',
+      display: 'flex'
     },
     drawer: {
       [theme.breakpoints.up('sm')]: {
@@ -53,9 +55,16 @@ const useStyles = makeStyles(theme => ({
         display: 'none',
       },
     },
-    toolbar: theme.mixins.toolbar,
+    // toolbar: theme.mixins.toolbar,
     drawerPaper: {
       width: drawerWidth,
+      backgroundColor: "#17192b",
+    },
+    fontStyle: {
+      color: "#DCDCDC",
+      "& svg":{
+        color: "#DCDCDC",
+      }
     },
     content: {
       flexGrow: 1,
@@ -113,9 +122,9 @@ const NavbarApp2 = (props) => {
 
     const drawer = (
       <div>
-        <div className={classes.toolbar} />
+        <div className={classes.toolbar}/>
         <Divider />
-        <List>
+        <List className={classes.fontStyle}>
             <ListItem button key="Dashboard" onClick={ () => onClickRoute("/login") } >
               <ListItemIcon><Dashboard /></ListItemIcon>
               <ListItemText primary="Dashboard" />
@@ -152,7 +161,7 @@ const NavbarApp2 = (props) => {
     return (
       <div className={classes.root}>
         <CssBaseline />
-        <AppBar position="fixed" className={classes.appBar}>
+        <AppBar position="fixed" className={classes.appBar} >
           <Toolbar>
             <IconButton
               color="inherit"
@@ -168,7 +177,7 @@ const NavbarApp2 = (props) => {
             </Typography>
           </Toolbar>
         </AppBar>
-        <nav className={classes.drawer} aria-label="mailbox folders">
+        <nav className={classes.drawer} aria-label="mailbox folders" >
           {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
           <Hidden smUp implementation="css">
             <Drawer
@@ -187,7 +196,7 @@ const NavbarApp2 = (props) => {
               {drawer}
             </Drawer>
           </Hidden>
-          <Hidden xsDown implementation="css">
+          <Hidden xsDown implementation="css" >
             <Drawer
               classes={{
                 paper: classes.drawerPaper,
