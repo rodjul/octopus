@@ -38,26 +38,26 @@ class App  extends React.Component {
         // console.log(<withAuth/>);
         // console.log( <withAuth./> );
 
-        let html = "";
-        if(logged){
-            html = <>
-              <NavbarApp history={hist} />
-              {/* <TesteBar /> */}
-              <Route path="/create-account" component={(CreateAccount)} />
-              <Route path="/manage-roles-accounts" component={RolesAccounts} />
-              <Route path="/manage-policies" component={Policies} />
-              <Route path="/accounts-compliance" component={AccountsCompliance} />
-              </>;
-        }else{
-            html = <Route path="/" exact component={() => <LoginPage setLogged={this.changeLoginStatus} logged={logged} history={hist} /> } />;
-        }
-
         console.log(window.location.pathname);
         return (
             // <section className="container">
             <Router history={hist}>
                 <Switch>
-                   {html}
+                    {logged ? (
+                        <>
+                            <NavbarApp history={hist} appbarTitle={window.location.pathname} />
+                            {/* <TesteBar /> */}
+                            <Route path="/create-account" component={(CreateAccount)} />
+                            <Route path="/manage-roles-accounts" component={RolesAccounts} />
+                            <Route path="/manage-policies" component={Policies} />
+                            <Route path="/accounts-compliance" component={AccountsCompliance} />
+                        </>
+                    ):(
+                        <>
+                            <Route path="/" exact component={() => <LoginPage setLogged={this.changeLoginStatus} logged={logged} history={hist} /> } />
+                        </>
+                    )
+                }
                 </Switch>
             </Router>
             

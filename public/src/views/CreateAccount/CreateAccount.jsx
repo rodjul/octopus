@@ -37,6 +37,7 @@ export default class CreateAccount extends Component {
     }
 
     validateForm() {
+        console.log(1);
         return this.state.email.length > 0 && this.state.name.length > 0;
     }
 
@@ -57,15 +58,15 @@ export default class CreateAccount extends Component {
     onSubmit = (event) => {
         event.preventDefault();
 
-        let render_html = "<div id='temporary'>\n\
-        <img id='loader' style='display:block; margin:auto' src='images/loading-spinning-bubbles.svg' alt='loading' >\n\
-        <p id='output_text' style='font-size:1.3em'>Enviando os dados..</p>\n\
-        </div>";
+        // let render_html = "<div id='temporary'>\n\
+        // <img id='loader' style='display:block; margin:auto' src='images/loading-spinning-bubbles.svg' alt='loading' >\n\
+        // <p id='output_text' style='font-size:1.3em'>Enviando os dados..</p>\n\
+        // </div>";
 
         //$("#output").after(render_html);
-        document.getElementById("output").innerHTML = render_html;
+        // document.getElementById("output").innerHTML = render_html;
         
-        // // remover isso
+        // // // remover isso
         // this.sleep(1000).then( () =>{ document.getElementById("output_text").textContent = "Criando a conta...";  }  );
         // this.sleep(2000).then( () =>{ document.getElementById("temporary").remove(); }  );
         // this.sleep(3000).then( () =>{ 
@@ -75,7 +76,7 @@ export default class CreateAccount extends Component {
         // console.log("Event:",this.state);
         
 
-        // return ;
+        return JSON.stringify({"error":false, "content":"COLOCAR ALGO"});
         //fetch('/api/authenticate', {
         //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
         const self = this;
@@ -169,7 +170,7 @@ export default class CreateAccount extends Component {
                 handleSelectAccountType={this.handleSelectAccountType.bind(this)}
                 handleForm={this.handleInputChange.bind(this)}
                 validateForm={this.validateForm.bind(this)}
-                load_table={true}
+                // load_table={true}
                 
                 />
             </>
