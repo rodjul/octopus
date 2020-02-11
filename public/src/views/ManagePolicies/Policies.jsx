@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import './Policies.css';
 
 import PoliciesHtml from "./components/PoliciesHtml";
@@ -40,9 +40,13 @@ export default class Policies extends React.PureComponent {
                 let trusts_json = JSON.parse(data['trusts']);
                 let tmp_trusts = [];
                 let tmp_policies =[];
-                policies_json.map( elem => tmp_policies.push( JSON.parse(elem['Data']) ) );
+                //policies_json.map( elem => tmp_policies.push( JSON.parse(elem['Data']) ) );
                 trusts_json.map(elem => tmp_trusts.push( JSON.parse(elem['Data']) ) );
                 
+                if(tmp_policies.length === 0 ){
+                    tmp_policies.push({Description: "Description of this new policy", Name: "New-Policy", Path: "/", PolicyDocument:{"null":true}});
+                }
+
                 // console.log(tmp_trusts);
                 this.setState({ 
                     // trusts: data.message.TrustRelationships,
@@ -140,8 +144,8 @@ export default class Policies extends React.PureComponent {
      * Handle the input changes for each field
      * @param {Object} event
      */
-    onSubmitForm(event){
-        event.preventDefault();
+    async onSubmitForm(event){
+        // event.preventDefault();
         // console.log(event.target);
         // console.log(event.target[0].value);
         // console.log(this.state.document_name);
@@ -154,29 +158,32 @@ export default class Policies extends React.PureComponent {
         //};
         
         // return ;
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/update",{
+        return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/update",{
             method:"POST", mode:"cors",
             body: JSON.stringify( {"policies":this.state.policies, "trusts_relationship":this.state.trusts} )
         })
         .then(resp => {
             if( resp.status === 502 ){
-                this.setState({
-                    showModal: true,
-                    actionModal: "Erro ao atualizar",
-                    modalMessage: "Ocorreu um erro ao executar essa ação"
-                });
+                // this.setState({
+                //     showModal: true,
+                //     actionModal: "Erro ao atualizar",
+                //     modalMessage: "Ocorreu um erro ao executar essa aÃ§Ã£o"
+                // });
+                return {"error":true, "message":"Ocorreu um erro ao executar a ação"};
             }else if( resp.status === 400 ){
-                this.setState({
-                    showModal: true,
-                    actionModal: "Erro ao atualizar",
-                    modalMessage: "Todos os campos precisam ser preenchidos"
-                });
+                // this.setState({
+                //     showModal: true,
+                //     actionModal: "Erro ao atualizar",
+                //     modalMessage: "Todos os campos precisam ser preenchidos"
+                // });
+                return {"error":true, "message":"Todos os campos precisam ser preenchidos"};
             }else if( resp.status === 200 ){
-                this.setState({
-                    showModal: true,
-                    actionModal: "Atualizar",
-                    modalMessage: "Executado com sucesso"
-                });
+                // this.setState({
+                //     showModal: true,
+                //     actionModal: "Atualizar",
+                //     modalMessage: "Executado com sucesso"
+                // });
+                return {"error":false, "message":"Executado com sucesso"};
             }
         })
         
@@ -195,6 +202,7 @@ export default class Policies extends React.PureComponent {
             handleForm={this.onChangeForms.bind(this)}
             handleRemoveFields={this.handleRemoveFields.bind(this)}
             handleAddFields={this.handleAddFields.bind(this)}
+            handleOnSubmitForm={this.onSubmitForm.bind(this)}
             />
         );
     }

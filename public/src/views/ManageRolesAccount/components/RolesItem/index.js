@@ -1,9 +1,50 @@
 import React from "react";
 import { Form, Modal } from "react-bootstrap";
 import { makeStyles } from '@material-ui/core/styles';
-import {Fab, Box, Zoom, Button } from "@material-ui/core";
+import { Fab, Box, Zoom, Button, CircularProgress, Tooltip, Typography, Tab, Tabs
+} from "@material-ui/core";
+
+import PropTypes from 'prop-types';
+
+import { green } from '@material-ui/core/colors';
+
+import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon } from '@material-ui/icons';
 
 import RolesHtml from "../RolesHtml";
+
+import AlertMessage from "../../../../components/AlertMessage";
+
+
+function TabPanel(props) {
+    const { children, value, index, ...other} = props;
+    return (
+      <Typography
+        component="div"
+        role="tabpanel"
+        hidden={value !== index}
+        id={`vertical-tabpanel-${index}`}
+        aria-labelledby={`vertical-tab-${index}`}
+        {...other}
+      >
+        {value === index && <Box p={3}>{children}</Box>}
+       
+      </Typography>
+    );
+  }
+  
+  TabPanel.propTypes = {
+    children: PropTypes.node,
+    index: PropTypes.any.isRequired,
+    value: PropTypes.any.isRequired,
+  };
+  
+  function a11yProps(index) {
+    return {
+      id: `vertical-tab-${index}`,
+      'aria-controls': `vertical-tabpanel-${index}`,
+    };
+  }
+
 
 
 const useStyles = makeStyles(theme => ({
@@ -53,99 +94,188 @@ const useStyles = makeStyles(theme => ({
         bottom: theme.spacing(5),
         right: theme.spacing(13),
     },
+    fabProgress: {
+        color: green[500],
+        position: 'absolute',
+        top: -6,
+        left: -6,
+        zIndex: 1,
+    }
 }));
 
 
-const RolesItem = (props) => {
+const RolesItem = (
+    {
+        role_type, description, roles, roles_available, policies_select,
+        policies_available, trusts_available,
+        handleAddFieldsParent, onChangeRoleTypeSelect, handleRemoveFields,
+        onChangeForms, handleChangePolicyARN, onChangeSelect, onSubmit
+    }) => {
     const classes = useStyles();
-    const roles_available = [];
-    const showModalDelete = false;
-    const html_delete_button = "";
-    const delete_roletype = "";
-    const role_type = [];
-    const description = "";
-    const roles = [];
+    const [loading, setLoading] = React.useState(false);
+    const [valueIndex, setValue] = React.useState(0);
+    const [openAlert, setOpenAlert] = React.useState(false);
+    const [typeMessage, setTypeMessage] = React.useState("");
+    const [messageAlert, setMessageAlert] = React.useState("");
+    
+    
 
-    // if(delete_roletype !== "não declarado"){
-    //     html_delete_button = <Button variant="danger" className="" onClick={this.handleShow.bind(this)} >Deletar "{delete_roletype}"</Button>;
-    // }
+    const handleChange = (event, newValue) => {
+        // get the value of type account if it's not the first time loading
+        let offsetParent = event.target.offsetParent;
+        let dataValue = offsetParent.attributes['data-value'].value
+        onChangeRoleTypeSelect(dataValue);
+        
+        // set the new value of index
+        setValue(newValue);
+    }
+
+    const handleAddFields = value => handleAddFieldsParent(value);
+
+    const handleChangeForms = (type, index, event) => {
+        // console.log(type, index, event.target);
+        if(type === "role_type" || type === "description" || type=="role_description"){
+            onChangeForms(type, index, event);
+
+        }else if(type === "role_name"){
+            let regex = new RegExp("\\s+|[.,/#!$%^&*;:{}=_`~()@¨'\"+[\\]`´]");
+            // if does not contains space, set the state
+            if(!regex.test(event.target.value)){
+                onChangeForms(type, index, event);
+            }else{
+                // if it does, set the value of the state (not from the event input)
+                event.target.value = event.target.value.slice(0, event.target.value.length -1 );
+            }
+
+        }else{
+            event.target.value = event.target.value.slice(0, event.target.value.length -1 );
+        }
+    }
+
+    async function saveData(){
+        setLoading(true);
+
+        await onSubmit(valueIndex)
+        .then(data => {
+            if(!data['error']){
+                setLoading(false);
+    
+                setOpenAlert(true);
+                setTypeMessage("success");
+                setMessageAlert(data.message);
+                
+            }else{
+                setLoading(false);
+    
+                setOpenAlert(true);
+                setTypeMessage("error");
+                setMessageAlert(data.message);
+                
+            }
+        });
+    }
 
     return (
         <main className={classes.content}>
             <Box boxShadow={3}> 
+                <div className={classes.root}>
 
-            <div className="header_buttons">
-                {html_delete_button}
+                    <Tabs
+                        orientation="vertical"
+                        variant="scrollable"
+                        value={valueIndex}
+                        onChange={handleChange}
+                        aria-label="Vertical type of roles by account"
+                        className={classes.tabs}
+                    >
+                        {roles_available.map((role, index) => {
+                            return <Tab className={classes.tabsMain} data-value={role}  key={`${role}~${index}`} label={role} {...a11yProps(index)} />
+                        })}
+            
+                    </Tabs>
+                    {role_type.length ? (
+                        roles_available.map((role, index) => {
+                            return (
+                                <TabPanel key={`${role}'~'${index}`} index={index} value={valueIndex}  className={classes.tabContent}>
+                                    
+                                    <div className="form-group row">
+                                        <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Tipo da conta: </label>
+                                        <div className="col-sm-12">
+                                            <input key={role_type} required type="text" name="role_type"
+                                                onChange={(e) => handleChangeForms("role_type", null, e)}
+                                                className="form-control" placeholder="policies-cloud" defaultValue={role_type} />
+                                        </div>
+                                    </div>
 
-                <Form className="space_y" >
-                    <Form.Group controlId="exampleForm.ControlSelect1">
-                        <Form.Label>Selecionar tipo de role da conta:</Form.Label>
-                        <Form.Control as="select" className="header_button_select"
-                        //onChange={this.onChangeRoleTypeSelect.bind(this)} 
-                        >
-                            <option key="null" value="" >Criar novo documento</option>
-                            {roles_available && roles_available.map((elem, index) => {
-                                return <option key={elem} value={elem} >{elem}</option>;
-                            })}
-                        </Form.Control>
-                    </Form.Group>
-                </Form>
+                                    <div className="form-group row">
+                                        <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Descrição: </label>
+                                        <div className="col-sm-12">
+                                            <input key={description} required type="text" name="description"
+                                                onChange={(e) => handleChangeForms("description",null,e)}
+                                                className="form-control" placeholder="This document..." defaultValue={description} />
+                                        </div>
+                                    </div>
+                                        
+                                    {roles.map((role, index) => {
+                                        return (
+                                            <RolesHtml key={`${role['role_name']}~${index}`}
+                                                role_name={role['role_name']}
+                                                role_description={role['role_description']}
+                                                policy_arn_aws={role['policy_arn_aws']}
+                                                trust_select={role['trust_relationship']}
+                                                policies_select={
+                                                    role['policies'] === undefined ? [] : role['policies']
+                                                }
+                                                policies_available={policies_available}
+                                                trusts_available={trusts_available}
+                                                index={index}
+                                                
+                                                handleForm={handleChangeForms.bind(this)}
+                                                handleRemoveFields={handleRemoveFields}
+                                                handleChangePolicyARN={handleChangePolicyARN.bind(this)}
+                                                onChangeSelect={onChangeSelect.bind(this)}
+                                            /> 
+                                        )
+                                    })}    
 
+                                    <Tooltip title="Adicionar nova role" aria-label="add" placement="top" arrow>
+                                        <Fab aria-label="Add policy" className={classes.fabAdd2} color="primary" 
+                                            style={{display:"grid",margin:"auto", width:"3em", height:"3em"}}
+                                            onClick={ () => handleAddFields("role")}
+                                            >
+                                            <AddIcon  />
+                                        </Fab>
+                                    </Tooltip>
+                                </TabPanel>
+                            )
+                        })
+                        ): (
+                            //https://css-tricks.com/centering-css-complete-guide/
+                            <CircularProgress style={{display:"grid",margin:"auto"}}/>
+                        )
+                    }
 
-                {/* <Modal show={showModalDelete} onHide={this.handleClose.bind(this)} animation={false}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Novo check</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>Essa ação irá deletar o documento "{delete_roletype}" permanentemente. Deseja continuar?</Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="success" value="new_check" onClick={this.handleClose.bind(this)}>
-                            Sim
-                            </Button>
-                        <Button variant="danger" onClick={this.handleClose.bind(this)}>
-                            Não
-                            </Button>
-                    </Modal.Footer>
-                </Modal> */}
-
-                {/* <img className="centralize-img2" src="images/loading-spinning-bubbles.svg" /> */}
-            </div>
-
-            <Form className="padding_header_forms" name="form_trust" 
-            // onSubmit={this.onSubmitForm.bind(this)}
-            >
-                <div className="form-group row">
-                    <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Tipo da conta: </label>
-                    <div className="col-sm-12">
-                        <input key={role_type} required type="text" name="role_type"
-                            onKeyUp={(e) => this.onChangeForms("role_type", null, e)}
-                            className="form-control" placeholder="policies-cloud" defaultValue={role_type} />
-                    </div>
                 </div>
-
-                <div className="form-group row">
-                    <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Descrição: </label>
-                    <div className="col-sm-12">
-                        <input key={description} required type="text" name="Description"
-                            //onChange={(e) => this.onChangeForms("description",null,e)}
-                            className="form-control" placeholder="This document..." defaultValue={description} />
-                    </div>
-                </div>
-                <h1 id="policy_titles">Roles</h1>
-
-                {roles.map((role, index) => {
-                    return (
-                        <RolesHtml />
-                    );
-                })}
-                <button className="btn btn-primary form_margin_bottom" type="button"
-                    onClick={() => this.handleAddFields("role")}
-                >Adicionar nova Policy</button>
-
-
-                <Button block className="button_small_central" type="submit">{delete_roletype == "não declarado" ? "Criar" : "Atualizar"}</Button>
-            </Form>
-
+                
             </Box>
+                {/* <Zoom key="primary" unmountOnExit in={1 === 1} onClick={() => handleAddRole("teste")} > */}
+                <Zoom key="add_type" unmountOnExit in={1 === 1} onClick={() => handleAddFields("type_role")} >
+                    <Tooltip title="Criar uma novo tipo de role" aria-label="add" placement="top" arrow>
+                        <Fab aria-label="Add policy" className={classes.fabAdd} color="primary">
+                            <AddIcon  />
+                        </Fab>
+                    </Tooltip>
+                </Zoom>
+                <Zoom key="save" unmountOnExit  in={1 === 1} onClick={() => saveData()}  >
+                    <Tooltip title="Salvar alterações" aria-label="save" placement="top" arrow>
+                        <Fab aria-label="Save" className={classes.fabSave} color="primary">
+                            <SaveIcon  />
+                            {loading && <CircularProgress size={68} className={classes.fabProgress} />}
+                        </Fab>
+                    </Tooltip>
+                </Zoom>
+
+                <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} />
         </main>
     );
 

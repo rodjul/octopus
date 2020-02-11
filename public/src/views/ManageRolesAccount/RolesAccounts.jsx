@@ -43,6 +43,9 @@ export default class RolesAccount extends React.Component {
                 this.setState({ roles_available: data.type_roles});
             }
 
+            // TODO: change function name
+            if(this.state.roles_available.length > 0) this.onChangeRoleTypeSelect(this.state.roles_available[0]);
+
             fetch(process.env.REACT_APP_ENDPOINT+"/policy/available/iam")
             .then(resp => resp.json())
             .then(data => {
@@ -137,11 +140,15 @@ export default class RolesAccount extends React.Component {
             values.push({
                 role_name: 'New-Role',
                 role_description: "Description of this role",
-                policies:[], 
                 policy_arn_aws:"" , 
                 trust_relationship:""
             });
             this.setState({roles : values});
+        }
+        else if(tipo === "type_role"){
+            const type_roles = [... this.state.roles_available];
+            type_roles.push("New type");
+            this.setState({roles_available: type_roles});
         }
     };
     
@@ -227,17 +234,10 @@ export default class RolesAccount extends React.Component {
             this.state.description = event.target.value;
 
         }else if(type === "role_name"){
-            let regex = new RegExp("\\s+|[.,/#!$%^&*;:{}=_`~()@¨'\"+[\\]`´]");
-            // if does not contains space, set the state
-            if(!regex.test(event.target.value)){
-                // let tmp_roles = this.state.roles;
-                // tmp_roles[index]['role_name'] = event.target.value
-                // this.setState({ roles: tmp_roles });
-                this.state.roles[index]['role_name'] = event.target.value;
-            }else{
-                // if it does, set the value of the state (not from the event input)
-                event.target.value = this.state.roles[index]['role_name'];
-            }
+            // let tmp_roles = this.state.roles;
+            // tmp_roles[index]['role_name'] = event.target.value
+            // this.setState({ roles: tmp_roles });
+            this.state.roles[index]['role_name'] = event.target.value;
 
         }else{
             this.state.roles[index][event.target.name] = event.target.value;
@@ -268,9 +268,10 @@ export default class RolesAccount extends React.Component {
      * Handle the submit form when doing the update or new document role
      * @param {Object} event 
      */
-    onSubmitForm(event){
-        event.preventDefault();
-
+    async onSubmitForm(event){
+        console.log("Submit: ",event);
+        // event.preventDefault();
+        
         let format = {
             role_type: this.state.role_type,
             description: this.state.description,
@@ -287,20 +288,21 @@ export default class RolesAccount extends React.Component {
             method = "PUT";
             action = "Atualizar";
         }
-
+        console.log(format);
+        
         let values = this.isQuantityPoliciesAttachedReached();
         let reached = values[0];
         let role_reached = values[1];
         if(reached){
-            this.setState({
-                showModal: true,
-                actionModal: "Erro "+action,
-                modalMessage: "A role \""+role_reached+"\" contém mais de 10 policies atachadas. Remova para poder proseguir com a ação."
-            });
-            return;
+            // this.setState({
+            //     showModal: true,
+            //     actionModal: "Erro "+action,
+            //     modalMessage: "A role \""+role_reached+"\" contém mais de 10 policies atachadas. Remova para poder proseguir com a ação."
+            // });
+            return {"error":true, "message":"A role \""+role_reached+"\" contém mais de 10 policies atachadas. Remova para poder proseguir com a ação."};
         }
         
-        fetch(url,{ 
+        return await fetch(url,{ 
             method: method, 
             mode:"cors", 
             body: JSON.stringify( format )
@@ -308,23 +310,25 @@ export default class RolesAccount extends React.Component {
         .then( resp =>{
             console.log("Data: ",resp);
             if( resp.status === 502 ){
-                this.setState({
-                    showModal: true,
-                    actionModal: "Erro "+action,
-                    modalMessage: "Ocorreu um erro ao executar essa ação"
-                });
+                // this.setState({
+                //     showModal: true,
+                //     actionModal: "Erro "+action,
+                //     modalMessage: "Ocorreu um erro ao executar essa ação"
+                // });
+                return {"error":true, "message":"Ocorreu um erro ao executar a ação de"+action};
             }else if( resp.status === 400 ){
-                this.setState({
-                    showModal: true,
-                    actionModal: "Erro "+action,
-                    modalMessage: "Todos os campos precisam ser preenchidos"
-                });
+                // this.setState({
+                //     showModal: true,
+                //     actionModal: "Erro "+action,
+                //     modalMessage: "Todos os campos precisam ser preenchidos"
+                // });
+                return {"error":true, "message":"Todos os campos precisam ser preenchidos"};
             }else if( resp.status === 200 ){
-                this.setState({
-                    showModal: true,
-                    actionModal: action,
-                    modalMessage: "Executado com sucesso"
-                });
+                // this.setState({
+                //     showModal: true,
+                //     actionModal: action,
+                //     modalMessage: "Executado com sucesso"
+                // });
 
                 localStorage.setItem( this.state.role_type, 
                     JSON.stringify({description : this.state.description, roles : this.state.roles})
@@ -341,6 +345,7 @@ export default class RolesAccount extends React.Component {
                     new_roles_available.push(this.state.role_type);
                     this.setState({ roles_available: new_roles_available});
                 }
+                return {"error":false, "message":"Executado com sucesso"};
             }
             //resp => resp.json()
         })
@@ -354,10 +359,11 @@ export default class RolesAccount extends React.Component {
      * @param {Object} e 
      */
     onChangeRoleTypeSelect(e){   
-        if(e !== undefined && e.target.value.length !== 0){
-
-            if( localStorage.getItem( e.target.value ) === null ){
-                fetch(process.env.REACT_APP_ENDPOINT+"/role/"+e.target.value,{
+        // console.log("Value: ",e);
+        if(e !== undefined && e.length !== 0 && e != "New type"){
+            let value = e;
+            if( localStorage.getItem( value ) === null ){
+                fetch(process.env.REACT_APP_ENDPOINT+"/role/"+value,{
                     method:"GET", mode:"cors"
                 })
                 .then(resp => resp.json())
@@ -380,8 +386,8 @@ export default class RolesAccount extends React.Component {
                     
                 });
             }else{
-                let data = localStorage.getItem( e.target.value );
-                let role_type = e.target.value;
+                let data = localStorage.getItem( value );
+                let role_type = value;
                 let description = JSON.parse(data)['description'];
                 let roles = JSON.parse(data)['roles'];
                 this.setState({
@@ -393,12 +399,10 @@ export default class RolesAccount extends React.Component {
             }
 
         // if the value is null, show the first view
-        }else if(e !== undefined && e.target.value.length === 0){
+        }else if(e !== undefined && e === "New type"){
             this.setState({ 
-                role_type: "",
+                role_type: "New type",
                 description: "",
-                trusts: [],
-                policies: [],
                 roles: [],
                 delete_roletype: "não declarado"
             });
@@ -416,9 +420,24 @@ export default class RolesAccount extends React.Component {
             delete_roletype, trusts_select, policies_select 
         } = this.state;
         
-        
         return (
-            <RolesItem />
+            <RolesItem 
+                role_type={role_type}
+                description={description}
+                roles={roles}
+                roles_available={roles_available}
+                policies_select={policies_select}
+                policies_available={this.state.policies}
+                trusts_available={trusts_select}
+                
+                onChangeRoleTypeSelect={this.onChangeRoleTypeSelect.bind(this)}
+                onChangeForms={this.onChangeForms.bind(this)}
+                handleChangePolicyARN={this.handleChangePolicyARN.bind(this)}
+                onChangeSelect={this.onChangeSelect.bind(this)}
+                handleAddFieldsParent={this.handleAddFields.bind(this)}
+                handleRemoveFields={this.handleRemoveFields.bind(this)}
+                onSubmit={this.onSubmitForm.bind(this)}
+            />
             
         );
     }

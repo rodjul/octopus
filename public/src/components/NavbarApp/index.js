@@ -186,7 +186,7 @@ const NavbarApp2 = (props) => {
                         <MenuIcon />
                     </IconButton>
                     <Typography variant="h6" noWrap>
-                        MUDAR AQUI{ appbarTitle } {props.appbarTitle}
+                        Titulo da página
                     </Typography>
                 </Toolbar>
             </AppBar>

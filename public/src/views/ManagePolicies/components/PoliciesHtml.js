@@ -1,14 +1,11 @@
 import React, {useState} from "react";
-import { FormGroup, FormLabel, Form, Modal } from "react-bootstrap";
-
-import {Fab, Box, Zoom } from "@material-ui/core";
+import {Fab, Box, Zoom, Tabs, Tab, Typography, CircularProgress} from "@material-ui/core";
 import { makeStyles } from '@material-ui/core/styles';
 import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon } from '@material-ui/icons';
 
 import PropTypes from 'prop-types';
-import Tabs from '@material-ui/core/Tabs';
-import Tab from '@material-ui/core/Tab';
-import Typography from '@material-ui/core/Typography';
+
+import { green } from '@material-ui/core/colors';
 
 /* Local imports */
 import AlertMessage from "../../../components/AlertMessage";
@@ -101,6 +98,13 @@ const useStyles = makeStyles(theme => ({
         bottom: theme.spacing(5),
         right: theme.spacing(13),
     },
+    fabProgress: {
+        color: green[500],
+        position: 'absolute',
+        top: -6,
+        left: -6,
+        zIndex: 1,
+    }
 }));
 
 
@@ -108,12 +112,13 @@ const PoliciesHtml = (props) => {
     const classes = useStyles();
     const policies = props.policies;
     const trusts = props.trusts;
-    const showModal = false;
-    const actionModal = "CRIAR";
-    const modalMessage = "BLA BLA";
-
+    console.log("Policies: ",policies);
     const [valueIndex, setValue] = React.useState(0);
     const [valueTabXIndex, setValueTabXIndex] = React.useState("iam_policy");
+    const [loading, setLoading] = React.useState(false);
+    const [openAlert, setOpenAlert] = React.useState(false);
+    const [typeMessage, setTypeMessage] = React.useState("");
+    const [messageAlert, setMessageAlert] = React.useState("");
 
     const handleChange = (event, newValue) => setValue(newValue);
 
@@ -147,6 +152,29 @@ const PoliciesHtml = (props) => {
         }
     }
 
+    async function saveData(){
+        setLoading(true);
+
+        await props.handleOnSubmitForm(valueIndex)
+        .then(data => {
+            if(!data['error']){
+                setLoading(false);
+    
+                setOpenAlert(true);
+                setTypeMessage("success");
+                setMessageAlert(data.message);
+                
+            }else{
+                setLoading(false);
+    
+                setOpenAlert(true);
+                setTypeMessage("error");
+                setMessageAlert(data.message);
+                
+            }
+        });
+    }
+
     // const onChangeFor
 
     // React.useEffect(() => {
@@ -163,6 +191,8 @@ const PoliciesHtml = (props) => {
                     <Tab className={classes.tabsMain} label="Trust Relantionship" value="iam_trust_relantionship" {...a11yProps('iam_trust_relantionship')} />
                 </Tabs>
 
+                {policies.length ? (
+                    <>
                 <TabPanel value={valueTabXIndex} index="iam_policy">
                     <div className={classes.root}>
                         <Tabs
@@ -243,15 +273,23 @@ const PoliciesHtml = (props) => {
                         </Fab>
                     </Zoom>
                 </TabPanel>
+                </>
+                ):(
+                    <CircularProgress style={{display:"grid",margin:"auto"}}/>
+                )
                 
-                <Zoom key="primary" unmountOnExit  in={1 === 1}>
+                }
+                
+                <Zoom key="primary" unmountOnExit  in={1 === 1} onClick={() => saveData()}>
                     <Fab aria-label="Save" className={classes.fabSave} color="primary">
                         <SaveIcon  />
+                        {loading && <CircularProgress size={68} className={classes.fabProgress} />}
                     </Fab>
                 </Zoom>
             </Box>
 
-            
+            <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} />
+
         </main>
     );
 }
