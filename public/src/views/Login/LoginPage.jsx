@@ -1,6 +1,7 @@
 import React from "react";
 
 import image from "../../assets/img/bg7.jpg";
+// import image from "../../assets/img/781500.jpg";
 
 import "./style.css"
 
@@ -62,7 +63,7 @@ const LoginForm = (props) => {
         },
         paper: {
             width: "30%",
-            height: "15em",
+            height: "16em",
             padding: "1em",
             marginTop: "12%",
             overflow: "hidden"
@@ -87,6 +88,7 @@ const LoginForm = (props) => {
                 <Grid item xs={12}>
                     <Grid container justify="center" spacing={spacing}>
                         <Paper className={classes.paper} >
+                            <h3>OCTOPUS</h3>
                             <form className={classes.pageHeader} noValidate autoComplete="off" onSubmit={props.onSubmit}>
 
                                 <TextField id="standard-basic" type="text" label="Username" style={{ margin: 0 }} placeholder="Email" 

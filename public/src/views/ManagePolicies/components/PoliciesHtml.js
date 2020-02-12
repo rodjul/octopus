@@ -85,7 +85,12 @@ const useStyles = makeStyles(theme => ({
         backgroundColor: theme.palette.background.paper,
         display: 'flex',
         // height: 224,
-        height: "38em",
+        "@media (max-height: 840px)":{
+            height: "36em",
+        },
+        "@media (min-height: 841px)":{
+            height: "50em",
+        }
         // height: "1%",
       },
     tabs: {
