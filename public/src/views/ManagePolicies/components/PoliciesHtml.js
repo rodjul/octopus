@@ -58,11 +58,23 @@ const useStyles = makeStyles(theme => ({
     },
     content: {
         overflow: "none",
-        marginTop: 64,
+        // marginTop: 64,
         flexGrow: 1,
         marginLeft: 240,
         paddingLeft: 20,
-        padding: theme.spacing(3),
+        paddingRight: 20,
+        // padding: theme.spacing(3),
+        "@media (max-width: 600px)":{
+            marginLeft: 0,
+            paddingLeft: 20,
+      }
+    },
+    titleHeader: {
+        // marginTop: 0,
+        // flexGrow: 1,
+        // marginLeft: 240,
+        // paddingLeft: 20,
+        paddingBottom: theme.spacing(4),
         "@media (max-width: 600px)":{
             marginLeft: 0,
             paddingLeft: 20,
@@ -112,7 +124,7 @@ const PoliciesHtml = (props) => {
     const classes = useStyles();
     const policies = props.policies;
     const trusts = props.trusts;
-    console.log("Policies: ",policies);
+    
     const [valueIndex, setValue] = React.useState(0);
     const [valueTabXIndex, setValueTabXIndex] = React.useState("iam_policy");
     const [loading, setLoading] = React.useState(false);
@@ -183,12 +195,15 @@ const PoliciesHtml = (props) => {
 
     return (
         <main className={classes.content}>
+            <Typography className={classes.titleHeader} variant="h4" noWrap >
+                Gerenciar policies
+            </Typography>
             <Box boxShadow={3}>
                 {/* <div className={classes.paper} > */}
 
                 <Tabs value={valueTabXIndex} className={classes.tabsMain} indicatorColor="primary" textColor="primary" onChange={handleChangeTabX} aria-label="">
                     <Tab className={classes.tabsMain} label="Policies" value="iam_policy" {...a11yProps('iam_policy')}/> 
-                    <Tab className={classes.tabsMain} label="Trust Relantionship" value="iam_trust_relantionship" {...a11yProps('iam_trust_relantionship')} />
+                    <Tab className={classes.tabsMain} label="Trust Relationship" value="iam_trust_relantionship" {...a11yProps('iam_trust_relantionship')} />
                 </Tabs>
 
                 {policies.length ? (

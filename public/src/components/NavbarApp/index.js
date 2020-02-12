@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 import { NavLink } from 'react-router-dom';
 import { Navbar, Nav } from "react-bootstrap";
 
@@ -34,7 +34,7 @@ const drawerWidth = 240;
 
 const useStyles = makeStyles(theme => ({
     root: {
-        display: 'flex'
+        display: 'flex',
     },
     drawer: {
         [theme.breakpoints.up('sm')]: {
@@ -174,8 +174,8 @@ const NavbarApp2 = (props) => {
     return (
         <div className={classes.root}>
             <CssBaseline />
-            <AppBar position="fixed" className={classes.appBar} >
-                <Toolbar>
+            {/* <AppBar position="fixed" className={classes.appBar} color="transparent" >
+                 <Toolbar style={{ backgroundColor: "#fff", color:"black"}}>
                     <IconButton
                         color="inherit"
                         aria-label="open drawer"
@@ -185,11 +185,11 @@ const NavbarApp2 = (props) => {
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" noWrap>
+                    {/* <Typography variant="h4" noWrap  id="titleHeader" >
                         Titulo da página
-                    </Typography>
-                </Toolbar>
-            </AppBar>
+                    </Typography> */}
+                {/* </Toolbar> 
+            </AppBar> */} */}
             <nav className={classes.drawer} aria-label="mailbox folders" >
                 {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
                 <Hidden smUp implementation="css">

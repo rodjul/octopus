@@ -40,7 +40,7 @@ export default class Policies extends React.PureComponent {
                 let trusts_json = JSON.parse(data['trusts']);
                 let tmp_trusts = [];
                 let tmp_policies =[];
-                //policies_json.map( elem => tmp_policies.push( JSON.parse(elem['Data']) ) );
+                policies_json.map( elem => tmp_policies.push( JSON.parse(elem['Data']) ) );
                 trusts_json.map(elem => tmp_trusts.push( JSON.parse(elem['Data']) ) );
                 
                 if(tmp_policies.length === 0 ){

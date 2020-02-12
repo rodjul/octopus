@@ -13,6 +13,7 @@
     "brace": "^0.11.1",
     "jsoneditor": "^8.0.0",
     "jsoneditor-react": "^2.0.0",
+    "material-table": "^1.57.2",
     "material-ui": "^1.0.0-beta.47",
     "prop-types": "^15.7.2",
     "react": "^16.12.0",

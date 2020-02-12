@@ -9,7 +9,7 @@ import SaveIcon from '@material-ui/icons/Save';
 import {
     TextField, Grid, Select, InputLabel,  MenuItem, FormControl,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Button, CircularProgress, Fab, Box
+    Button, CircularProgress, Fab, Box, Typography
 } from "@material-ui/core";
 
 
@@ -44,15 +44,28 @@ const useStyles = makeStyles(theme => ({
         padding: "2vw",
         width: "40vw",
     },
+    titleHeader: {
+        // marginTop: 0,
+        // flexGrow: 1,
+        // marginLeft: 240,
+        // paddingLeft: 20,
+        // padding: theme.spacing(3),
+        paddingBottom: theme.spacing(4),
+        "@media (max-width: 600px)":{
+            marginLeft: 0,
+            paddingLeft: 20,
+      }
+    },
     content: {
-        marginTop: 64,
+        // marginTop: 20,
         flexGrow: 1,
         marginLeft: 240,
         paddingLeft: 20,
-      padding: theme.spacing(3),
-      "@media (max-width: 600px)":{
-          marginLeft: 0,
-          paddingLeft: 20,
+        paddingRight: 20,
+        // padding: theme.spacing(3),
+        "@media (max-width: 600px)":{
+            marginLeft: 0,
+            paddingLeft: 20,
       }
     },
     background:{
@@ -63,27 +76,27 @@ const useStyles = makeStyles(theme => ({
         margin: theme.spacing(1),
         position: 'relative',
       },
-      buttonSuccess: {
+    buttonSuccess: {
         backgroundColor: green[500],
-        '&:hover': {
-          backgroundColor: green[700],
+            '&:hover': {
+                backgroundColor: green[700],
         },
-      },
-      fabProgress: {
+    },
+    fabProgress: {
         color: green[500],
         position: 'absolute',
         top: -6,
         left: -6,
         zIndex: 1,
-      },
-      buttonProgress: {
+    },
+    buttonProgress: {
         color: green[500],
         position: 'absolute',
         top: '50%',
         left: '50%',
         marginTop: -12,
         marginLeft: -12,
-      },
+    },
 }));
 
 
@@ -151,13 +164,17 @@ const CreateAccount = (
         }
     };
 
+    // document.getElementById("titleHeader").value = "123";
 
     return (
         <main className={classes.content}>
+            <Typography className={classes.titleHeader} variant="h4" noWrap >
+                Criar conta
+            </Typography>
             <Box boxShadow={3}>
                 <div className={classes.paper} >
                     <Grid container direction="column" alignItems="center" justify="center">
-                        <FormControl className={classes.formStyle} noValidate autoComplete="off" onSubmit={"props.onSubmit"}>
+                        <FormControl className={classes.formStyle} noValidate autoComplete="off">
 
                             <TextField id="standard-basic" type="text" label="Email" style={{ margin: 0 }} placeholder="Email" 
                             // helperText="Full width!" 

@@ -54,11 +54,24 @@ const useStyles = makeStyles(theme => ({
     },
     content: {
         overflow: "none",
-        marginTop: 64,
+        // marginTop: 64,
         flexGrow: 1,
         marginLeft: 240,
         paddingLeft: 20,
-        padding: theme.spacing(3),
+        paddingRight: 20,
+        // padding: theme.spacing(3),
+        "@media (max-width: 600px)":{
+            marginLeft: 0,
+            paddingLeft: 20,
+      }
+    },
+    titleHeader: {
+        // marginTop: 0,
+        // flexGrow: 1,
+        // marginLeft: 240,
+        // paddingLeft: 20,
+        // padding: theme.spacing(3),
+        paddingBottom: theme.spacing(4),
         "@media (max-width: 600px)":{
             marginLeft: 0,
             paddingLeft: 20,
@@ -177,6 +190,9 @@ const RolesItem = (
 
     return (
         <main className={classes.content}>
+            <Typography className={classes.titleHeader} variant="h4" noWrap >
+                Gerenciar tipos de conta
+            </Typography>
             <Box boxShadow={3}> 
                 <div className={classes.root}>
 
