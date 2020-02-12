@@ -89,6 +89,7 @@ export default class RolesAccount extends React.Component {
     isQuantityPoliciesAttachedReached = () => {
         let number_permited = 10
         for(var i=0; i<this.state.roles.length; i++){
+            console.log(this.state);
             let policies = this.state.roles[i].policies.length;
             let policies_arn = this.state.roles[i].policy_arn_aws.split(",").length;
             
@@ -141,6 +142,7 @@ export default class RolesAccount extends React.Component {
                 role_name: 'New-Role',
                 role_description: "Description of this role",
                 policy_arn_aws:"" , 
+                policies:[],
                 trust_relationship:""
             });
             this.setState({roles : values});
@@ -250,7 +252,9 @@ export default class RolesAccount extends React.Component {
      * @param {str} type
      * @param {int} index
      */
-    onChangeSelect = (selectedOption, type, index) => {
+    onChangeSelect = (selectedOption, type, index, role_name) => {
+        console.log(selectedOption, type, index, role_name);
+        console.log(this.state.roles);
         if(type === "policies"){
             if( selectedOption !== null) this.state.roles[index][type].push(selectedOption[0].value);
         }else{
@@ -429,6 +433,7 @@ export default class RolesAccount extends React.Component {
                 policies_select={policies_select}
                 policies_available={this.state.policies}
                 trusts_available={trusts_select}
+                delete_roletype={delete_roletype}
                 
                 onChangeRoleTypeSelect={this.onChangeRoleTypeSelect.bind(this)}
                 onChangeForms={this.onChangeForms.bind(this)}
@@ -437,6 +442,9 @@ export default class RolesAccount extends React.Component {
                 handleAddFieldsParent={this.handleAddFields.bind(this)}
                 handleRemoveFields={this.handleRemoveFields.bind(this)}
                 onSubmit={this.onSubmitForm.bind(this)}
+                
+                handleDeleteRole={this.requestDeleteRoleType.bind(this)}
+
             />
             
         );

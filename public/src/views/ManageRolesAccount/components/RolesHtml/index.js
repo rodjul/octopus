@@ -10,6 +10,7 @@ const RolesHtml = (
     
     return (
         <div className="form_margin_bottom shadow" key={`${role_name}~${index}`}>
+            
             <div className="form-group row">
                 <label htmlFor="role_name" className="col-sm-2 col-form-label bolder">Name: </label>
                 <div className="col-sm-10">
@@ -38,7 +39,7 @@ const RolesHtml = (
                             return { "value":elem ,"label":elem }
                         }) 
                     }
-                    //onChange={e_arr => this.onChangeSelect(e_arr, "policies", index)}
+                    onChange={e_arr => onChangeSelect(e_arr, "policies", index, role_name)}
                     />
                 </div>
             </div>

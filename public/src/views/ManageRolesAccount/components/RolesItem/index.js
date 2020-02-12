@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 
 import { green } from '@material-ui/core/colors';
 
-import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon } from '@material-ui/icons';
+import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon } from '@material-ui/icons';
 
 import RolesHtml from "../RolesHtml";
 
@@ -119,10 +119,10 @@ const useStyles = makeStyles(theme => ({
 
 const RolesItem = (
     {
-        role_type, description, roles, roles_available, policies_select,
+        role_type, description, roles, roles_available, delete_roletype,
         policies_available, trusts_available,
         handleAddFieldsParent, onChangeRoleTypeSelect, handleRemoveFields,
-        onChangeForms, handleChangePolicyARN, onChangeSelect, onSubmit
+        onChangeForms, handleChangePolicyARN, onChangeSelect, onSubmit, handleDeleteRole
     }) => {
     const classes = useStyles();
     const [loading, setLoading] = React.useState(false);
@@ -136,11 +136,13 @@ const RolesItem = (
     const handleChange = (event, newValue) => {
         // get the value of type account if it's not the first time loading
         let offsetParent = event.target.offsetParent;
-        let dataValue = offsetParent.attributes['data-value'].value
-        onChangeRoleTypeSelect(dataValue);
-        
-        // set the new value of index
-        setValue(newValue);
+        if(offsetParent.attributes.hasOwnProperty("data-value")){
+            let dataValue = offsetParent.attributes['data-value'].value
+            onChangeRoleTypeSelect(dataValue);
+            
+            // set the new value of index
+            setValue(newValue);
+        }
     }
 
     const handleAddFields = value => handleAddFieldsParent(value);
@@ -205,7 +207,9 @@ const RolesItem = (
                         className={classes.tabs}
                     >
                         {roles_available.map((role, index) => {
+                            // return <Tab className={classes.tabsMain} key={`${role}~${index}`} label={<><AddIcon  style={{verticalAlign: 'middle'}} />  {role}</>} {...a11yProps(index)}  /> 
                             return <Tab className={classes.tabsMain} data-value={role}  key={`${role}~${index}`} label={role} {...a11yProps(index)} />
+                            // return <div style={{flexDirection:'row', zIndex:"-1"}} ><AddIcon fontSize="large"/><Tab style={{zIndex:99}} className={classes.tabsMain} data-value={role}  key={`${role}~${index}`} label={role} {...a11yProps(index)} /></div>
                         })}
             
                     </Tabs>
@@ -214,7 +218,22 @@ const RolesItem = (
                             return (
                                 <TabPanel key={`${role}'~'${index}`} index={index} value={valueIndex}  className={classes.tabContent}>
                                     
-                                    <div className="form-group row">
+                                    {delete_roletype != "não declarado" ?
+                                    (
+
+                                    
+                                    <Button
+                                        variant="contained"
+                                        color="secondary"
+                                        startIcon={<DeleteIcon />}
+                                        onClick={ handleDeleteRole }
+                                        style={{position:"absolute", right:"4.5em"}}
+                                    >
+                                        Deletar {role}
+                                    </Button>
+                                    ) : null }
+                                    
+                                    <div className="form-group row" style={{marginTop: "1em"}}>
                                         <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Tipo da conta: </label>
                                         <div className="col-sm-12">
                                             <input key={role_type} required type="text" name="role_type"
