@@ -29,7 +29,7 @@ def get_policy_by_name(policy_name):
 def get_available_policies_iam():
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_policy")
-    content = table.scan(FilterExpression=Attr("Type").eq("IAM"))['Items']
+    content = table.scan(FilterExpression=Attr("Type").eq("POLICY"))['Items']
     list = []
     if content:
         list = [ p['PolicyName'] for p in content]
@@ -55,7 +55,7 @@ def lambda_handler(event,context):
 
     if event['httpMethod'] == "GET":
         if event['resource'] == "/policy/content":
-            policies_db = get_all_policies_by_type("IAM")
+            policies_db = get_all_policies_by_type("POLICY")
             trusts_db = get_all_policies_by_type("TRUST")
 
             return {"statusCode":200, "body":dumps({"error":False, 
@@ -89,7 +89,7 @@ def lambda_handler(event,context):
         content = "ok"
         for policy in policies:
             policy_name = policy['Name']
-            policy_type = "IAM"
+            policy_type = "POLICY"
             insert_policy(policy_name, policy_type, policy)
 
         for trust in trusts:
@@ -97,8 +97,8 @@ def lambda_handler(event,context):
             policy_type = "TRUST"
             insert_policy(policy_name, policy_type, trust)  
 
-        # search for all policies of type IAM
-        policies_db = get_all_policies_by_type("IAM")
+        # search for all policies of type POLICY
+        policies_db = get_all_policies_by_type("POLICY")
         # we do a comparation to find the item, if not found delete
         for policy_db in policies_db:
             found = False
@@ -108,7 +108,7 @@ def lambda_handler(event,context):
                     break
 
             if not found:
-                delete_policy(policy_db['PolicyName'],"IAM")
+                delete_policy(policy_db['PolicyName'],"POLICY")
         
         # search for all policies of type TRUST
         trusts_db = get_all_policies_by_type("TRUST")

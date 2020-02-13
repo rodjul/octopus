@@ -10,7 +10,7 @@ import { green } from '@material-ui/core/colors';
 
 import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon } from '@material-ui/icons';
 
-import RolesHtml from "../RolesHtml";
+import RolesHtml from "../RolesItem/RolesHtml";
 
 import AlertMessage from "../../../../components/AlertMessage";
 

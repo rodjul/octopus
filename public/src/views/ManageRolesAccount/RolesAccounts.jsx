@@ -9,10 +9,6 @@ export default class RolesAccount extends React.Component {
       super(props);
       this.state = {
           document_name: "",
-          showModalDelete: false,
-          actionModal: "",
-          showModal: false,
-          modalMessage: "",
           description:"",
           trusts:[],
           policies:[],
@@ -173,10 +169,6 @@ export default class RolesAccount extends React.Component {
         }
     };
 
-    /**
-     * Handle the general modal. This function close the modal
-     */
-    handleModalCloseActions = () => this.setState({showModal:false}) ;
 
     /**
      * Handle the modal at the delete button. If user accept the action, calls requestDeleteRoleType() to delete
@@ -190,10 +182,6 @@ export default class RolesAccount extends React.Component {
         this.setState({showModalDelete:false}) ;
     }
 
-    /**
-     * Handle the modal at the delete button. This closes the modal
-     */
-    handleShow = () => this.setState({showModalDelete:true});
 
     /**
      * Handle the policyArnAWS input and do a match regex if the value does not contains spaces

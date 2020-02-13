@@ -16,7 +16,18 @@ export default class Policies extends React.PureComponent {
           trusts:[],
           policies:[],
           actionModal: "",
-          modalMessage: ""
+          modalMessage: "",
+
+          document_name: "",
+          description:"",
+          roles:[],
+          trusts_select:[],
+          policies_select:[],
+          roles_select:[],
+          roles_available: [],
+          delete_roletype: "não declarado",
+          role_type:"",
+          selectedOption: null
       };
     }
     
@@ -56,6 +67,21 @@ export default class Policies extends React.PureComponent {
                 });
             }
         })
+
+        fetch(process.env.REACT_APP_ENDPOINT+"/role/available")
+        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/available")
+        .then(resp => resp.json())
+        .then(data => {
+            if(data.message === "Internal server error"){
+                console.error("Error in fetching data");
+            }else{
+                // console.log(data);
+                this.setState({ roles_available: data.type_roles});
+            }
+
+            this.onChangeRoleTypeSelect(this.state.roles_available[0]);
+        });
+
     }
 
    /**
@@ -63,7 +89,17 @@ export default class Policies extends React.PureComponent {
     * @see see https://dev.to/fuchodeveloper/dynamic-form-fields-in-react-1h6c
     */
     handleAddFields = tipo => {
-        if(tipo === "trustrelationships"){
+        if(tipo === "role"){
+            const values = [...this.state.roles];
+            values.push({
+                role_name: 'New-Role',
+                role_description: "Description of this role",
+                policy_arn_aws:"" , 
+                policies:[],
+                trust_relationship:""
+            });
+            this.setState({roles : values});
+        }else if(tipo === "trustrelationships"){
             const values = [...this.state.trusts];
             values.push({ Name: 'New-Trust-Relationship', AssumeRolePolicyDocument: {"null":true} });
             this.setState({trusts : values});
@@ -85,6 +121,10 @@ export default class Policies extends React.PureComponent {
             const values = [...this.state.trusts];
             values.splice(index, 1);
             this.setState({trusts : values});
+        }else if(type === "role"){
+                const values = [...this.state.roles];
+                values.splice(index, 1);
+                this.setState({roles : values});
         }else if(type === "policy"){
             const values = [...this.state.policies];
             values.splice(index, 1);
@@ -132,6 +172,12 @@ export default class Policies extends React.PureComponent {
             let tmp_policies = this.state.policies;
             tmp_policies[index][event.target.name] = event.target.value;
             this.setState( { policies: tmp_policies } );
+        
+        }else if(type === "role_name"){
+                // let tmp_roles = this.state.roles;
+                // tmp_roles[index]['role_name'] = event.target.value
+                // this.setState({ roles: tmp_roles });
+                this.state.roles[index]['role_name'] = event.target.value;
             
         }else if(type==="policy_name"){
             let tmp_policies = this.state.policies;
@@ -187,12 +233,148 @@ export default class Policies extends React.PureComponent {
             }
         })
         
-    }    
+    }
+
+    /**
+     * Handle the select tag for which role type to load
+     * If there is not role type to get, it will load the default values if null values.
+     * If exists values to get, it will fetch the values then set the values to localStorage to not request again.
+     * 
+     * @param {Object} e 
+     */
+    onChangeRoleTypeSelect(e){   
+        // console.log("Value: ",e);
+        if(e !== undefined && e.length !== 0 && e != "New type"){
+            let value = e;
+            if( localStorage.getItem( value ) === null ){
+                fetch(process.env.REACT_APP_ENDPOINT+"/role/"+value,{
+                    method:"GET", mode:"cors"
+                })
+                .then(resp => resp.json())
+                .then(data => {
+                    let type_role_json =  data.type_role[0] ;
+                    let roles =  JSON.parse( type_role_json.Roles ) ;
+
+                    this.setState({ 
+                        //document_name: type_role_json.RoleType,
+                        role_type: type_role_json.RoleType,
+                        description: type_role_json.Description,
+                        roles: roles,
+                        delete_roletype: type_role_json.RoleType
+                    });
+                    
+                    // armazenando no local storage
+                    localStorage.setItem( this.state.role_type, 
+                        JSON.stringify({description : this.state.description, roles : this.state.roles})
+                    );
+                    
+                });
+            }else{
+                let data = localStorage.getItem( value );
+                let role_type = value;
+                let description = JSON.parse(data)['description'];
+                let roles = JSON.parse(data)['roles'];
+                this.setState({
+                    role_type: role_type,
+                    description: description,
+                    roles: roles,
+                    delete_roletype: role_type
+                })
+            }
+
+        // if the value is null, show the first view
+        }else if(e !== undefined && e === "New type"){
+            this.setState({ 
+                role_type: "New type",
+                description: "",
+                roles: [],
+                delete_roletype: "não declarado"
+            });
+        }
+    }
+
+       /**
+     * Handle the policyArnAWS input and do a match regex if the value does not contains spaces
+     * 
+     */
+    handleChangePolicyARN = (event, index) => {
+        event.preventDefault();
+        const { value } = event.target;
+        //console.log(name,value);
+        //let term = "arn:aws:iam::aws:policy/ReadOnlyAccess";
+        //let regex = new RegExp("(arn:aws:iam::(aws|([0-9]+)):policy\/[A-Za-z0-9-]+\/*[A-Za-z0-9-]*$,*)");
+        // let regex = new RegExp("\\s+");
+        let regex = new RegExp("\\s+|[.#!$%^&*;{}=_`~()@¨'\"+[\\]`´]");
+        
+        if(!regex.test(value)){
+            let roles_tmp = this.state.roles;
+            roles_tmp[index]['policy_arn_aws'] = value;
+            // this.setState({roles: roles_tmp});
+            this.state.roles[index]['policy_arn_aws'] = value;
+        }else{
+            event.target.value = this.state.roles[index]['policy_arn_aws'];
+            //this.setState({test: this.state.test});
+        }
+    }
+
+        /**
+     * Handle the select tag in the form (policies, trust relationshops)
+     * @param {str/Array} selectedOption
+     * @param {str} type
+     * @param {int} index
+     */
+    onChangeSelect = (selectedOption, type, index, role_name) => {
+        console.log(selectedOption, type, index, role_name);
+        console.log(this.state.roles);
+        if(type === "policies"){
+            if( selectedOption !== null) this.state.roles[index][type].push(selectedOption[0].value);
+        }else{
+            // if the value is an array, we get the index with the value
+            let value = selectedOption[0].value;
+            // but if not an array, just get the value
+            if(type === "trust_relationship"){
+                value = selectedOption;
+            }
+            this.state.roles[index][type] = value;
+        }
+    };
+
+    /**
+     * Handle the button delete, also set the states to initial value and remove from localStorage
+     */
+    requestDeleteRoleType(){
+        fetch(process.env.REACT_APP_ENDPOINT+"/role/delete",{
+            method:"DELETE", mode:"cors",
+            body: JSON.stringify( {"role_type":this.state.delete_roletype} )
+        })
+        .then(resp => resp.json())
+        .then( _ => {
+            let index = this.state.roles_available.indexOf(this.state.delete_roletype);
+            let new_available = this.state.roles_available;
+            new_available.splice(index, 1);
+            this.setState({ 
+                roles_available: new_available,
+                document_name: "",
+                description:"",
+                trusts:[],
+                policies:[],
+                roles:[],
+                delete_roletype: "não declarado",
+                actionModal: "Deletar",
+                showModal: true,
+                modalMessage: "Excluído com sucesso"
+            });
+
+            localStorage.removeItem( this.state.role_type );
+
+        } )
+    }
 
     render(){
         //console.log(this.state.data);
-        const { trusts, policies, showModal, actionModal, modalMessage } = this.state;
-        
+        const { trusts, policies }= this.state;
+        const { role_type, description, roles, roles_available, policies_select, trusts_select, delete_roletype } = this.state;
+        console.log(this.state);
         return (
             <PoliciesHtml
             trusts={trusts}
@@ -203,6 +385,30 @@ export default class Policies extends React.PureComponent {
             handleRemoveFields={this.handleRemoveFields.bind(this)}
             handleAddFields={this.handleAddFields.bind(this)}
             handleOnSubmitForm={this.onSubmitForm.bind(this)}
+
+            // roles
+            role_type={role_type}
+            description={description}
+            roles={roles}
+            roles_available={roles_available}
+            policies_select={policies_select}
+            policies_available={this.state.policies}
+            trusts_available={trusts_select}
+            delete_roletype={delete_roletype}
+            
+            onChangeRoleTypeSelect={this.onChangeRoleTypeSelect.bind(this)}
+            onChangeForms={this.onChangeForms.bind(this)}
+            handleChangePolicyARN={this.handleChangePolicyARN.bind(this)}
+            onChangeSelect={this.onChangeSelect.bind(this)}
+            handleAddFieldsParent={this.handleAddFields.bind(this)}
+            handleRemoveFields={this.handleRemoveFields.bind(this)}
+            onSubmit={this.onSubmitForm.bind(this)}
+            
+            handleDeleteRole={this.requestDeleteRoleType.bind(this)}
+
+
+
+
             />
         );
     }

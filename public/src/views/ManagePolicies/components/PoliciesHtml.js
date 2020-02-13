@@ -12,6 +12,7 @@ import AlertMessage from "../../../components/AlertMessage";
 import PoliciesItem from "./PoliciesItem";
 import TrustItem    from "./TrustsItem";
 
+import RolesHtml   from "./RolesItem/RolesHtml";
 
 
 function TabPanel(props) {
@@ -131,11 +132,18 @@ const PoliciesHtml = (props) => {
     const trusts = props.trusts;
     
     const [valueIndex, setValue] = React.useState(0);
-    const [valueTabXIndex, setValueTabXIndex] = React.useState("iam_policy");
+    const [valueTabXIndex, setValueTabXIndex] = React.useState("iam_roles");
     const [loading, setLoading] = React.useState(false);
     const [openAlert, setOpenAlert] = React.useState(false);
     const [typeMessage, setTypeMessage] = React.useState("");
     const [messageAlert, setMessageAlert] = React.useState("");
+
+    const policies_available = props.policies_available;
+    const trusts_available = props.trusts_available;
+    const handleChangeForms = props.handleChangeForms;
+    const handleRemoveFields = props.handleRemoveFields;
+    const handleChangePolicyARN = props.handleChangePolicyARN;
+    const onChangeSelect = props.onChangeSelect;
 
     const handleChange = (event, newValue) => setValue(newValue);
 
@@ -207,13 +215,14 @@ const PoliciesHtml = (props) => {
                 {/* <div className={classes.paper} > */}
 
                 <Tabs value={valueTabXIndex} className={classes.tabsMain} indicatorColor="primary" textColor="primary" onChange={handleChangeTabX} aria-label="">
+                    <Tab className={classes.tabsMain} label="Roles" value="iam_roles" {...a11yProps('iam_roles')}/> 
                     <Tab className={classes.tabsMain} label="Policies" value="iam_policy" {...a11yProps('iam_policy')}/> 
                     <Tab className={classes.tabsMain} label="Trust Relationship" value="iam_trust_relantionship" {...a11yProps('iam_trust_relantionship')} />
                 </Tabs>
 
                 {policies.length ? (
                     <>
-                <TabPanel value={valueTabXIndex} index="iam_policy">
+                {/* <TabPanel value={valueTabXIndex} index="iam_policy">
                     <div className={classes.root}>
                         <Tabs
                             orientation="vertical"
@@ -254,7 +263,7 @@ const PoliciesHtml = (props) => {
                             <AddIcon  />
                         </Fab>
                     </Zoom>
-                </TabPanel>
+                </TabPanel> */}
                 
                 <TabPanel value={valueTabXIndex} index="iam_trust_relantionship" >
                     <div className={classes.root}>
@@ -293,11 +302,62 @@ const PoliciesHtml = (props) => {
                         </Fab>
                     </Zoom>
                 </TabPanel>
+
+                <TabPanel value={valueTabXIndex} index="iam_roles">
+                    <div className={classes.root}>
+                        <Tabs
+                            orientation="vertical"
+                            variant="scrollable"
+                            value={valueIndex}
+                            onChange={handleChange}
+                            aria-label="Vertical policies"
+                            className={classes.tabs}
+                        >
+                            {props.roles.map((role, index) => {
+                                return <Tab className={classes.tabsMain}  key={`${role['role_name']}~${index}`} label={role['role_name']} {...a11yProps(index)} />
+                            })}
+               
+                        </Tabs>
+                        {props.roles.map((role, index) => {
+                            console.log(role);
+                            return (
+                                <TabPanel index={index} value={valueIndex}  key={`${role['role_name']}~${index}`} className={classes.tabContent}>
+                                    <RolesHtml key={`${role['role_name']}~${index}`}
+                                        role_name={role['role_name']}
+                                        role_description={role['role_description']}
+                                        policy_arn_aws={role['policy_arn_aws']}
+                                        trust_select={role['trust_relationship']}
+                                        policies_select={
+                                            role['policies'] === undefined ? [] : role['policies']
+                                        }
+                                        policies_available={props.policies_available}
+                                        trusts_available={props.trusts_available}
+                                        index={index}
+                                        handleForm={props.onChangeForms.bind(this)}
+                                        handleRemoveFields={props.handleRemoveFields}
+                                        handleChangePolicyARN={props.handleChangePolicyARN.bind(this)}
+                                        onChangeSelect={props.onChangeSelect.bind(this)}
+                                    /> 
+                                </TabPanel>
+                                    )
+                                })}   
+    
+                    </div>
+
+                    
+                    <Zoom key="primary" unmountOnExit in={1 === 1} onClick={ () => handleAddFields("policy")} >
+                        <Fab aria-label="Add policy" className={classes.fabAdd} color="primary">
+                            <AddIcon  />
+                        </Fab>
+                    </Zoom>
+                </TabPanel>
+
+
                 </>
                 ):(
                     <CircularProgress style={{display:"grid",margin:"auto"}}/>
                 )
-                
+
                 }
                 
                 <Zoom key="primary" unmountOnExit  in={1 === 1} onClick={() => saveData()}>
