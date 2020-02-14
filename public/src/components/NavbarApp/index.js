@@ -129,10 +129,6 @@ const NavbarApp2 = (props) => {
         props.history.push(e);
     }
 
-    React.useEffect(() => {
-        console.log("Mudou: ",props.history);
-    }, [props.history.location['pathname']]);
-
     const drawer = (
         <div>
             <div className={classes.toolbar} />
@@ -150,9 +146,9 @@ const NavbarApp2 = (props) => {
                     <ListItemIcon><Edit /></ListItemIcon>
                     <ListItemText primary="Gerenciar tipos de conta" />
                 </ListItem>
-                <ListItem button key="Gerenciar policies" onClick={() => onClickRoute("/manage-policies")} >
+                <ListItem button key="Gerenciar policies" onClick={() => onClickRoute("/manage-iam")} >
                     <ListItemIcon><Edit /></ListItemIcon>
-                    <ListItemText primary="Gerenciar policies" />
+                    <ListItemText primary="Gerenciar IAM" />
                 </ListItem>
                 <ListItem button key="Compliance das contas" onClick={() => onClickRoute("/accounts-compliance")} >
                     <ListItemIcon><Assessment /></ListItemIcon>

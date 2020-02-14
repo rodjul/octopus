@@ -33,8 +33,8 @@ const RolesHtml = (
                 <label htmlFor="policies_role" className="col-sm-2 col-form-label bolder">Policies: </label>
                 <div className="col-sm-10">
                     <Select key={`${role_name}~${index}`} className="policies" closeMenuOnSelect={false} isMulti 
-                    options={policies_available} 
-                    defaultValue={ 
+                    options={policies_available} //policies_available
+                    defaultValue={
                         policies_select.map(elem => {
                             return { "value":elem ,"label":elem }
                         }) 
@@ -63,7 +63,11 @@ const RolesHtml = (
                 <div className="col-sm-10">
                     <Select key={`${role_name}~${index}`} 
                     className="trust_relationship" closeMenuOnSelect={true} 
-                    options={trusts_available} 
+                    options={
+                        trusts_available.map(elem => {
+                            return { "value":elem['Name'] ,"label":elem['Name'] };
+                        })
+                    } 
                     defaultValue={ { "value":trust_select ,"label":trust_select } }
                     onChange={e => onChangeSelect(e.value, "trust_relationship", index)}
                     />

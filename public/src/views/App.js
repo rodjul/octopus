@@ -5,7 +5,7 @@ import './App.css';
 import CreateAccount from './CreateAccount/CreateAccount';
 // import withAuth from './Login/withAuth';
 import LoginForm from './Login/LoginForm';
-import Policies from './ManagePolicies/Policies';
+import ManageIAM from './ManagePolicies/ManageIAM';
 import AccountsCompliance from './CheckCompliance/AccountsCompliance';
 import RolesAccounts from './ManageRolesAccount/RolesAccounts';
 
@@ -49,7 +49,7 @@ class App  extends React.Component {
                             {/* <TesteBar /> */}
                             <Route path="/create-account" component={(CreateAccount)} />
                             <Route path="/manage-roles-accounts" component={RolesAccounts} />
-                            <Route path="/manage-policies" component={Policies} />
+                            <Route path="/manage-iam" component={ManageIAM} />
                             <Route path="/accounts-compliance" component={AccountsCompliance} />
                         </>
                     ):(

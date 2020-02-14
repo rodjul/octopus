@@ -124,10 +124,9 @@ const useStyles = makeStyles(theme => ({
 
 const RolesItem = (
     {
-        role_type, description, roles, roles_available, delete_roletype,
-        policies_available, trusts_available,
-        handleAddFieldsParent, onChangeRoleTypeSelect, handleRemoveFields,
-        onChangeForms, handleChangePolicyARN, onChangeSelect, onSubmit, handleDeleteRole
+        role_type, description, roles, roles_available, delete_roletype, roles_select,
+        handleAddFieldsParent, onChangeRoleTypeSelect, handleRemoveFields, handleDeleteRole, 
+        onChangeForms, onChangeSelect, onSubmit
     }) => {
     const classes = useStyles();
     const [loading, setLoading] = React.useState(false);
@@ -218,7 +217,7 @@ const RolesItem = (
                         })}
             
                     </Tabs>
-                    {role_type.length ? (
+                    {roles_available.length ? (
                         roles_available.map((role, index) => {
                             return (
                                 <TabPanel key={`${role}'~'${index}`} index={index} value={valueIndex}  className={classes.tabContent}>
@@ -256,36 +255,29 @@ const RolesItem = (
                                         </div>
                                     </div>
                                         
-                                    {roles.map((role, index) => {
-                                        return (
-                                            <RolesHtml key={`${role['role_name']}~${index}`}
-                                                role_name={role['role_name']}
-                                                role_description={role['role_description']}
-                                                policy_arn_aws={role['policy_arn_aws']}
-                                                trust_select={role['trust_relationship']}
-                                                policies_select={
-                                                    role['policies'] === undefined ? [] : role['policies']
-                                                }
-                                                policies_available={policies_available}
-                                                trusts_available={trusts_available}
-                                                index={index}
-                                                
-                                                handleForm={handleChangeForms.bind(this)}
-                                                handleRemoveFields={handleRemoveFields}
-                                                handleChangePolicyARN={handleChangePolicyARN.bind(this)}
-                                                onChangeSelect={onChangeSelect.bind(this)}
-                                            /> 
-                                        )
-                                    })}    
 
-                                    <Tooltip title="Adicionar nova role" aria-label="add" placement="top" arrow>
+                                    <RolesHtml
+                                        role_name={"role['role_name']"}
+                                        role_description={"role['role_description']"}
+                                        policy_arn_aws={"role['policy_arn_aws']"}
+                                        trust_select={"role['trust_relationship']"}
+                                        policies_selected={ roles === [] ? [] : roles}
+                                        policies_available={roles_select}
+                                        
+                                        handleForm={handleChangeForms.bind(this)}
+                                        handleRemoveFields={handleRemoveFields}
+                                        onChangeSelect={onChangeSelect.bind(this)}
+                                    /> 
+                                    
+
+                                    {/* <Tooltip title="Adicionar nova role" aria-label="add" placement="top" arrow>
                                         <Fab aria-label="Add policy" className={classes.fabAdd2} color="primary" 
                                             style={{display:"grid",margin:"auto", width:"3em", height:"3em"}}
                                             onClick={ () => handleAddFields("role")}
                                             >
                                             <AddIcon  />
                                         </Fab>
-                                    </Tooltip>
+                                    </Tooltip> */}
                                 </TabPanel>
                             )
                         })

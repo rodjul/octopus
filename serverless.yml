@@ -218,6 +218,10 @@ functions:
           method: get
           cors: true
       - http:
+          path: /policy/available/role
+          method: get
+          cors: true
+      - http:
           path: /policy/update
           method: post
           cors: true
@@ -350,9 +354,13 @@ resources:
         AttributeDefinitions:
           - AttributeName: PolicyName
             AttributeType: S
+          - AttributeName: Type
+            AttributeType: S
         KeySchema:
           - AttributeName: PolicyName
             KeyType: HASH
+          - AttributeName: Type
+            KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1

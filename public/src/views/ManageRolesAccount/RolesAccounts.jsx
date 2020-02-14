@@ -10,10 +10,7 @@ export default class RolesAccount extends React.Component {
       this.state = {
           document_name: "",
           description:"",
-          trusts:[],
-          policies:[],
           roles:[],
-          trusts_select:[],
           policies_select:[],
           roles_select:[],
           roles_available: [],
@@ -41,61 +38,31 @@ export default class RolesAccount extends React.Component {
 
             // TODO: change function name
             if(this.state.roles_available.length > 0) this.onChangeRoleTypeSelect(this.state.roles_available[0]);
+            else{
+                const type_roles = [... this.state.roles_available];
+                type_roles.push("New type");
+                this.setState({roles_available: type_roles});
+            }
 
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/available/iam")
+            fetch(process.env.REACT_APP_ENDPOINT+"/policy/available/role")
             .then(resp => resp.json())
             .then(data => {
                 if(data.error === true){
                     console.error("Error in fetching data");
                 }else{
-                    let policy_ar = [];
-                    data.policies.map( (elem,index) => policy_ar[index] = { "value":elem, "label":elem } );
+                    let roles_ar = [];
+                    data.policies.map( (elem,index) => roles_ar[index] = { "value":elem, "label":elem } );
                     
                     this.setState({ 
-                        policies: policy_ar,
-                        policies_select: policy_ar
+                        // roles: roles_ar,
+                        policies_select: roles_ar
                     });
                 }
             })
-
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/available/trust")
-            .then(resp => resp.json())
-            .then(data => {
-                if(data.error === true){
-                    console.error("Error in fetching data");
-                }else{
-                    let trust_ar = [];
-                    data.policies.map( (elem,index) => trust_ar[index] = { "value":elem, "label":elem } );
-                    
-                    this.setState({ 
-                        trusts: trust_ar,
-                        trusts_select: trust_ar
-                    });
-                }
-            })
-
 
         })
     }
     
-    /**
-     * Valid if the total number (10) of attached policies is not reached
-     * Check policy ARN and custom policies
-     */
-    isQuantityPoliciesAttachedReached = () => {
-        let number_permited = 10
-        for(var i=0; i<this.state.roles.length; i++){
-            console.log(this.state);
-            let policies = this.state.roles[i].policies.length;
-            let policies_arn = this.state.roles[i].policy_arn_aws.split(",").length;
-            
-            if( (policies + policies_arn) > number_permited ){
-                return [true, this.state.roles[i].role_name];
-            }
-        }
-        
-        return [false, null]
-    }
 
     /**
      * Handle the button delete, also set the states to initial value and remove from localStorage
@@ -169,44 +136,6 @@ export default class RolesAccount extends React.Component {
         }
     };
 
-
-    /**
-     * Handle the modal at the delete button. If user accept the action, calls requestDeleteRoleType() to delete
-     * @param {Object} e 
-     */
-    handleClose(e){ 
-        //console.log(e, e.target);
-        if(e !== undefined && e.target.value === "new_check"){
-            this.requestDeleteRoleType();
-        }
-        this.setState({showModalDelete:false}) ;
-    }
-
-
-    /**
-     * Handle the policyArnAWS input and do a match regex if the value does not contains spaces
-     * 
-     */
-    handleChangePolicyARN = (event, index) => {
-        event.preventDefault();
-        const { value } = event.target;
-        //console.log(name,value);
-        //let term = "arn:aws:iam::aws:policy/ReadOnlyAccess";
-        //let regex = new RegExp("(arn:aws:iam::(aws|([0-9]+)):policy\/[A-Za-z0-9-]+\/*[A-Za-z0-9-]*$,*)");
-        // let regex = new RegExp("\\s+");
-        let regex = new RegExp("\\s+|[.#!$%^&*;{}=_`~()@¨'\"+[\\]`´]");
-        
-        if(!regex.test(value)){
-            let roles_tmp = this.state.roles;
-            roles_tmp[index]['policy_arn_aws'] = value;
-            // this.setState({roles: roles_tmp});
-            this.state.roles[index]['policy_arn_aws'] = value;
-        }else{
-            event.target.value = this.state.roles[index]['policy_arn_aws'];
-            //this.setState({test: this.state.test});
-        }
-    }
-
     /**
      * Handle the input changes for each field
      * @param {str} type 
@@ -214,6 +143,7 @@ export default class RolesAccount extends React.Component {
      * @param {Object} event
      */
     onChangeForms = (type, index, event) => {
+        console.log(this.state);
         if(type === "role_type"){
             //TODO: how to use setState when the unser input frozen each time a key is pressed?
             // this.setState({role_type: event.target.value});
@@ -222,13 +152,7 @@ export default class RolesAccount extends React.Component {
         }else if(type === "description"){
             // this.setState({description: event.target.value});
             this.state.description = event.target.value;
-
-        }else if(type === "role_name"){
-            // let tmp_roles = this.state.roles;
-            // tmp_roles[index]['role_name'] = event.target.value
-            // this.setState({ roles: tmp_roles });
-            this.state.roles[index]['role_name'] = event.target.value;
-
+            
         }else{
             this.state.roles[index][event.target.name] = event.target.value;
         }
@@ -241,19 +165,12 @@ export default class RolesAccount extends React.Component {
      * @param {int} index
      */
     onChangeSelect = (selectedOption, type, index, role_name) => {
-        console.log(selectedOption, type, index, role_name);
-        console.log(this.state.roles);
         if(type === "policies"){
-            if( selectedOption !== null) this.state.roles[index][type].push(selectedOption[0].value);
-        }else{
-            // if the value is an array, we get the index with the value
-            let value = selectedOption[0].value;
-            // but if not an array, just get the value
-            if(type === "trust_relationship"){
-                value = selectedOption;
+            if( selectedOption !== null){
+                this.state.roles.push(selectedOption[selectedOption.length -1].value);
             }
-            this.state.roles[index][type] = value;
         }
+        console.log(this.state.roles);
     };
 
     /**
@@ -279,19 +196,6 @@ export default class RolesAccount extends React.Component {
             url = process.env.REACT_APP_ENDPOINT+"/role/update"
             method = "PUT";
             action = "Atualizar";
-        }
-        console.log(format);
-        
-        let values = this.isQuantityPoliciesAttachedReached();
-        let reached = values[0];
-        let role_reached = values[1];
-        if(reached){
-            // this.setState({
-            //     showModal: true,
-            //     actionModal: "Erro "+action,
-            //     modalMessage: "A role \""+role_reached+"\" contém mais de 10 policies atachadas. Remova para poder proseguir com a ação."
-            // });
-            return {"error":true, "message":"A role \""+role_reached+"\" contém mais de 10 policies atachadas. Remova para poder proseguir com a ação."};
         }
         
         return await fetch(url,{ 
@@ -408,27 +312,22 @@ export default class RolesAccount extends React.Component {
         //console.log(this.state.data);
         const { 
             role_type, description, roles, roles_available,
-            actionModal, showModal, showModalDelete, modalMessage,
-            delete_roletype, trusts_select, policies_select 
+            delete_roletype, policies_select 
         } = this.state;
-        
+        console.log(this.state);
         return (
             <RolesItem 
                 role_type={role_type}
                 description={description}
                 roles={roles}
                 roles_available={roles_available}
-                policies_select={policies_select}
-                policies_available={this.state.policies}
-                trusts_available={trusts_select}
+                roles_select={policies_select}
                 delete_roletype={delete_roletype}
                 
                 onChangeRoleTypeSelect={this.onChangeRoleTypeSelect.bind(this)}
                 onChangeForms={this.onChangeForms.bind(this)}
-                handleChangePolicyARN={this.handleChangePolicyARN.bind(this)}
                 onChangeSelect={this.onChangeSelect.bind(this)}
                 handleAddFieldsParent={this.handleAddFields.bind(this)}
-                handleRemoveFields={this.handleRemoveFields.bind(this)}
                 onSubmit={this.onSubmitForm.bind(this)}
                 
                 handleDeleteRole={this.requestDeleteRoleType.bind(this)}

@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import './Policies.css';
+import './ManageIAM.css';
 
 import PoliciesHtml from "./components/PoliciesHtml";
 
@@ -8,7 +8,7 @@ import PoliciesHtml from "./components/PoliciesHtml";
  * for what has changed their values
  * @see see https://pt-br.reactjs.org/docs/optimizing-performance.html#examples
  */
-export default class Policies extends React.PureComponent {
+export default class ManageIAM extends React.PureComponent {
     constructor(props) {
       super(props);
       this.state = {
@@ -49,38 +49,33 @@ export default class Policies extends React.PureComponent {
                 // console.log(data);
                 let policies_json = JSON.parse(data['policies']);
                 let trusts_json = JSON.parse(data['trusts']);
+                let roles_json = JSON.parse(data['roles']);
                 let tmp_trusts = [];
                 let tmp_policies =[];
+                let tmp_roles =[];
+                let policy_ar = [];
                 policies_json.map( elem => tmp_policies.push( JSON.parse(elem['Data']) ) );
                 trusts_json.map(elem => tmp_trusts.push( JSON.parse(elem['Data']) ) );
+                roles_json.map(elem => tmp_roles.push( JSON.parse(elem['Data']) ) );
                 
                 if(tmp_policies.length === 0 ){
                     tmp_policies.push({Description: "Description of this new policy", Name: "New-Policy", Path: "/", PolicyDocument:{"null":true}});
                 }
+                policies_json.map(elem => {
+                    let data = JSON.parse(elem['Data'])['Name'];
+                    policy_ar.push({ "value":data , "label":data }); 
+                });
 
-                // console.log(tmp_trusts);
                 this.setState({ 
                     // trusts: data.message.TrustRelationships,
                     // policies: data.message.Policies
                     trusts: tmp_trusts,
-                    policies: tmp_policies
+                    policies: tmp_policies,
+                    policies_select: policy_ar,
+                    roles: tmp_roles
                 });
             }
         })
-
-        fetch(process.env.REACT_APP_ENDPOINT+"/role/available")
-        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/available")
-        .then(resp => resp.json())
-        .then(data => {
-            if(data.message === "Internal server error"){
-                console.error("Error in fetching data");
-            }else{
-                // console.log(data);
-                this.setState({ roles_available: data.type_roles});
-            }
-
-            this.onChangeRoleTypeSelect(this.state.roles_available[0]);
-        });
 
     }
 
@@ -132,10 +127,6 @@ export default class Policies extends React.PureComponent {
         }
     };
 
-    /**
-     * Handle the general modal. This function close the modal
-     */
-    handleModalCloseActions = () => this.setState({showModal:false}) ;
 
     /**
      * Handle the input change for the json field
@@ -174,10 +165,10 @@ export default class Policies extends React.PureComponent {
             this.setState( { policies: tmp_policies } );
         
         }else if(type === "role_name"){
-                // let tmp_roles = this.state.roles;
-                // tmp_roles[index]['role_name'] = event.target.value
-                // this.setState({ roles: tmp_roles });
-                this.state.roles[index]['role_name'] = event.target.value;
+            // let tmp_roles = this.state.roles;
+            // tmp_roles[index]['role_name'] = event.target.value
+            // this.setState({ roles: tmp_roles });
+            this.state.roles[index]['role_name'] = event.target.value;
             
         }else if(type==="policy_name"){
             let tmp_policies = this.state.policies;
@@ -202,11 +193,13 @@ export default class Policies extends React.PureComponent {
             //Policies: this.state.policies
             //Roles: this.state.roles,
         //};
-        
-        // return ;
         return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/update",{
             method:"POST", mode:"cors",
-            body: JSON.stringify( {"policies":this.state.policies, "trusts_relationship":this.state.trusts} )
+            body: JSON.stringify( {
+                "policies":this.state.policies, 
+                "trusts_relationship":this.state.trusts,
+                "roles":this.state.roles
+            } )
         })
         .then(resp => {
             if( resp.status === 502 ){
@@ -325,9 +318,9 @@ export default class Policies extends React.PureComponent {
      */
     onChangeSelect = (selectedOption, type, index, role_name) => {
         console.log(selectedOption, type, index, role_name);
-        console.log(this.state.roles);
+        //console.log(this.state.roles);
         if(type === "policies"){
-            if( selectedOption !== null) this.state.roles[index][type].push(selectedOption[0].value);
+            if( selectedOption !== null) this.state.roles[index][type].push(selectedOption[selectedOption.length -1].value);
         }else{
             // if the value is an array, we get the index with the value
             let value = selectedOption[0].value;
@@ -374,7 +367,7 @@ export default class Policies extends React.PureComponent {
         //console.log(this.state.data);
         const { trusts, policies }= this.state;
         const { role_type, description, roles, roles_available, policies_select, trusts_select, delete_roletype } = this.state;
-        console.log(this.state);
+        
         return (
             <PoliciesHtml
             trusts={trusts}
@@ -391,8 +384,7 @@ export default class Policies extends React.PureComponent {
             description={description}
             roles={roles}
             roles_available={roles_available}
-            policies_select={policies_select}
-            policies_available={this.state.policies}
+            policies_available={policies_select}
             trusts_available={trusts_select}
             delete_roletype={delete_roletype}
             
@@ -400,8 +392,6 @@ export default class Policies extends React.PureComponent {
             onChangeForms={this.onChangeForms.bind(this)}
             handleChangePolicyARN={this.handleChangePolicyARN.bind(this)}
             onChangeSelect={this.onChangeSelect.bind(this)}
-            handleAddFieldsParent={this.handleAddFields.bind(this)}
-            handleRemoveFields={this.handleRemoveFields.bind(this)}
             onSubmit={this.onSubmitForm.bind(this)}
             
             handleDeleteRole={this.requestDeleteRoleType.bind(this)}

@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {Fab, Box, Zoom, Tabs, Tab, Typography, CircularProgress} from "@material-ui/core";
+import {Fab, Box, Zoom, Tabs, Tab, Typography, CircularProgress, Tooltip} from "@material-ui/core";
 import { makeStyles } from '@material-ui/core/styles';
 import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon } from '@material-ui/icons';
 
@@ -131,23 +131,26 @@ const PoliciesHtml = (props) => {
     const policies = props.policies;
     const trusts = props.trusts;
     
-    const [valueIndex, setValue] = React.useState(0);
-    const [valueTabXIndex, setValueTabXIndex] = React.useState("iam_roles");
+    const [valueIndexRoles, setValueRoles] = React.useState(0);
+    const [valueIndexPolicies, setValuePolicies] = React.useState(0);
+    const [valueIndexTrusts, setValueTrusts] = React.useState(0);
+    const [valueTitleTabIndex, setValueTitleTabIndex] = React.useState("iam_roles");
     const [loading, setLoading] = React.useState(false);
     const [openAlert, setOpenAlert] = React.useState(false);
     const [typeMessage, setTypeMessage] = React.useState("");
     const [messageAlert, setMessageAlert] = React.useState("");
 
     const policies_available = props.policies_available;
-    const trusts_available = props.trusts_available;
     const handleChangeForms = props.handleChangeForms;
     const handleRemoveFields = props.handleRemoveFields;
     const handleChangePolicyARN = props.handleChangePolicyARN;
     const onChangeSelect = props.onChangeSelect;
 
-    const handleChange = (event, newValue) => setValue(newValue);
+    const handleChangeRoles = (event, newValue) => setValueRoles(newValue);
+    const handleChangePolicies = (event, newValue) => setValuePolicies(newValue);
+    const handleChangeTrusts = (event, newValue) => setValueTrusts(newValue);
 
-    const handleChangeTabX = (event, newValue) => setValueTabXIndex(newValue);
+    const handleChangeTabX = (event, newValue) => setValueTitleTabIndex(newValue);
 
     const handleAddFields = value => props.handleAddFields(value);
 
@@ -177,7 +180,36 @@ const PoliciesHtml = (props) => {
         }
     }
 
-    async function saveData(){
+    const handleSelect = (selectedOption, type, index, role_name) => {
+        if(!isQuantityPoliciesAttachedReached(index)){
+            props.onChangeSelect(selectedOption, type, index, role_name);
+        }else{
+            setOpenAlert(true);
+            setTypeMessage("error");
+            setMessageAlert("A role "+props.roles[index].role_name+" so pode possuir até 10 policies");
+        }
+
+    }
+
+    /**
+     * Valid if the total number (10) of attached policies is not reached
+     * Check policy ARN and custom policies
+     */
+    const isQuantityPoliciesAttachedReached = index => {
+        const number_permited = 10;
+        let policies = props.roles[index].policies.length +1;
+        let policies_arn = props.roles[index].policy_arn_aws.split(",");
+        if(policies_arn[0] === "") policies_arn = 0;
+        else policies_arn = policies.length;
+
+        if( (policies + policies_arn) > number_permited ){
+            return true;
+        }
+    
+        return false;
+    }
+
+    async function saveData(valueIndex){
         setLoading(true);
 
         await props.handleOnSubmitForm(valueIndex)
@@ -200,11 +232,6 @@ const PoliciesHtml = (props) => {
         });
     }
 
-    // const onChangeFor
-
-    // React.useEffect(() => {
-    //     console.log(props.policies);
-    // },[props.policies]);
 
     return (
         <main className={classes.content}>
@@ -214,7 +241,7 @@ const PoliciesHtml = (props) => {
             <Box boxShadow={3}>
                 {/* <div className={classes.paper} > */}
 
-                <Tabs value={valueTabXIndex} className={classes.tabsMain} indicatorColor="primary" textColor="primary" onChange={handleChangeTabX} aria-label="">
+                <Tabs value={valueTitleTabIndex} className={classes.tabsMain} indicatorColor="primary" textColor="primary" onChange={handleChangeTabX} aria-label="">
                     <Tab className={classes.tabsMain} label="Roles" value="iam_roles" {...a11yProps('iam_roles')}/> 
                     <Tab className={classes.tabsMain} label="Policies" value="iam_policy" {...a11yProps('iam_policy')}/> 
                     <Tab className={classes.tabsMain} label="Trust Relationship" value="iam_trust_relantionship" {...a11yProps('iam_trust_relantionship')} />
@@ -222,13 +249,13 @@ const PoliciesHtml = (props) => {
 
                 {policies.length ? (
                     <>
-                {/* <TabPanel value={valueTabXIndex} index="iam_policy">
+                <TabPanel value={valueTitleTabIndex} index="iam_policy">
                     <div className={classes.root}>
                         <Tabs
                             orientation="vertical"
                             variant="scrollable"
-                            value={valueIndex}
-                            onChange={handleChange}
+                            value={valueIndexPolicies}
+                            onChange={handleChangePolicies}
                             aria-label="Vertical policies"
                             className={classes.tabs}
                         >
@@ -239,7 +266,7 @@ const PoliciesHtml = (props) => {
                         </Tabs>
                         {policies.map((policy, index) => {
                             return (
-                                <TabPanel index={index} value={valueIndex}  key={`${policy['Name']}~${index}`} className={classes.tabContent}>
+                                <TabPanel index={index} value={valueIndexPolicies}  key={`${policy['Name']}~${index}`} className={classes.tabContent}>
                                     <PoliciesItem key={`${policy['Name']}~${index}`}
                                         policy_name={policy['Name']}
                                         description={policy['Description']}
@@ -259,19 +286,21 @@ const PoliciesHtml = (props) => {
 
                     
                     <Zoom key="primary" unmountOnExit in={1 === 1} onClick={ () => handleAddFields("policy")} >
-                        <Fab aria-label="Add policy" className={classes.fabAdd} color="primary">
-                            <AddIcon  />
-                        </Fab>
+                        <Tooltip title="Criar um nova policy" aria-label="add" placement="top" arrow>
+                            <Fab aria-label="Add policy" className={classes.fabAdd} color="primary">
+                                <AddIcon  />
+                            </Fab>
+                        </Tooltip>
                     </Zoom>
-                </TabPanel> */}
+                </TabPanel>
                 
-                <TabPanel value={valueTabXIndex} index="iam_trust_relantionship" >
+                <TabPanel value={valueTitleTabIndex} index="iam_trust_relantionship" >
                     <div className={classes.root}>
                         <Tabs
                             orientation="vertical"
                             variant="scrollable"
-                            value={valueIndex}
-                            onChange={handleChange}
+                            value={valueIndexTrusts}
+                            onChange={handleChangeTrusts}
                             aria-label="Vertical trust relationship"
                             className={classes.tabs}
                         >
@@ -281,7 +310,7 @@ const PoliciesHtml = (props) => {
                         </Tabs>
                         {trusts.map((trust, index) => {
                             return (
-                                <TabPanel index={index} value={valueIndex} key={`${trust['Name']}~${index}`} className={classes.tabContent}>
+                                <TabPanel index={index} value={valueIndexTrusts} key={`${trust['Name']}~${index}`} className={classes.tabContent}>
                                     <p className="disclaimer">OBS: os documentos que possuírem "ACCOUNT_ID" no lugar da Account ID, irão ser interpretados pelo código para serem substituídos pelo valor do Account ID.</p>
                                     <TrustItem key={`${trust['Name']}~${index}`}
                                         trust_name={trust['Name']}
@@ -297,20 +326,22 @@ const PoliciesHtml = (props) => {
                     </div>
                 
                     <Zoom key="primary" unmountOnExit  in={1 === 1}  onClick={ () => handleAddFields("trustrelationships")} >
-                        <Fab aria-label="Add trust relationship" className={classes.fabAdd} color="primary">
-                            <AddIcon />
-                        </Fab>
+                        <Tooltip title="Criar um novo trust relationship" aria-label="add" placement="top" arrow>
+                            <Fab aria-label="Add trust relationship" className={classes.fabAdd} color="primary">
+                                <AddIcon />
+                            </Fab>
+                        </Tooltip>
                     </Zoom>
                 </TabPanel>
 
-                <TabPanel value={valueTabXIndex} index="iam_roles">
+                <TabPanel value={valueTitleTabIndex} index="iam_roles">
                     <div className={classes.root}>
                         <Tabs
                             orientation="vertical"
                             variant="scrollable"
-                            value={valueIndex}
-                            onChange={handleChange}
-                            aria-label="Vertical policies"
+                            value={valueIndexRoles}
+                            onChange={handleChangeRoles}
+                            aria-label="Vertical roles"
                             className={classes.tabs}
                         >
                             {props.roles.map((role, index) => {
@@ -319,9 +350,8 @@ const PoliciesHtml = (props) => {
                
                         </Tabs>
                         {props.roles.map((role, index) => {
-                            console.log(role);
                             return (
-                                <TabPanel index={index} value={valueIndex}  key={`${role['role_name']}~${index}`} className={classes.tabContent}>
+                                <TabPanel index={index} value={valueIndexRoles}  key={`${role['role_name']}~${index}`} className={classes.tabContent}>
                                     <RolesHtml key={`${role['role_name']}~${index}`}
                                         role_name={role['role_name']}
                                         role_description={role['role_description']}
@@ -330,28 +360,38 @@ const PoliciesHtml = (props) => {
                                         policies_select={
                                             role['policies'] === undefined ? [] : role['policies']
                                         }
-                                        policies_available={props.policies_available}
-                                        trusts_available={props.trusts_available}
+                                        policies_available={policies_available}
+                                        trusts_available={trusts}
                                         index={index}
                                         handleForm={props.onChangeForms.bind(this)}
                                         handleRemoveFields={props.handleRemoveFields}
                                         handleChangePolicyARN={props.handleChangePolicyARN.bind(this)}
-                                        onChangeSelect={props.onChangeSelect.bind(this)}
+                                        onChangeSelect={handleSelect.bind(this)}
                                     /> 
                                 </TabPanel>
-                                    )
-                                })}   
+                            )
+                        })}   
     
                     </div>
 
                     
-                    <Zoom key="primary" unmountOnExit in={1 === 1} onClick={ () => handleAddFields("policy")} >
-                        <Fab aria-label="Add policy" className={classes.fabAdd} color="primary">
-                            <AddIcon  />
-                        </Fab>
+                    <Zoom key="primary" unmountOnExit in={1 === 1} onClick={ () => handleAddFields("role")} >
+                        <Tooltip title="Criar uma nova role" aria-label="add" placement="top" arrow>
+                            <Fab aria-label="Add role" className={classes.fabAdd} color="primary">
+                                <AddIcon  />
+                            </Fab>
+                        </Tooltip>
                     </Zoom>
                 </TabPanel>
-
+                
+                <Zoom key="primary" unmountOnExit  in={1 === 1} onClick={() => saveData()}>
+                    <Tooltip title="Salvar" aria-label="add" placement="top" arrow>
+                        <Fab aria-label="Save" className={classes.fabSave} color="primary">
+                            <SaveIcon  />
+                            {loading && <CircularProgress size={68} className={classes.fabProgress} />}
+                        </Fab>
+                    </Tooltip>
+                </Zoom>
 
                 </>
                 ):(
@@ -360,12 +400,7 @@ const PoliciesHtml = (props) => {
 
                 }
                 
-                <Zoom key="primary" unmountOnExit  in={1 === 1} onClick={() => saveData()}>
-                    <Fab aria-label="Save" className={classes.fabSave} color="primary">
-                        <SaveIcon  />
-                        {loading && <CircularProgress size={68} className={classes.fabProgress} />}
-                    </Fab>
-                </Zoom>
+                
             </Box>
 
             <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} />
