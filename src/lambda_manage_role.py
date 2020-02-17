@@ -79,7 +79,7 @@ def lambda_handler(event,context):
             return {"statusCode":400, "body":dumps({"error":True, "message":"Params invalid"}),
                 "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
         
-        if "" in (role_type, description, roles_data):
+        if "" in (role_type, description) or len(roles_data)==0:
             return {"statusCode":400, "body":dumps({"error":True, "message":"Params blank"}),
                 "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
 

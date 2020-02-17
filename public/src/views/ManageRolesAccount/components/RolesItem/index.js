@@ -1,17 +1,16 @@
 import React from "react";
 import { Form, Modal } from "react-bootstrap";
 import { makeStyles } from '@material-ui/core/styles';
-import { Fab, Box, Zoom, Button, CircularProgress, Tooltip, Typography, Tab, Tabs
+import { 
+    Fab, Box, Zoom, Button, CircularProgress, Tooltip, Typography, Tab, Tabs, 
+    DialogTitle, DialogContentText, DialogContent, DialogActions, Dialog
 } from "@material-ui/core";
 
 import PropTypes from 'prop-types';
-
 import { green } from '@material-ui/core/colors';
-
 import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon } from '@material-ui/icons';
 
 import RolesHtml from "../RolesHtml";
-
 import AlertMessage from "../../../../components/AlertMessage";
 
 
@@ -30,21 +29,20 @@ function TabPanel(props) {
        
       </Typography>
     );
-  }
-  
-  TabPanel.propTypes = {
-    children: PropTypes.node,
-    index: PropTypes.any.isRequired,
-    value: PropTypes.any.isRequired,
-  };
-  
-  function a11yProps(index) {
-    return {
-      id: `vertical-tab-${index}`,
-      'aria-controls': `vertical-tabpanel-${index}`,
-    };
-  }
+}
 
+TabPanel.propTypes = {
+children: PropTypes.node,
+index: PropTypes.any.isRequired,
+value: PropTypes.any.isRequired,
+};
+
+function a11yProps(index) {
+return {
+    id: `vertical-tab-${index}`,
+    'aria-controls': `vertical-tabpanel-${index}`,
+};
+}
 
 
 const useStyles = makeStyles(theme => ({
@@ -134,8 +132,17 @@ const RolesItem = (
     const [openAlert, setOpenAlert] = React.useState(false);
     const [typeMessage, setTypeMessage] = React.useState("");
     const [messageAlert, setMessageAlert] = React.useState("");
+    const [openModalDelete, setOpenModalDelete] = React.useState(false);
     
     
+    const handleClickModalDelete = () => setOpenModalDelete(true);
+    const handleCloseModalDelete = () => setOpenModalDelete(false);
+    const handleDeleteRoleModal = () => {
+        handleDeleteRole();
+        handleCloseModalDelete();
+    }
+
+    const handleOpenAlert = elem => setOpenAlert(elem);
 
     const handleChange = (event, newValue) => {
         // get the value of type account if it's not the first time loading
@@ -173,7 +180,7 @@ const RolesItem = (
 
     async function saveData(){
         setLoading(true);
-
+        console.log("openalert: ",openAlert);
         await onSubmit(valueIndex)
         .then(data => {
             if(!data['error']){
@@ -193,6 +200,9 @@ const RolesItem = (
             }
         });
     }
+
+    let isDisabled = false;
+    roles_available[roles_available.length-1] === "New type" ? isDisabled=true : isDisabled=false;
 
     return (
         <main className={classes.content}>
@@ -224,18 +234,17 @@ const RolesItem = (
                                     
                                     {delete_roletype != "não declarado" ?
                                     (
-
-                                    
-                                    <Button
-                                        variant="contained"
-                                        color="secondary"
-                                        startIcon={<DeleteIcon />}
-                                        onClick={ handleDeleteRole }
-                                        style={{position:"relative", left:"49.2em"}}
-                                    >
+                                    <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={ handleClickModalDelete }
+                                    style={{position:"relative", left:"49.2em"}} >
                                         Deletar {role}
                                     </Button>
-                                    ) : null }
+                                    ) : (
+                                    <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} 
+                                    style={{position:"relative", left:"49.2em", visibility:"hidden"}} >
+                                        Deletar {role}
+                                    </Button>
+                                    )                                    
+                                    }
                                     
                                     <div className="form-group row" style={{marginTop: "-2em"}}>
                                         <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Tipo da conta: </label>
@@ -257,11 +266,12 @@ const RolesItem = (
                                         
 
                                     <RolesHtml
-                                        role_name={"role['role_name']"}
+                                        key={`${role}'~'${index}`}
+                                        role_type={role_type}
                                         role_description={"role['role_description']"}
                                         policy_arn_aws={"role['policy_arn_aws']"}
                                         trust_select={"role['trust_relationship']"}
-                                        policies_selected={ roles === [] ? [] : roles}
+                                        policies_selected={ roles}
                                         policies_available={roles_select}
                                         
                                         handleForm={handleChangeForms.bind(this)}
@@ -291,7 +301,9 @@ const RolesItem = (
                 
             </Box>
                 {/* <Zoom key="primary" unmountOnExit in={1 === 1} onClick={() => handleAddRole("teste")} > */}
-                <Zoom key="add_type" unmountOnExit in={1 === 1} onClick={() => handleAddFields("type_role")} >
+                <Zoom key="add_type" unmountOnExit in={1 === 1} 
+                onClick={() => handleAddFields("type_role")} 
+                >
                     <Tooltip title="Criar uma novo tipo de role" aria-label="add" placement="top" arrow>
                         <Fab aria-label="Add policy" className={classes.fabAdd} color="primary">
                             <AddIcon  />
@@ -307,7 +319,31 @@ const RolesItem = (
                     </Tooltip>
                 </Zoom>
 
-                <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} />
+                <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} openAlertCallback={handleOpenAlert}/>
+
+
+                <Dialog
+                    open={openModalDelete}
+                    onClose={handleCloseModalDelete}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                >
+                    <DialogTitle id="alert-dialog-title">{"Deletando "+role_type}</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText id="alert-dialog-description">
+                            Deseja realmente deletar? Essa ação é irreversível.
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleCloseModalDelete} color="secondary">
+                            Não
+                        </Button>
+                        <Button onClick={handleDeleteRoleModal} color="primary" autoFocus>
+                            Sim
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
         </main>
     );
 

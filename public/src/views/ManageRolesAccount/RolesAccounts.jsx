@@ -8,7 +8,6 @@ export default class RolesAccount extends React.Component {
     constructor(props) {
       super(props);
       this.state = {
-          document_name: "",
           description:"",
           roles:[],
           policies_select:[],
@@ -35,7 +34,7 @@ export default class RolesAccount extends React.Component {
                 // console.log(data);
                 this.setState({ roles_available: data.type_roles});
             }
-
+            
             // TODO: change function name
             if(this.state.roles_available.length > 0) this.onChangeRoleTypeSelect(this.state.roles_available[0]);
             else{
@@ -77,20 +76,20 @@ export default class RolesAccount extends React.Component {
             let index = this.state.roles_available.indexOf(this.state.delete_roletype);
             let new_available = this.state.roles_available;
             new_available.splice(index, 1);
+            
+            // if the available roles (created) is empty, add default form
+            if(new_available.length === 0) new_available.push("New type");
+            
+            localStorage.removeItem( this.state.role_type );
+            
             this.setState({ 
                 roles_available: new_available,
-                document_name: "",
+                role_type: new_available.length ? new_available[0] : "New type",
                 description:"",
-                trusts:[],
-                policies:[],
                 roles:[],
                 delete_roletype: "não declarado",
-                actionModal: "Deletar",
-                showModal: true,
-                modalMessage: "Excluído com sucesso"
             });
 
-            localStorage.removeItem( this.state.role_type );
 
         } )
     }
@@ -99,18 +98,7 @@ export default class RolesAccount extends React.Component {
     * Dynamic forms which add new field on the form
     */
     handleAddFields = tipo => {
-        if(tipo === "role"){
-            const values = [...this.state.roles];
-            values.push({
-                role_name: 'New-Role',
-                role_description: "Description of this role",
-                policy_arn_aws:"" , 
-                policies:[],
-                trust_relationship:""
-            });
-            this.setState({roles : values});
-        }
-        else if(tipo === "type_role"){
+        if(tipo === "type_role"){
             const type_roles = [... this.state.roles_available];
             type_roles.push("New type");
             this.setState({roles_available: type_roles});
@@ -118,32 +106,12 @@ export default class RolesAccount extends React.Component {
     };
     
     /**
-     * Dynamic form which removes dynamically the part of the form
-     */
-    handleRemoveFields = (index,type) => {
-        if(type === "trustrelationships"){
-            const values = [...this.state.trusts];
-            values.splice(index, 1);
-            this.setState({trusts : values});
-        }else if(type === "role"){
-            const values = [...this.state.roles];
-            values.splice(index, 1);
-            this.setState({roles : values});
-        }else if(type === "policy"){
-            const values = [...this.state.trusts];
-            values.splice(index, 1);
-            this.setState({trusts : values});
-        }
-    };
-
-    /**
      * Handle the input changes for each field
      * @param {str} type 
      * @param {int} index
      * @param {Object} event
      */
     onChangeForms = (type, index, event) => {
-        console.log(this.state);
         if(type === "role_type"){
             //TODO: how to use setState when the unser input frozen each time a key is pressed?
             // this.setState({role_type: event.target.value});
@@ -170,7 +138,6 @@ export default class RolesAccount extends React.Component {
                 this.state.roles.push(selectedOption[selectedOption.length -1].value);
             }
         }
-        console.log(this.state.roles);
     };
 
     /**
@@ -206,25 +173,10 @@ export default class RolesAccount extends React.Component {
         .then( resp =>{
             console.log("Data: ",resp);
             if( resp.status === 502 ){
-                // this.setState({
-                //     showModal: true,
-                //     actionModal: "Erro "+action,
-                //     modalMessage: "Ocorreu um erro ao executar essa ação"
-                // });
                 return {"error":true, "message":"Ocorreu um erro ao executar a ação de"+action};
             }else if( resp.status === 400 ){
-                // this.setState({
-                //     showModal: true,
-                //     actionModal: "Erro "+action,
-                //     modalMessage: "Todos os campos precisam ser preenchidos"
-                // });
                 return {"error":true, "message":"Todos os campos precisam ser preenchidos"};
             }else if( resp.status === 200 ){
-                // this.setState({
-                //     showModal: true,
-                //     actionModal: action,
-                //     modalMessage: "Executado com sucesso"
-                // });
 
                 localStorage.setItem( this.state.role_type, 
                     JSON.stringify({description : this.state.description, roles : this.state.roles})
@@ -236,11 +188,29 @@ export default class RolesAccount extends React.Component {
                         exists = true;
                     }
                 });
+                
+                // setting the format for react-select to output the values selected/saved in db
+                let roles_format = [];
+                // roles.map(e => { roles_format.push( { "value":e.toString(), "label":e.toString()} ) });
+                this.state.roles.map(e => { roles_format.push( { "value":e.toString(), "label":e.toString()} ) });
+
                 if(!exists){
-                    let new_roles_available = this.state.roles_available;
-                    new_roles_available.push(this.state.role_type);
-                    this.setState({ roles_available: new_roles_available});
+                    if(method === "POST"){
+                        let new_roles_available = this.state.roles_available;
+                        for(var i=0; i<new_roles_available.length; i++){
+                            if(new_roles_available[i] == "New type"){
+                                new_roles_available[i] = this.state.role_type;
+                                this.setState({ 
+                                    roles_available: new_roles_available,
+                                    delete_roletype: new_roles_available[i],
+                                    roles: roles_format
+                                 });
+                                break;
+                            }
+                        }
+                    }
                 }
+                console.log("Teste: ",this.state);
                 return {"error":false, "message":"Executado com sucesso"};
             }
             //resp => resp.json()
@@ -255,7 +225,7 @@ export default class RolesAccount extends React.Component {
      * @param {Object} e 
      */
     onChangeRoleTypeSelect(e){   
-        // console.log("Value: ",e);
+        console.log("Value: ",e);
         if(e !== undefined && e.length !== 0 && e != "New type"){
             let value = e;
             if( localStorage.getItem( value ) === null ){
@@ -265,33 +235,47 @@ export default class RolesAccount extends React.Component {
                 .then(resp => resp.json())
                 .then(data => {
                     let type_role_json =  data.type_role[0] ;
-                    let roles =  JSON.parse( type_role_json.Roles ) ;
 
-                    this.setState({ 
-                        //document_name: type_role_json.RoleType,
-                        role_type: type_role_json.RoleType,
-                        description: type_role_json.Description,
-                        roles: roles,
-                        delete_roletype: type_role_json.RoleType
-                    });
-                    
-                    // armazenando no local storage
-                    localStorage.setItem( this.state.role_type, 
-                        JSON.stringify({description : this.state.description, roles : this.state.roles})
-                    );
-                    
+                    if(type_role_json !== undefined){
+                        let roles =  JSON.parse( type_role_json.Roles ) ;
+
+                        // setting the format for react-select to output the values selected/saved in db
+                        let roles_format = [];
+                        // roles.map(e => { roles_format.push( { "value":e.toString(), "label":e.toString()} ) });
+                        roles.map(e => { roles_format.push( { "value":e.toString(), "label":e.toString()} ) });
+    
+                        this.setState({ 
+                            role_type: type_role_json.RoleType,
+                            description: type_role_json.Description,
+                            roles: roles_format,
+                            delete_roletype: type_role_json.RoleType
+                        });
+                        
+                        // armazenando no local storage
+                        localStorage.setItem( this.state.role_type, 
+                            JSON.stringify({description : this.state.description, roles : this.state.roles})
+                        );
+                    }
                 });
             }else{
                 let data = localStorage.getItem( value );
                 let role_type = value;
                 let description = JSON.parse(data)['description'];
                 let roles = JSON.parse(data)['roles'];
+
+                // setting the format for react-select to output the values selected/saved in db
+                let roles_format = [];
+                // roles.map(e => { roles_format.push( { "value":e.toString(), "label":e.toString()} ) });
+                roles.map(e => { roles_format.push( { "value":e.toString(), "label":e.toString()} ) });
+                console.log("Roles_format: ",roles_format);
                 this.setState({
                     role_type: role_type,
                     description: description,
-                    roles: roles,
+                    roles: roles_format,
                     delete_roletype: role_type
                 })
+                console.log(this.state);
+                console.log("Roles: ",this.state.roles);
             }
 
         // if the value is null, show the first view
@@ -314,11 +298,14 @@ export default class RolesAccount extends React.Component {
             role_type, description, roles, roles_available,
             delete_roletype, policies_select 
         } = this.state;
-        console.log(this.state);
+        
+        
+        // console.log(roles_format);
         return (
             <RolesItem 
                 role_type={role_type}
                 description={description}
+
                 roles={roles}
                 roles_available={roles_available}
                 roles_select={policies_select}

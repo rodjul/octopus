@@ -146,6 +146,7 @@ const PoliciesHtml = (props) => {
     const handleChangePolicyARN = props.handleChangePolicyARN;
     const onChangeSelect = props.onChangeSelect;
 
+    const handleOpenAlert = elem => setOpenAlert(elem);
     const handleChangeRoles = (event, newValue) => setValueRoles(newValue);
     const handleChangePolicies = (event, newValue) => setValuePolicies(newValue);
     const handleChangeTrusts = (event, newValue) => setValueTrusts(newValue);
@@ -403,7 +404,7 @@ const PoliciesHtml = (props) => {
                 
             </Box>
 
-            <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} />
+            <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} openAlertCallback={handleOpenAlert}/>
 
         </main>
     );
