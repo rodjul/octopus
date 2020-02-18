@@ -44,16 +44,17 @@ export default class AccountsCompliance extends React.Component {
                 });
             }
 
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action=", {
-                method:"GET", mode:"cors"
-            })
-            .then(resp => resp.json())
-            .then(data => {
-                this.setState( {accounts:data['content'],
-                                dates_available: data['dates_available'],
-                                loading:false } );
-                //  console.log(this.state.accounts);
-            })
+            // fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action=", {
+            //     method:"GET", mode:"cors"
+            // })
+            // .then(resp => resp.json())
+            // .then(data => {
+            //     console.log(data);
+            //     this.setState( {accounts:data['content'],
+            //                     dates_available: data['dates_available'],
+            //                     loading:false } );
+            //     //  console.log(this.state.accounts);
+            // })
 
         })
     }

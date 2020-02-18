@@ -113,6 +113,33 @@ const AccountsTable = (props) => {
         setPage(0);
     };
 
+    // const requestNewCompliance = () => {
+    //     props.requestNewCompliance;
+    //     if (!loading) {
+    //         setLoading(true);
+    //         setSuccess(false);
+            
+    //         let resp = await onSubmit(event);
+    //         resp = JSON.parse(resp);
+    //         console.log(resp);
+    //         if(!resp['error']){
+    //             setLoading(false);
+
+    //             setOpenAlert(true);
+    //             setTypeMessage("success");
+    //             setMessageAlert("CriaÃ§Ã£o da conta com sucesso");
+                
+    //             setLoadTable(true);
+    //         }else{
+    //             setLoading(false);
+
+    //             setOpenAlert(true);
+    //             setTypeMessage("error");
+    //             setMessageAlert("Ocorreu um erro ao criar a conta. Contate o suporte");
+                
+    //         }
+    // }
+
     const type_role_selected = props.type_role_selected;
     const type_roles = props.type_roles;
     const accounts = props.accounts;
@@ -129,7 +156,7 @@ const AccountsTable = (props) => {
 
 
     let rows = [];
-    if(accounts.length !== 0){
+    if(accounts.length){
         accounts.map(elem => {
             JSON.parse(elem['DataCompliance']).map(elem2 => {
                 // id: 'Account', title: 'Account\u00a0ID'; id: 'Name', title: 'Name\u00a0Account'; id: 'name', title: 'Role\u00a0Name';

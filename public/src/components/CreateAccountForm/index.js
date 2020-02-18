@@ -117,6 +117,8 @@ const CreateAccount = (
     const [openAlert, setOpenAlert] = React.useState(false);
     const [typeMessage, setTypeMessage] = React.useState("");
     const [messageAlert, setMessageAlert] = React.useState("");
+    
+    const handleOpenAlert = elem => setOpenAlert(elem)
   
     const buttonClassname = clsx({
       [classes.buttonSuccess]: success,
@@ -276,7 +278,7 @@ const CreateAccount = (
                 : null
             }
 
-        <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} />
+        <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} openAlertCallback={handleOpenAlert}/>
         
     </main>
     

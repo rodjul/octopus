@@ -114,15 +114,22 @@ class IamControl:
         roles_json = []
         policy_json = []
         trusts_json = []
+        roles_from_type_account = []
 
         results = table.scan()
         for row in results['Items']:
             if row['RoleType'].lower() == role_type.lower():
-                roles_json = row
+                roles_from_type_account = json.loads(row['Roles'])
                 break
         
         table = dynamodb.Table("octopus_policy")
         policies =  table.scan()['Items']
+        
+        # para cada role da octopus_role_type, procuramos o conteudo da role no octopus_policy 
+        for policy in policies:
+            for roledb in roles_from_type_account:
+                if policy['Type'] == "ROLE" and policy['PolicyName'] == roledb:
+                    roles_json.append(policy)
         
         for policy in policies:
             if policy['Type'] == "IAM":

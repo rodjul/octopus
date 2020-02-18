@@ -8,7 +8,7 @@ import {
 
 import PropTypes from 'prop-types';
 import { green } from '@material-ui/core/colors';
-import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon } from '@material-ui/icons';
+import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon, Info as InfoIcon } from '@material-ui/icons';
 
 import RolesHtml from "../RolesHtml";
 import AlertMessage from "../../../../components/AlertMessage";
@@ -122,7 +122,7 @@ const useStyles = makeStyles(theme => ({
 
 const RolesItem = (
     {
-        role_type, description, roles, roles_available, delete_roletype, roles_select,
+        role_type, description, roles, roles_available, delete_roletype, roles_select, roles_created_local,
         handleAddFieldsParent, onChangeRoleTypeSelect, handleRemoveFields, handleDeleteRole, 
         onChangeForms, onChangeSelect, onSubmit
     }) => {
@@ -201,9 +201,6 @@ const RolesItem = (
         });
     }
 
-    let isDisabled = false;
-    roles_available[roles_available.length-1] === "New type" ? isDisabled=true : isDisabled=false;
-
     return (
         <main className={classes.content}>
             <Typography className={classes.titleHeader} variant="h4" noWrap >
@@ -230,24 +227,29 @@ const RolesItem = (
                     {roles_available.length ? (
                         roles_available.map((role, index) => {
                             return (
-                                <TabPanel key={`${role}'~'${index}`} index={index} value={valueIndex}  className={classes.tabContent}>
+                                <TabPanel key={`${role}'~'${index}`} index={index} value={valueIndex} className={classes.tabContent}>
                                     
                                     {delete_roletype != "não declarado" ?
                                     (
                                     <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={ handleClickModalDelete }
-                                    style={{position:"relative", left:"49.2em"}} >
-                                        Deletar {role}
+                                    html
+                                    style={{position:"relative", left:"54em"}} >
+                                        Deletar
                                     </Button>
                                     ) : (
                                     <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} 
-                                    style={{position:"relative", left:"49.2em", visibility:"hidden"}} >
-                                        Deletar {role}
+                                    style={{position:"relative", left:"54em", visibility:"hidden"}} >
+                                        Deletar
                                     </Button>
                                     )                                    
                                     }
                                     
                                     <div className="form-group row" style={{marginTop: "-2em"}}>
-                                        <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Tipo da conta: </label>
+                                        <label htmlFor="name_trust" style={{marginLeft: "0.8em"}} className="col-form-label bolder">Tipo da conta: </label>
+                                        <Tooltip title="O nome da conta tem que ser único" arrow>
+                                            <InfoIcon size="small" color="primary"/>
+                                        </Tooltip>
+
                                         <div className="col-sm-12">
                                             <input key={role_type} required type="text" name="role_type"
                                                 onChange={(e) => handleChangeForms("role_type", null, e)}
@@ -271,7 +273,7 @@ const RolesItem = (
                                         role_description={"role['role_description']"}
                                         policy_arn_aws={"role['policy_arn_aws']"}
                                         trust_select={"role['trust_relationship']"}
-                                        policies_selected={ roles}
+                                        policies_selected={ roles }
                                         policies_available={roles_select}
                                         
                                         handleForm={handleChangeForms.bind(this)}
@@ -280,15 +282,29 @@ const RolesItem = (
                                     /> 
                                     
 
-                                    {/* <Tooltip title="Adicionar nova role" aria-label="add" placement="top" arrow>
-                                        <Fab aria-label="Add policy" className={classes.fabAdd2} color="primary" 
-                                            style={{display:"grid",margin:"auto", width:"3em", height:"3em"}}
-                                            onClick={ () => handleAddFields("role")}
-                                            >
-                                            <AddIcon  />
-                                        </Fab>
-                                    </Tooltip> */}
+                                    <Dialog
+                                        open={openModalDelete}
+                                        onClose={handleCloseModalDelete}
+                                        aria-labelledby="alert-dialog-title"
+                                        aria-describedby="alert-dialog-description"
+                                    >
+                                        <DialogTitle id="alert-dialog-title">{"Deletando "+role_type}</DialogTitle>
+                                        <DialogContent>
+                                            <DialogContentText id="alert-dialog-description">
+                                                Deseja realmente deletar {role}? Essa ação é irreversível.
+                                            </DialogContentText>
+                                        </DialogContent>
+                                        <DialogActions>
+                                            <Button onClick={handleCloseModalDelete} color="secondary">
+                                                Não
+                                            </Button>
+                                            <Button onClick={handleDeleteRoleModal} color="primary" autoFocus>
+                                                Sim
+                                            </Button>
+                                        </DialogActions>
+                                    </Dialog>
                                 </TabPanel>
+                                
                             )
                         })
                         ): (
@@ -320,29 +336,6 @@ const RolesItem = (
                 </Zoom>
 
                 <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} openAlertCallback={handleOpenAlert}/>
-
-
-                <Dialog
-                    open={openModalDelete}
-                    onClose={handleCloseModalDelete}
-                    aria-labelledby="alert-dialog-title"
-                    aria-describedby="alert-dialog-description"
-                >
-                    <DialogTitle id="alert-dialog-title">{"Deletando "+role_type}</DialogTitle>
-                    <DialogContent>
-                        <DialogContentText id="alert-dialog-description">
-                            Deseja realmente deletar? Essa ação é irreversível.
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseModalDelete} color="secondary">
-                            Não
-                        </Button>
-                        <Button onClick={handleDeleteRoleModal} color="primary" autoFocus>
-                            Sim
-                        </Button>
-                    </DialogActions>
-                </Dialog>
 
         </main>
     );
