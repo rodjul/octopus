@@ -43,7 +43,7 @@ def check_compliance(event):
     lista_compliance = []
     
     # obtendo os valores do banco (master) IAM Role (role name, policy name, trust relationship)
-    for role_master in loads( file_master['roles_json']['Roles'] ):
+    for role_master in file_master['roles_json']:
         try:
             roles_account = iam_cont.list_roles()
         except Exception as e:
@@ -107,7 +107,7 @@ def check_compliance(event):
                             hash_child = hash_master = ""
                             if policy_child_content != "":
                                 hash_master = hashlib.md5( str(policy_child_content['PolicyVersion']['Document']).encode() ).hexdigest()
-                            if policy_file != "": 
+                            if policy_master_content != "": 
                                 hash_child  = hashlib.md5( str(policy_master_content['PolicyDocument']).encode() ).hexdigest() 
                             
                             
@@ -127,7 +127,7 @@ def check_compliance(event):
                                                 "status":"Policy com o nome informado não encontrado" })
 
         if not role_compliance_found:
-            lista_compliance.append({"name":role_master['role_name'],"policy":role_master['Policies'], "compliance":False,
+            lista_compliance.append({"name":role_master['role_name'],"policy":role_master['policies'], "compliance":False,
                                     "status":"Não encontrado"})        
     
     print(lista_compliance)
@@ -179,8 +179,7 @@ def get_compliance(event):
         type_role = event['queryStringParameters']['type_role']
     except KeyError as e:
         print("Error in get param: ",e)
-        date_input = ""
-        return {"statusCode":400, "body":dumps({"error":False, "dates_available":dates, "content": content}),
+        return {"statusCode":400, "body":dumps({"error":True, "message":"Params invalid"}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
         
     
@@ -216,6 +215,12 @@ def lambda_handler(event, context):
                      "TypeRole": loads(msg['body'])['type_role']  }
             check_compliance(event2)
             
-    elif "httpMethod" in event and event['httpMethod'] == "GET":
-        return get_compliance(event)
+    elif event['httpMethod'] == "GET":
+        if event['resource'] == "/policy/compliance/dates_available":
+            dates = dates = get_date_actions()
+            return {"statusCode":200, "body":dumps({"error":False, "dates_available":dates}),
+    "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
+    
+        elif event['resource'] == "/policy/compliance/check":
+            return get_compliance(event)
         

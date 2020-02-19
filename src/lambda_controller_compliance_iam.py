@@ -28,7 +28,15 @@ def lambda_handler(event,context):
         if today != date_input or date_input == "":
             date_action = today
     
-    accounts = requests.get("https://o2u171afvl.execute-api.us-east-2.amazonaws.com/dev/account/organizations").json() 
+    lam = boto3.client("lambda")
+    resp = lam.invoke(
+        FunctionName=environ["LAMBDA_ORGANIZATION"],
+        InvocationType="RequestResponse",
+        LogType="Tail"
+    )
+    # accounts = requests.get("https://o2u171afvl.execute-api.us-east-2.amazonaws.com/dev/account/organizations").json() 
+
+    accounts = loads( loads(resp['Payload'].read().decode())['body'] )
     
     sqs_client = boto3.client("sqs")
     for account in accounts['accounts']:

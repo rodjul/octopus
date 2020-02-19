@@ -12,8 +12,8 @@ const RolesHtml = (
         <div className="form_margin_bottom shadow" key={`${role_name}~${index}`}>
             
             <div className="form-group row">
-                <label htmlFor="role_name" className="col-sm-2 col-form-label bolder">Name: </label>
-                <div className="col-sm-10">
+                <label htmlFor="role_name" className="col-sm-3 col-form-label bolder">Name: </label>
+                <div className="col-sm-12">
                     <input key={`${role_name}~${index}`} type="text" name="role_name" 
                     onChange={(e) => handleForm("role_name",index,e)}
                     className="form-control" placeholder="accessmngt" 
@@ -22,16 +22,16 @@ const RolesHtml = (
                 </div>
             </div>
             <div className="form-group row">
-                <label htmlFor="name_role" className="col-sm-2 col-form-label bolder">Description: </label>
-                <div className="col-sm-10">
+                <label htmlFor="name_role" className="col-sm-3 col-form-label bolder">Description: </label>
+                <div className="col-sm-12">
                     <input key={`${role_description}~${index}`} type="text" name="role_description"
                     onChange={(e) => handleForm("role_description",index,e)}
                     className="form-control" placeholder="" defaultValue={role_description} />
                 </div>
             </div>
             <div className="form-group row">
-                <label htmlFor="policies_role" className="col-sm-2 col-form-label bolder">Policies: </label>
-                <div className="col-sm-10">
+                <label htmlFor="policies_role" className="col-sm-3 col-form-label bolder">Policies: </label>
+                <div className="col-sm-12">
                     <Select key={`${role_name}~${index}`} className="policies" closeMenuOnSelect={false} isMulti 
                     options={policies_available} //policies_available
                     defaultValue={
@@ -44,8 +44,8 @@ const RolesHtml = (
                 </div>
             </div>
             <div className="form-group row">
-                <label htmlFor="policyArnAws_role" className="col-sm-2 col-form-label bolder">PolicyArnAWS: </label>
-                <div className="col-sm-10">
+                <label htmlFor="policyArnAws_role" className="col-sm-3 col-form-label bolder">PolicyArnAWS: </label>
+                <div className="col-sm-12">
                     <input key={`${policy_arn_aws}~${index}`} type="text" name="policy_arn_aws" 
                     // //onChange={this.handleInputChange}
                     ////onChange={(e) => handleForm("policy_arn_aws",index,e)}
@@ -59,8 +59,8 @@ const RolesHtml = (
                 </div>
             </div>
             <div className="form-group row">
-                <label htmlFor="trustRelationship_role" className="col-sm-2 col-form-label bolder">TrustRelationship: </label>
-                <div className="col-sm-10">
+                <label htmlFor="trustRelationship_role" className="col-sm-3 col-form-label bolder">TrustRelationship: </label>
+                <div className="col-sm-12">
                     <Select key={`${role_name}~${index}`} 
                     className="trust_relationship" closeMenuOnSelect={true} 
                     options={

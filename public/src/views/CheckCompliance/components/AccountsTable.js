@@ -58,7 +58,7 @@ const useStyles = makeStyles(theme => ({
         backgroundColor: theme.palette.background.paper,
         display: 'flex',
         // height: 224,
-        height: "38em",
+        // height: "38em",
         // height: "1%",
       },
     tabsMain: {
@@ -94,15 +94,19 @@ const AccountsTable = (props) => {
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(50);
     const [openRefresh, setOpenRefresh] = React.useState(false);
-    const [openAdd, setOpenAdd] = React.useState(false);
+    const [openAddNewCheck, setOpenAddNewCheck] = React.useState(false);
+    const [disabledButtonRequestCompliance, setDisabledButtonRequestCompliance] = React.useState(true);
 
     const handleClickOpenRefresh = () => setOpenRefresh(true);
 
     const handleCloseRefresh = () => setOpenRefresh(false);
 
-    const handleClickOpenAdd = () => setOpenAdd(true);
+    const handleClickOpenAdd = () => setOpenAddNewCheck(true);
 
-    const handleCloseAdd = () => setOpenAdd(false);
+    const handleCloseAddNewCheck = () => {
+        setDisabledButtonRequestCompliance(true);
+        setOpenAddNewCheck(false);
+    }
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -112,6 +116,16 @@ const AccountsTable = (props) => {
         setRowsPerPage(+event.target.value);
         setPage(0);
     };
+
+    const onChangeTypeRole = e => {
+        setDisabledButtonRequestCompliance(false);
+        props.onChangeTypeRole(e);
+    }
+
+    const requestNewCompliance = () => {
+        setOpenAddNewCheck(false);
+        props.requestNewCompliance();
+    }
 
     // const requestNewCompliance = () => {
     //     props.requestNewCompliance;
@@ -269,8 +283,8 @@ const AccountsTable = (props) => {
                 </Dialog>
 
                 <Dialog
-                    open={openAdd}
-                    onClose={handleCloseAdd}
+                    open={openAddNewCheck}
+                    onClose={handleCloseAddNewCheck}
                     aria-labelledby="alert-dialog-title"
                     aria-describedby="alert-dialog-description"
                 >
@@ -281,7 +295,7 @@ const AccountsTable = (props) => {
                         <FormControl style={{width:"10em"}}>
                             {/* <InputLabel id="controlled-open-select-label-tipo-da-conta">Tipo da conta</InputLabel> */}
                             <Select required labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"
-                            onChange={e => props.onChangeTypeRole(e)}
+                            onChange={e => onChangeTypeRole(e)}
                             >   
                                 {type_roles && type_roles.map((elem,index) =>{
                                     return <MenuItem key={elem} value={elem}>{elem}</MenuItem>;
@@ -292,12 +306,22 @@ const AccountsTable = (props) => {
                     </DialogContentText>
                     </DialogContent>
                     <DialogActions>
-                    <Button 
-                    onClick={props.requestNewCompliance} 
-                    variant="contained" color="primary">
-                        Sim
-                    </Button>
-                    <Button onClick={handleCloseAdd} variant="contained" color="secondary" autoFocus>
+                    {disabledButtonRequestCompliance ? (
+                        <Button disabled
+                        variant="contained" color="primary">
+                            Sim
+                        </Button>
+                    ) : (
+                        <Button
+                        onClick={requestNewCompliance} 
+                        variant="contained" color="primary">
+                            Sim
+                        </Button>
+                    )
+                
+                    }
+                    
+                    <Button onClick={handleCloseAddNewCheck} variant="contained" color="secondary" autoFocus>
                         Não
                     </Button>
                     </DialogActions>

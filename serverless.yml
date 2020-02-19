@@ -64,7 +64,7 @@ functions:
         - src/lambda_create_account.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"
     events:
       - sqs:
          arn: 
@@ -122,7 +122,7 @@ functions:
   request_get_account_organizations:
     handler: src/lambda_get_accounts_organizations.lambda_handler
     environment:
-      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}    
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
     runtime: python3.6
     memorySize: 256
     timeout: 30 # 30 seconds
@@ -133,7 +133,7 @@ functions:
         - src/model/*.py
         - src/lambda_get_accounts_organizations.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"        
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"        
     events:
       - http:
           path: /account/organizations
@@ -147,7 +147,7 @@ functions:
       octopus_resource: totvs-cloudformation-templates 
     runtime: python3.6
     memorySize: 256
-    timeout: 300 # 30 seconds
+    timeout: 30 # 30 seconds
     role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
     name: ${self:service}-compliance_iam-${self:provider.stage}
     package:
@@ -155,12 +155,16 @@ functions:
         - src/model/*.py
         - src/lambda_compliance_iam.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"        
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"        
     events:
       - http:
           path: /policy/compliance/check
           method: get
           cors: true
+      - http:
+          path: /policy/compliance/dates_available
+          method: get
+          cors: true          
       - sqs:
          arn: 
           "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_new_check}"
@@ -170,7 +174,8 @@ functions:
     environment:
       URL_SQS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
       PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
-      octopus_resource: "totvs-cloudformation-templates"
+      LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
+      # octopus_resource: "totvs-cloudformation-templates"
     runtime: python3.6
     memorySize: 256
     timeout: 30 # 30 seconds
@@ -181,7 +186,7 @@ functions:
         - src/lambda_controller_compliance_iam.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"
       - "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
     events:
       - http:
@@ -202,7 +207,7 @@ functions:
         - src/lambda_manage_policy.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:9"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"
       #- "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
     events:
       - http:

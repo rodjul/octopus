@@ -13,9 +13,11 @@ class IamControl:
     def __init__(self, account_id, do_sts=True):
         # session = boto3.Session(profile_name="temp")
         # self.iam_client = session.client("iam")
+        self.account_id = account_id
         if do_sts:
-            self.account_id = account_id
             self.iam_client = get_creds("iam",Id=account_id)
+        else:
+            self.iam_client = get_creds("iam")
 
     def list_policies(self):
         return self.iam_client.list_policies()
@@ -129,10 +131,10 @@ class IamControl:
         for policy in policies:
             for roledb in roles_from_type_account:
                 if policy['Type'] == "ROLE" and policy['PolicyName'] == roledb:
-                    roles_json.append(policy)
+                    roles_json.append(json.loads(policy['Data']))
         
         for policy in policies:
-            if policy['Type'] == "IAM":
+            if policy['Type'] == "POLICY":
                 policy_json.append(policy)
             elif policy['Type'] == "TRUST":
                 trusts_json.append(policy)
@@ -144,7 +146,7 @@ class IamControl:
         Setup the policies, roles, and trustrelationship in the account.
         '''
         content_json = self.get_document_of_roles(type_role)
-        roles_json  = json.loads( content_json["roles_json"]['Roles'] )
+        roles_json  = content_json["roles_json"]
         policy_json = content_json["policy_json"]
         trusts_json = content_json["trusts_json"]
 
@@ -202,7 +204,7 @@ class IamControl:
                     # if there are standard policies from aws associated with the role, we create
                     policy_arn_aws = role['policy_arn_aws'].split(",")
                     if policy_arn_aws and policy_arn_aws[0] != "":
-                        for policy_arn in role['policy_arn_aws']:
+                        for policy_arn in policy_arn_aws:
                             self.iam_client.attach_role_policy(PolicyArn=policy_arn, RoleName=role_name)
 
 
