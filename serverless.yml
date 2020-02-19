@@ -64,7 +64,7 @@ functions:
         - src/lambda_create_account.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"
     events:
       - sqs:
          arn: 
@@ -133,7 +133,7 @@ functions:
         - src/model/*.py
         - src/lambda_get_accounts_organizations.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"        
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"        
     events:
       - http:
           path: /account/organizations
@@ -155,7 +155,7 @@ functions:
         - src/model/*.py
         - src/lambda_compliance_iam.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"        
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"        
     events:
       - http:
           path: /policy/compliance/check
@@ -186,7 +186,7 @@ functions:
         - src/lambda_controller_compliance_iam.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"
       - "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
     events:
       - http:
@@ -207,7 +207,7 @@ functions:
         - src/lambda_manage_policy.py
         - src/model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:12"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"
       #- "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
     events:
       - http:
