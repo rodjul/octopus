@@ -33,15 +33,17 @@ provider:
 plugins:
   - serverless-plugin-log-retention
   - serverless-s3-sync
+  # - serverless-plugin-split-stacks
 
 custom:
   awsconfig: ${file(awsconfig.yml):${self:provider.stage}}
-  splitStacks:
-    perFunction: true
-    perType: false
-    perGroupFunction: false
+  # splitStacks:
+  #   perFunction: true
+  #   perType: false
+  #   perGroupFunction: false
   sqs_name: "CreateAccount"
   sqs_compliance_new_check: "ComplianceNewCheck"
+  sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
   s3Sync:
     - bucketName: "octopus-site"
       localDir: public/build/
@@ -140,7 +142,38 @@ functions:
           method: get
           cors: true
 
-
+  # send the data to sqs
+  controller_compliance_new_check: 
+    handler: src/lambda_controller_compliance_iam.lambda_handler
+    environment:
+      URL_SQS_IAM: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
+      URL_SQS_CIS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
+      # octopus_resource: "totvs-cloudformation-templates"
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-controller_compliance_iam-${self:provider.stage}
+    package:
+      include:
+        - src/lambda_controller_compliance_iam.py
+        - src/model/*.py
+    layers:
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
+    events:
+      - http:
+          path: /policy/compliance/iam/new
+          method: post
+          cors: true
+      - http:
+          path: /policy/compliance/cis/new
+          method: post
+          cors: true
+  
+  # receive the sqs data and also the requests from api gateway
   compliance_iam_account:
     handler: src/lambda_compliance_iam.lambda_handler
     environment:
@@ -169,30 +202,49 @@ functions:
          arn: 
           "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_new_check}"
 
-  controller_compliance_new_check: 
-    handler: src/lambda_controller_compliance_iam.lambda_handler
-    environment:
-      URL_SQS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
-      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
-      LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
-      # octopus_resource: "totvs-cloudformation-templates"
+  # receive the requests from api gateway
+  request_cis_compliance:
+    handler: src/lambda_cis_compliance.lambda_handler
     runtime: python3.6
     memorySize: 256
     timeout: 30 # 30 seconds
     role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
-    name: ${self:service}-controller_compliance_iam-${self:provider.stage}
+    name: ${self:service}-lambda_cis_compliance-${self:provider.stage}
     package:
       include:
-        - src/lambda_controller_compliance_iam.py
         - src/model/*.py
+        - src/lambda_cis_compliance.py
     layers:
-      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"
-      - "arn:aws:lambda:us-east-2:826839167791:layer:requests:1"
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"        
     events:
       - http:
-          path: /policy/compliance/new
-          method: post
+          path: /policy/compliance/cis/check
+          method: get
           cors: true
+      - http:
+          path: /policy/compliance/cis/dates-available
+          method: get
+          cors: true
+  
+  # receive the sqs data
+  proccess_data_cis_compliance:
+    handler: src/lambda_aws_cis_foundation_benchmark_checklist.lambda_handler
+    runtime: python3.6
+    memorySize: 256
+    timeout: 600 # 10 minutes
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-aws_cis_foundation_benchmark_checklist-${self:provider.stage}
+    package:
+      include:
+        - src/model/*.py
+        - src/lambda_aws_cis_foundation_benchmark_checklist.py
+    layers:
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"        
+    events:      
+      - sqs:
+         arn: 
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_cis_new_check}"
+        batchSize: 2
 
 
   requests_manage_policy: 
@@ -335,7 +387,7 @@ resources:
           WriteCapacityUnits: 1
         TableName: octopus_account
 
-    DynamoDbAccountCompliance1:
+    DynamoDbAccountCompliance:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
@@ -343,11 +395,22 @@ resources:
             AttributeType: S
           - AttributeName: Account
             AttributeType: S
+          - AttributeName: TypeCompliance
+            AttributeType: S
         KeySchema:
           - AttributeName: DateAction
             KeyType: HASH
           - AttributeName: Account
             KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: indexTypeCompliance
+            KeySchema:
+              - AttributeName: TypeCompliance
+                KeyType: RANGE
+            Projection:
+              # NonKeyAttributes:
+              #   - count
+              ProjectionType: KEYS_ONLY             
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
@@ -398,6 +461,11 @@ resources:
         QueueName: ${self:custom.sqs_compliance_new_check}
         VisibilityTimeout: 500 
     
+    SQSComplianceCISNewCheck:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:custom.sqs_compliance_cis_new_check}
+        VisibilityTimeout: 600 
     
     # # Specifying the S3 Bucket
     # StaticSite:

@@ -20,7 +20,8 @@ def insert_data(account_id, account_name, data_json, date_action, type_role):
         "Account": account_id,
         "Name": account_name,
         "DataCompliance": dumps(data_json, ensure_ascii=False),
-        "TypeRole": type_role
+        "TypeRole": type_role,
+        "TypeCompliance":"IAM"
         }
 
     table.put_item( Item=item )
@@ -50,7 +51,7 @@ def check_compliance(event):
             print("Não conseguiu fazer sts:", e, account_id)
             lista_compliance = [{"name":"n/a","policy":"n/a", "compliance":False,
                                 "status":"Não foi possível fazer o acesso a conta"}]
-            insert_data(account_id, account_name, lista_compliance, date_action)
+            insert_data(account_id, account_name, lista_compliance, date_action, type_role)
             return 200
 
         role_compliance_found = False
@@ -113,7 +114,7 @@ def check_compliance(event):
                             
                             if hash_master != hash_child or policies_adicionais_status:
                                 lista_compliance.append({"name":role_master['role_name'],"policy":policy_child['PolicyName'], "compliance":False,
-                                                "status":"Policy com o nome informado não encontrado", "policies_adicionais":policies_adicionais })
+                                                "status":"Policy possui modificações e/ou policy adicionais", "policies_adicionais":policies_adicionais })
                                 
                             else:
                                 lista_compliance.append({"name":role_master['role_name'],"policy":policy_child['PolicyName'], "compliance":True,
@@ -167,7 +168,7 @@ def get_date_actions():
     # obter da data mais recente quando na 1 vez
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_account_compliance")
-    date_actions = table.scan(AttributesToGet=["DateAction"])
+    date_actions = table.scan(FilterExpression=Attr("TypeCompliance").eq("IAM"))
     dates =  list( set( [date['DateAction'] for date in date_actions['Items']] ) )
     dates.sort()
     return dates
@@ -196,7 +197,9 @@ def get_compliance(event):
     content = ""
     if date_input != "":
         try:
-            content = table.scan(FilterExpression=Attr("DateAction").eq(date_input) & Attr("TypeRole").eq(type_role))['Items']
+            content = table.scan(FilterExpression=Attr("DateAction").eq(date_input) 
+                                & Attr("TypeRole").eq(type_role)
+                                & Attr("TypeCompliance").eq("IAM"))['Items']
         except KeyError as e:
             print(e)
             content = ""

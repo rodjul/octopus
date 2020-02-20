@@ -1,10 +1,10 @@
 import React from 'react';
 
-import AccountsTable from "./components/AccountsTable";
+import AccountsTable from "./components/Table";
 
-import "./AccountsCompliance.css";
+import "./CisCompliance.css";
 
-export default class AccountsCompliance extends React.Component {
+export default class CisCompliance extends React.Component {
     constructor(props) {
       super(props);
       this.state = {
@@ -14,7 +14,6 @@ export default class AccountsCompliance extends React.Component {
         type_role_selected: "",
         date_check_selected: "",
         loading: true,
-        showModal: false,
         filter_text: {
                 "account_id": "", //[], 
                 "account_name": "", //[],
@@ -44,7 +43,7 @@ export default class AccountsCompliance extends React.Component {
                 });
             }
 
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/dates_available", {
+            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates_available", {
                 method:"GET", mode:"cors"
             })
             .then(resp => resp.json())
@@ -80,7 +79,7 @@ export default class AccountsCompliance extends React.Component {
     getCompliance(e){
         this.setState({accounts:[]});
 
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action="+this.state.date_check_selected+"&type_role="+this.state.type_role_selected, {
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/check?date_action="+this.state.date_check_selected, {
             method:"GET", mode:"cors"
         })
         .then(resp => resp.json())
@@ -103,7 +102,7 @@ export default class AccountsCompliance extends React.Component {
         let yyyy = today.getFullYear();
         let date_format = dd + mm + yyyy;
 
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/new",{
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/new",{
             method:"POST", mode:"cors",
             body: JSON.stringify( {"date_action":date_format, "type_role": this.state.type_role_selected} )
         })
@@ -115,57 +114,14 @@ export default class AccountsCompliance extends React.Component {
     }
     
      render(){
-        const { showModal, filter_text, accounts, loading, dates_available, type_roles, type_role_selected} = this.state;
-        let img_loading = "";
-        if(loading) img_loading = <img className="centralize-img" src="images/loading-spinning-bubbles.svg" /> ;
-        //img_loading = <img src="images/loading-spinning-bubbles.svg" /> ;
-                
-        let roles = [];
-        let policy= [];
-        let compliance = [];
-        let status = [];
-        let policies_adicionais = [];
-        let total_rows = 0;
-        
-        //console.log();
-        if(accounts && !(accounts.length === 0) ){
-            {accounts.map((elem,index) =>{
-                // console.log(elem);
-                JSON.parse(elem['DataCompliance']).map(elem => {
-                    roles.push(elem['name']);
-                    
-                    if(elem['policy'].length === 0) policy.push("(empty)");
-                    else policy.push(elem['policy'].toString());
-                    
-                    compliance.push(elem['compliance']);
+        const { accounts, dates_available } = this.state;
 
-                    if(elem['status'].length === 0 || elem['status'] === "") status.push("(empty)");
-                    else status.push(elem['policy'].toString());
-
-                    if(elem['policies_adicionais'] !== undefined){
-                        // console.log(elem['policies_adicionais'] );
-                        policies_adicionais.push( elem['policies_adicionais'].length === 0 ? "(empty)" : elem['policies_adicionais'].toString());
-                    
-                    }else policies_adicionais.push("(empty)");
-                });
-            })}
-
-            total_rows = policy.length;
-            roles = [... new Set(roles)]; // removing duplicates
-            policy = [... new Set(policy)];
-            compliance = [... new Set(compliance)];
-            status = [... new Set(status)];
-            policies_adicionais = [... new Set(policies_adicionais)];
-            // moving to the lastest position
-            policies_adicionais.shift(); policies_adicionais.push("(empty)");
-        }
-        
+                        
         return (
             <AccountsTable 
                 accounts={accounts}
-                type_roles={type_roles}
                 dates_available={dates_available}
-
+                
                 requestNewCompliance={this.requestNewCompliance.bind(this)}
                 getCompliance={this.getCompliance.bind(this)}
                 onChangeTypeRole={this.onChangeTypeRole.bind(this)}

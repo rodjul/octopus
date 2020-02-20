@@ -154,19 +154,10 @@ const AccountsTable = (props) => {
     //         }
     // }
 
-    const type_role_selected = props.type_role_selected;
+
     const type_roles = props.type_roles;
     const accounts = props.accounts;
     const dates_available = props.dates_available;
-    const total_rows = props.total_rows;
-    const filter_text = props.filter_text;
-    const roles = props.roles;
-    const policy = props.policy;
-    const compliance = props.compliance;
-    const policies_adicionais = props.policies_adicionais;
-    const status = props.status;
-    const img_loading = "";
-    const showModal = "";
 
 
     let rows = [];
@@ -291,7 +282,7 @@ const AccountsTable = (props) => {
                     <DialogTitle id="alert-dialog-title2">{"Novo check"}</DialogTitle>
                     <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        Essa ação irá acessar as contas do Organizations utilizando o tipo de conta "
+                        Essa ação irá acessar as contas do Organizations e fazer a partir das roles do tipo "
                         <FormControl style={{width:"10em"}}>
                             {/* <InputLabel id="controlled-open-select-label-tipo-da-conta">Tipo da conta</InputLabel> */}
                             <Select required labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"

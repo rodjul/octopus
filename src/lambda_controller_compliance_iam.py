@@ -39,17 +39,28 @@ def lambda_handler(event,context):
     accounts = loads( loads(resp['Payload'].read().decode())['body'] )
     
     sqs_client = boto3.client("sqs")
-    for account in accounts['accounts']:
-    
-        sqs_client.send_message(
-            QueueUrl=environ['URL_SQS'],
-            MessageBody=dumps({
-                "account_id": account['Id'], 
-                "account_name":account['Name'], 
-                "date_action": date_action,
-                "type_role":type_role
-                })
-        )   
+
+    if event['resource'] == "/policy/compliance/iam/new":
+        for account in accounts['accounts']:
+            sqs_client.send_message(
+                QueueUrl=environ['URL_SQS_IAM'],
+                MessageBody=dumps({
+                    "account_id": account['Id'], 
+                    "account_name":account['Name'], 
+                    "date_action": date_action,
+                    "type_role":type_role
+                    })
+            )
+    elif event['resource'] == "/policy/compliance/cis/new":
+        for account in accounts['accounts']:
+            sqs_client.send_message(
+                QueueUrl=environ['URL_SQS_CIS'],
+                MessageBody=dumps({
+                    "account_id": account['Id'], 
+                    "account_name":account['Name'], 
+                    "date_action": date_action
+                    })
+            )
     
     return {"statusCode":200, "body":dumps({"error":False, "message":"Checking..."}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}

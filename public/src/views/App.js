@@ -7,6 +7,7 @@ import CreateAccount from './CreateAccount/CreateAccount';
 import LoginForm from './Login/LoginForm';
 import ManageIAM from './ManagePolicies/ManageIAM';
 import AccountsCompliance from './CheckCompliance/AccountsCompliance';
+import CisCompliance from './CisCompliance/CisCompliance';
 import RolesAccounts from './ManageRolesAccount/RolesAccounts';
 
 import LoginPage from './Login/LoginPage';
@@ -51,6 +52,7 @@ class App  extends React.Component {
                             <Route path="/manage-roles-accounts" component={RolesAccounts} />
                             <Route path="/manage-iam" component={ManageIAM} />
                             <Route path="/accounts-compliance" component={AccountsCompliance} />
+                            <Route path="/cis-compliance" component={CisCompliance} />
                         </>
                     ):(
                         <>

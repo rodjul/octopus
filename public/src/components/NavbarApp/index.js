@@ -154,6 +154,10 @@ const NavbarApp2 = (props) => {
                     <ListItemIcon><Assessment /></ListItemIcon>
                     <ListItemText primary="Compliance das contas" />
                 </ListItem>
+                <ListItem button key="CIS Compliance" onClick={() => onClickRoute("/cis-compliance")} >
+                    <ListItemIcon><Assessment /></ListItemIcon>
+                    <ListItemText primary="CIS Compliance" />
+                </ListItem>
             </List>
             {/* <Divider />
         <List>

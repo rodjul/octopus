@@ -13,6 +13,8 @@ Attributes:
     S3_WEB_REPORT_EXPIRE (str): Description
     S3_WEB_REPORT_OBFUSCATE_ACCOUNT (bool): Description
     SCRIPT_OUTPUT_JSON (bool): Description
+    
+    Source: https://github.com/awslabs/aws-security-benchmark/blob/64722bd27b3a5f548883905c7f36b0e4ce5b51fb/aws_cis_foundation_framework/aws-cis-foundation-benchmark-checklist.py
 """
 
 import csv
@@ -72,12 +74,12 @@ IAM_MASTER_POLICY = "iam_master_policy"
 IAM_MANAGER_POLICY = "iam_manager_policy"
 
 # Control 1.1 - Days allowed since use of root account.
-CONTROL_1_1_DAYS = 0
+CONTROL_1_1_DAYS = 30
 
 # --- Global ---
-IAM_CLIENT = boto3.client('iam')
-S3_CLIENT = boto3.client('s3')
-
+IAM_CLIENT = None #boto3.client('iam')
+S3_CLIENT = None #boto3.client('s3')
+ACCOUNT_ID = None
 
 # --- 1 Identity and Access Management ---
 
@@ -1094,7 +1096,8 @@ def control_2_8_ensure_kms_cmk_rotation(regions):
     description = "Ensure rotation for customer created CMKs is enabled"
     scored = True
     for n in regions:
-        kms_client = boto3.client('kms', region_name=n)
+        # kms_client = boto3.client('kms', region_name=n)
+        kms_client = get_creds('kms', Id=ACCOUNT_ID, region=n)
         paginator = kms_client.get_paginator('list_keys')
         response_iterator = paginator.paginate()
         for page in response_iterator:
@@ -2339,123 +2342,216 @@ def send_results_to_sns(url):
     )
 
 
+
+
+
+#sts
+def get_creds(aws_service,**kwargs):
+    if "Id" not in kwargs:
+        return boto3.client(aws_service)
+    else:
+        try:
+            sts = boto3.client("sts")
+        except botocore.exceptions.ClientError as e:
+            raise e
+            #return my_logging(e,"error") 
+
+        if "role" in kwargs:
+            role = kwargs["role"]
+        else:
+            role = "octopusmngt"
+
+        if "session_name" in kwargs:
+            session_name = kwargs["session_name"]
+        else:
+            session_name = "octopusroleassumed"
+        
+        try:
+            role = sts.assume_role(
+                RoleArn="arn:aws:iam::{}:role/{}".format(kwargs["Id"],role),
+                RoleSessionName=session_name
+            )
+        except botocore.exceptions.ClientError as e:
+            raise e
+            #return my_logging(e,"error")
+
+        if "region" in kwargs:
+            region = kwargs["region"]
+        else:
+            region = "us-east-2"       
+
+        try:    
+            client = boto3.client(
+                aws_service,
+                region_name=region,
+                aws_access_key_id=role['Credentials']['AccessKeyId'],
+                aws_secret_access_key=role['Credentials']['SecretAccessKey'],
+                aws_session_token=role['Credentials']['SessionToken']
+            )
+            return client
+        except botocore.exceptions.ClientError as e:
+            raise e
+            #return my_logging(e,"error")
+
+def insert_data(account_id, account_name, data_json, date_action, type_role):
+    '''
+    Insert the name account create to make the index
+    '''
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_account_compliance")
+
+    item = {
+        "DateAction": date_action,
+        "Account": account_id,
+        "Name": account_name,
+        "DataCompliance": dumps(data_json, ensure_ascii=False),
+        "TypeRole": type_role,
+        "TypeCompliance":"CIS"
+        }
+
+    table.put_item( Item=item )
+
+
 def lambda_handler(event, context):
-    """Summary
-
-    Args:
-        event (TYPE): Description
-        context (TYPE): Description
-
-    Returns:
-        TYPE: Description
-    """
     # Run all control validations.
     # The control object is a dictionary with the value
     # result : Boolean - True/False
     # failReason : String - Failure description
     # scored : Boolean - True/False
     # Check if the script is initiade from AWS Config Rules
-    try:
-        if event['configRuleId']:
-            configRule = True
-            # Verify correct format of event
-            invokingEvent = json.loads(event['invokingEvent'])
-    except:
-        configRule = False
 
-    # Globally used resources
-    region_list = get_regions()
-    cred_report = get_cred_report()
-    password_policy = get_account_password_policy()
-    cloud_trails = get_cloudtrails(region_list)
-    accountNumber = get_account_number()
+    if "Records" in event:
+        for msg in event['Records']:
+            data = loads(msg['body'])
+            
+            ACCOUNT_ID = data['account_id']
+            date_action = data['date_action']
+            account_name = data['account_name']
+            type_role = ""#data['type_role']
 
-    # Run individual controls.
-    # Comment out unwanted controls
-    control1 = []
-    control1.append(control_1_1_root_use(cred_report))
-    control1.append(control_1_2_mfa_on_password_enabled_iam(cred_report))
-    control1.append(control_1_3_unused_credentials(cred_report))
-    control1.append(control_1_4_rotated_keys(cred_report))
-    control1.append(control_1_5_password_policy_uppercase(password_policy))
-    control1.append(control_1_6_password_policy_lowercase(password_policy))
-    control1.append(control_1_7_password_policy_symbol(password_policy))
-    control1.append(control_1_8_password_policy_number(password_policy))
-    control1.append(control_1_9_password_policy_length(password_policy))
-    control1.append(control_1_10_password_policy_reuse(password_policy))
-    control1.append(control_1_11_password_policy_expire(password_policy))
-    control1.append(control_1_12_root_key_exists(cred_report))
-    control1.append(control_1_13_root_mfa_enabled())
-    control1.append(control_1_14_root_hardware_mfa_enabled())
-    control1.append(control_1_15_security_questions_registered())
-    control1.append(control_1_16_no_policies_on_iam_users())
-    control1.append(control_1_17_maintain_current_contact_details())
-    control1.append(control_1_18_ensure_security_contact_details())
-    control1.append(control_1_19_ensure_iam_instance_roles_used())
-    control1.append(control_1_20_ensure_incident_management_roles())
-    control1.append(control_1_21_no_active_initial_access_keys_with_iam_user(cred_report))
-    control1.append(control_1_22_no_overly_permissive_policies())
+            try:
+                IAM_CLIENT = get_creds("iam",Id=ACCOUNT_ID)
+                S3_CLIENT = get_creds("s3",Id=ACCOUNT_ID)
+                
+                # attaching permission to use EC2/VPC/S3/KMS and also IAM
+                IAM_CLIENT.attach_role_policy(PolicyArn="arn:aws:iam::aws:policy/ReadOnlyAccess", RoleName="octopusmngt")
+            except Exception as e:
+                lista_compliance = [
+                    { 
+                        "1":{
+                            "1": {"ControlId": "0", "Description": "Falha ao acessar a conta", "Result": False, "Offenders": "", "failReason": "STS"}
+                        }
+                    }
+                ]
+                insert_data(ACCOUNT_ID, account_name, lista_compliance, date_action)
+                continue
 
-    control2 = []
-    control2.append(control_2_1_ensure_cloud_trail_all_regions(cloud_trails))
-    control2.append(control_2_2_ensure_cloudtrail_validation(cloud_trails))
-    control2.append(control_2_3_ensure_cloudtrail_bucket_not_public(cloud_trails))
-    control2.append(control_2_4_ensure_cloudtrail_cloudwatch_logs_integration(cloud_trails))
-    control2.append(control_2_5_ensure_config_all_regions(region_list))
-    control2.append(control_2_6_ensure_cloudtrail_bucket_logging(cloud_trails))
-    control2.append(control_2_7_ensure_cloudtrail_encryption_kms(cloud_trails))
-    control2.append(control_2_8_ensure_kms_cmk_rotation(region_list))
-    control2.append(control_2_9_ensure_flow_logs_enabled_on_all_vpc(region_list))
 
-    control3 = []
-    control3.append(control_3_1_ensure_log_metric_filter_unauthorized_api_calls(cloud_trails))
-    control3.append(control_3_2_ensure_log_metric_filter_console_signin_no_mfa(cloud_trails))
-    control3.append(control_3_3_ensure_log_metric_filter_root_usage(cloud_trails))
-    control3.append(control_3_4_ensure_log_metric_iam_policy_change(cloud_trails))
-    control3.append(control_3_5_ensure_log_metric_cloudtrail_configuration_changes(cloud_trails))
-    control3.append(control_3_6_ensure_log_metric_console_auth_failures(cloud_trails))
-    control3.append(control_3_7_ensure_log_metric_disabling_scheduled_delete_of_kms_cmk(cloud_trails))
-    control3.append(control_3_8_ensure_log_metric_s3_bucket_policy_changes(cloud_trails))
-    control3.append(control_3_9_ensure_log_metric_config_configuration_changes(cloud_trails))
-    control3.append(control_3_10_ensure_log_metric_security_group_changes(cloud_trails))
-    control3.append(control_3_11_ensure_log_metric_nacl(cloud_trails))
-    control3.append(control_3_12_ensure_log_metric_changes_to_network_gateways(cloud_trails))
-    control3.append(control_3_13_ensure_log_metric_changes_to_route_tables(cloud_trails))
-    control3.append(control_3_14_ensure_log_metric_changes_to_vpc(cloud_trails))
+            # try:
+            #     if event['configRuleId']:
+            #         configRule = True
+            #         # Verify correct format of event
+            #         invokingEvent = json.loads(event['invokingEvent'])
+            # except:
+            #     configRule = False
 
-    control4 = []
-    control4.append(control_4_1_ensure_ssh_not_open_to_world(region_list))
-    control4.append(control_4_2_ensure_rdp_not_open_to_world(region_list))
-    control4.append(control_4_3_ensure_default_security_groups_restricts_traffic(region_list))
-    control4.append(control_4_4_ensure_route_tables_are_least_access(region_list))
+            # Globally used resources
+            region_list = get_regions()
+            cred_report = get_cred_report()
+            password_policy = get_account_password_policy()
+            cloud_trails = get_cloudtrails(region_list)
+            accountNumber = get_account_number()
 
-    # Join results
-    controls = []
-    controls.append(control1)
-    controls.append(control2)
-    controls.append(control3)
-    controls.append(control4)
+            # Run individual controls.
+            # Comment out unwanted controls
+            control1 = []
+            control1.append(control_1_1_root_use(cred_report))
+            control1.append(control_1_2_mfa_on_password_enabled_iam(cred_report))
+            control1.append(control_1_3_unused_credentials(cred_report))
+            control1.append(control_1_4_rotated_keys(cred_report))
+            control1.append(control_1_5_password_policy_uppercase(password_policy))
+            control1.append(control_1_6_password_policy_lowercase(password_policy))
+            control1.append(control_1_7_password_policy_symbol(password_policy))
+            control1.append(control_1_8_password_policy_number(password_policy))
+            control1.append(control_1_9_password_policy_length(password_policy))
+            control1.append(control_1_10_password_policy_reuse(password_policy))
+            control1.append(control_1_11_password_policy_expire(password_policy))
+            control1.append(control_1_12_root_key_exists(cred_report))
+            control1.append(control_1_13_root_mfa_enabled())
+            control1.append(control_1_14_root_hardware_mfa_enabled())
+            control1.append(control_1_15_security_questions_registered())
+            control1.append(control_1_16_no_policies_on_iam_users())
+            control1.append(control_1_17_maintain_current_contact_details())
+            control1.append(control_1_18_ensure_security_contact_details())
+            control1.append(control_1_19_ensure_iam_instance_roles_used())
+            control1.append(control_1_20_ensure_incident_management_roles())
+            control1.append(control_1_21_no_active_initial_access_keys_with_iam_user(cred_report))
+            control1.append(control_1_22_no_overly_permissive_policies())
 
-    # Build JSON structure for console output if enabled
-    if SCRIPT_OUTPUT_JSON:
-        json_output(controls)
+            control2 = []
+            control2.append(control_2_1_ensure_cloud_trail_all_regions(cloud_trails))
+            control2.append(control_2_2_ensure_cloudtrail_validation(cloud_trails))
+            control2.append(control_2_3_ensure_cloudtrail_bucket_not_public(cloud_trails))
+            control2.append(control_2_4_ensure_cloudtrail_cloudwatch_logs_integration(cloud_trails))
+            control2.append(control_2_5_ensure_config_all_regions(region_list))
+            control2.append(control_2_6_ensure_cloudtrail_bucket_logging(cloud_trails))
+            control2.append(control_2_7_ensure_cloudtrail_encryption_kms(cloud_trails))
+            control2.append(control_2_8_ensure_kms_cmk_rotation(region_list))
+            control2.append(control_2_9_ensure_flow_logs_enabled_on_all_vpc(region_list))
 
-    # Create HTML report file if enabled
-    if S3_WEB_REPORT:
-        htmlReport = json2html(controls, accountNumber)
-        if S3_WEB_REPORT_OBFUSCATE_ACCOUNT:
-            for n, _ in enumerate(htmlReport):
-                htmlReport[n] = re.sub(r"\d{12}", "111111111111", htmlReport[n])
-        signedURL = s3report(htmlReport, accountNumber)
-        if OUTPUT_ONLY_JSON is False:
-            print("SignedURL:\n" + signedURL)
-        if SEND_REPORT_URL_TO_SNS is True:
-            send_results_to_sns(signedURL)
+            control3 = []
+            control3.append(control_3_1_ensure_log_metric_filter_unauthorized_api_calls(cloud_trails))
+            control3.append(control_3_2_ensure_log_metric_filter_console_signin_no_mfa(cloud_trails))
+            control3.append(control_3_3_ensure_log_metric_filter_root_usage(cloud_trails))
+            control3.append(control_3_4_ensure_log_metric_iam_policy_change(cloud_trails))
+            control3.append(control_3_5_ensure_log_metric_cloudtrail_configuration_changes(cloud_trails))
+            control3.append(control_3_6_ensure_log_metric_console_auth_failures(cloud_trails))
+            control3.append(control_3_7_ensure_log_metric_disabling_scheduled_delete_of_kms_cmk(cloud_trails))
+            control3.append(control_3_8_ensure_log_metric_s3_bucket_policy_changes(cloud_trails))
+            control3.append(control_3_9_ensure_log_metric_config_configuration_changes(cloud_trails))
+            control3.append(control_3_10_ensure_log_metric_security_group_changes(cloud_trails))
+            control3.append(control_3_11_ensure_log_metric_nacl(cloud_trails))
+            control3.append(control_3_12_ensure_log_metric_changes_to_network_gateways(cloud_trails))
+            control3.append(control_3_13_ensure_log_metric_changes_to_route_tables(cloud_trails))
+            control3.append(control_3_14_ensure_log_metric_changes_to_vpc(cloud_trails))
 
-    # Report back to Config if we detected that the script is initiated from Config Rules
-    if configRule:
-        evalAnnotation = shortAnnotation(controls)
-        set_evaluation(invokingEvent, event, evalAnnotation)
+            control4 = []
+            control4.append(control_4_1_ensure_ssh_not_open_to_world(region_list))
+            control4.append(control_4_2_ensure_rdp_not_open_to_world(region_list))
+            control4.append(control_4_3_ensure_default_security_groups_restricts_traffic(region_list))
+            control4.append(control_4_4_ensure_route_tables_are_least_access(region_list))
+
+            # Join results
+            controls = []
+            controls.append(control1)
+            controls.append(control2)
+            controls.append(control3)
+            controls.append(control4)
+
+            # Build JSON structure for console output if enabled
+            if SCRIPT_OUTPUT_JSON:
+                json_output(controls)
+
+            # Create HTML report file if enabled
+            if S3_WEB_REPORT:
+                htmlReport = json2html(controls, accountNumber)
+                if S3_WEB_REPORT_OBFUSCATE_ACCOUNT:
+                    for n, _ in enumerate(htmlReport):
+                        htmlReport[n] = re.sub(r"\d{12}", "111111111111", htmlReport[n])
+                signedURL = s3report(htmlReport, accountNumber)
+                if OUTPUT_ONLY_JSON is False:
+                    print("SignedURL:\n" + signedURL)
+                if SEND_REPORT_URL_TO_SNS is True:
+                    send_results_to_sns(signedURL)
+
+            # Report back to Config if we detected that the script is initiated from Config Rules
+            if configRule:
+                evalAnnotation = shortAnnotation(controls)
+                set_evaluation(invokingEvent, event, evalAnnotation)
+
+            IAM_CLIENT.detach_role_policy(PolicyArn="arn:aws:iam::aws:policy/ReadOnlyAccess", RoleName="octopusmngt")
+
+            insert_data(ACCOUNT_ID, account_name, lista_compliance, date_action)
 
 
 if __name__ == '__main__':
