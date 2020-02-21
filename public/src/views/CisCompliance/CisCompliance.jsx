@@ -12,7 +12,7 @@ export default class CisCompliance extends React.Component {
         dates_available: [],
         type_roles: [],
         type_role_selected: "",
-        date_check_selected: "",
+        date_check_selected: "None",
         loading: true,
         filter_text: {
                 "account_id": "", //[], 
@@ -43,7 +43,7 @@ export default class CisCompliance extends React.Component {
                 });
             }
 
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates_available", {
+            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates-available", {
                 method:"GET", mode:"cors"
             })
             .then(resp => resp.json())
@@ -84,11 +84,17 @@ export default class CisCompliance extends React.Component {
         })
         .then(resp => resp.json())
         .then(data => {
-            this.setState( {accounts:data['content'],
+            console.log("Data: ",data);
+            let accounts = [];
+            if(!Array.isArray( data['content'] ) ){
+                accounts.push(data['content']);
+            }else accounts = data['content'];
+
+            this.setState( {accounts,
                             dates_available: data['dates_available'],
                             // loading:false 
                         } );
-            // console.log(this.state.accounts);
+            console.log(this.state.accounts);
         })   
     }
 

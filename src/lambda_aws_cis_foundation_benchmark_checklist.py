@@ -26,7 +26,7 @@ import sys
 import tempfile
 import time
 from datetime import datetime
-
+import botocore
 import boto3
 
 # --- Script controls ---
@@ -74,7 +74,7 @@ IAM_MASTER_POLICY = "iam_master_policy"
 IAM_MANAGER_POLICY = "iam_manager_policy"
 
 # Control 1.1 - Days allowed since use of root account.
-CONTROL_1_1_DAYS = 30
+CONTROL_1_1_DAYS = 0
 
 # --- Global ---
 IAM_CLIENT = None #boto3.client('iam')
@@ -672,7 +672,7 @@ def control_1_19_ensure_iam_instance_roles_used():
     description = "Ensure IAM instance roles are used for AWS resource access from instances, application code is not audited"
     scored = False
     failReason = "Instance not assigned IAM role for EC2"
-    client = boto3.client('ec2')
+    client = get_creds('ec2', Id=ACCOUNT_ID)
     response = client.describe_instances()
     offenders = []
     for n, _ in enumerate(response['Reservations']):
@@ -818,7 +818,7 @@ def control_2_1_ensure_cloud_trail_all_regions(cloudtrails):
     for m, n in cloudtrails.items():
         for o in n:
             if is_active_multiregion_cloudtrail(o, m):
-                client = boto3.client('cloudtrail', region_name=m)
+                client = get_creds('cloudtrail', Id=ACCOUNT_ID, region=m)
                 response = client.get_event_selectors(
                     TrailName=o['Name']
                 )
@@ -960,7 +960,7 @@ def control_2_5_ensure_config_all_regions(regions):
     globalConfigCapture = False  # Only one region needs to capture global events
     for n in regions:
         try:
-            configClient = boto3.client('config', region_name=n)
+            configClient = get_creds('config', Id=ACCOUNT_ID, region=n)
             response = configClient.describe_configuration_recorder_status()
          # Get recording status
             if not response['ConfigurationRecordersStatus'][0]['recording'] is True:
@@ -1131,7 +1131,7 @@ def control_2_9_ensure_flow_logs_enabled_on_all_vpc(regions):
     description = "Ensure VPC flow logging is enabled in all VPCs"
     scored = True
     for n in regions:
-        client = boto3.client('ec2', region_name=n)
+        client = get_creds('ec2', Id=ACCOUNT_ID, region=n)
         flowlogs = client.describe_flow_logs(
             #  No paginator support in boto atm.
         )
@@ -1179,7 +1179,7 @@ def control_3_1_ensure_log_metric_filter_unauthorized_api_calls(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1187,12 +1187,12 @@ def control_3_1_ensure_log_metric_filter_unauthorized_api_calls(cloudtrails):
                         patterns = ["\$\.errorCode\s*=\s*\"?\*UnauthorizedOperation(\"|\)|\s)",
                                     "\$\.errorCode\s*=\s*\"?AccessDenied\*(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1224,7 +1224,7 @@ def control_3_2_ensure_log_metric_filter_console_signin_no_mfa(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1232,12 +1232,12 @@ def control_3_2_ensure_log_metric_filter_console_signin_no_mfa(cloudtrails):
                         patterns = ["\$\.eventName\s*=\s*\"?ConsoleLogin(\"|\)|\s)",
                                     "\$\.additionalEventData\.MFAUsed\s*\!=\s*\"?Yes"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1269,7 +1269,7 @@ def control_3_3_ensure_log_metric_filter_root_usage(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1278,12 +1278,12 @@ def control_3_3_ensure_log_metric_filter_root_usage(cloudtrails):
                                     "\$\.userIdentity\.invokedBy\s*NOT\s*EXISTS",
                                     "\$\.eventType\s*\!=\s*\"?AwsServiceEvent(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1315,7 +1315,7 @@ def control_3_4_ensure_log_metric_iam_policy_change(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1337,12 +1337,12 @@ def control_3_4_ensure_log_metric_iam_policy_change(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?AttachGroupPolicy(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?DetachGroupPolicy(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1374,7 +1374,7 @@ def control_3_5_ensure_log_metric_cloudtrail_configuration_changes(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1385,12 +1385,12 @@ def control_3_5_ensure_log_metric_cloudtrail_configuration_changes(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?StartLogging(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?StopLogging(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1422,7 +1422,7 @@ def control_3_6_ensure_log_metric_console_auth_failures(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1430,12 +1430,12 @@ def control_3_6_ensure_log_metric_console_auth_failures(cloudtrails):
                         patterns = ["\$\.eventName\s*=\s*\"?ConsoleLogin(\"|\)|\s)",
                                     "\$\.errorMessage\s*=\s*\"?Failed authentication(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1467,7 +1467,7 @@ def control_3_7_ensure_log_metric_disabling_scheduled_delete_of_kms_cmk(cloudtra
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1476,12 +1476,12 @@ def control_3_7_ensure_log_metric_disabling_scheduled_delete_of_kms_cmk(cloudtra
                                     "\$\.eventName\s*=\s*\"?DisableKey(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?ScheduleKeyDeletion(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1513,7 +1513,7 @@ def control_3_8_ensure_log_metric_s3_bucket_policy_changes(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1529,12 +1529,12 @@ def control_3_8_ensure_log_metric_s3_bucket_policy_changes(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?DeleteBucketLifecycle(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?DeleteBucketReplication(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1566,7 +1566,7 @@ def control_3_9_ensure_log_metric_config_configuration_changes(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1577,12 +1577,12 @@ def control_3_9_ensure_log_metric_config_configuration_changes(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?PutDeliveryChannel(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?PutConfigurationRecorder(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1614,7 +1614,7 @@ def control_3_10_ensure_log_metric_security_group_changes(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1626,12 +1626,12 @@ def control_3_10_ensure_log_metric_security_group_changes(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?CreateSecurityGroup(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?DeleteSecurityGroup(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1663,7 +1663,8 @@ def control_3_11_ensure_log_metric_nacl(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    # client = get_creds('logs', Id=ACCOUNT_ID, region=n)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1675,12 +1676,14 @@ def control_3_11_ensure_log_metric_nacl(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?ReplaceNetworkAclEntry(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?ReplaceNetworkAclAssociation(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            # cwclient = boto3.client('cloudwatch', region_name=n)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            # snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1712,7 +1715,8 @@ def control_3_12_ensure_log_metric_changes_to_network_gateways(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    # client = get_creds('logs', Id=ACCOUNT_ID, region=n)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1724,12 +1728,14 @@ def control_3_12_ensure_log_metric_changes_to_network_gateways(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?DeleteInternetGateway(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?DetachInternetGateway(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            # cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            # snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1761,7 +1767,8 @@ def control_3_13_ensure_log_metric_changes_to_route_tables(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    # client = get_creds('logs', Id=ACCOUNT_ID, region=n)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1774,12 +1781,14 @@ def control_3_13_ensure_log_metric_changes_to_route_tables(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?DeleteRoute(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?DisassociateRouteTable(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            # cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            # snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1811,7 +1820,8 @@ def control_3_14_ensure_log_metric_changes_to_vpc(cloudtrails):
             try:
                 if is_active_multiregion_cloudtrail(o,m) and o['CloudWatchLogsLogGroupArn']:
                     group = re.search('log-group:(.+?):', o['CloudWatchLogsLogGroupArn']).group(1)
-                    client = boto3.client('logs', region_name=m)
+                    # client = get_creds('logs', Id=ACCOUNT_ID, region=n)
+                    client = get_creds('logs', Id=ACCOUNT_ID, region=n)
                     filters = client.describe_metric_filters(
                         logGroupName=group
                     )
@@ -1828,12 +1838,14 @@ def control_3_14_ensure_log_metric_changes_to_vpc(cloudtrails):
                                     "\$\.eventName\s*=\s*\"?DisableVpcClassicLink(\"|\)|\s)",
                                     "\$\.eventName\s*=\s*\"?EnableVpcClassicLink(\"|\)|\s)"]
                         if find_in_string(patterns, str(p['filterPattern'])):
-                            cwclient = boto3.client('cloudwatch', region_name=m)
+                            # cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
+                            cwclient = get_creds('cloudwatch', Id=ACCOUNT_ID, region=n)
                             response = cwclient.describe_alarms_for_metric(
                                 MetricName=p['metricTransformations'][0]['metricName'],
                                 Namespace=p['metricTransformations'][0]['metricNamespace']
                             )
-                            snsClient = boto3.client('sns', region_name=m)
+                            # snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
+                            snsClient = get_creds('sns', Id=ACCOUNT_ID, region=n)
                             subscribers = snsClient.list_subscriptions_by_topic(
                                 TopicArn=response['MetricAlarms'][0]['AlarmActions'][0]
                                 #  Pagination not used since only 1 subscriber required
@@ -1862,7 +1874,8 @@ def control_4_1_ensure_ssh_not_open_to_world(regions):
     description = "Ensure no security groups allow ingress from 0.0.0.0/0 to port 22"
     scored = True
     for n in regions:
-        client = boto3.client('ec2', region_name=n)
+        # client = boto3.client('ec2', region_name=n)
+        client = get_creds('ec2', Id=ACCOUNT_ID, region=n)
         response = client.describe_security_groups()
         for m in response['SecurityGroups']:
             if "0.0.0.0/0" in str(m['IpPermissions']):
@@ -1895,7 +1908,8 @@ def control_4_2_ensure_rdp_not_open_to_world(regions):
     description = "Ensure no security groups allow ingress from 0.0.0.0/0 to port 3389"
     scored = True
     for n in regions:
-        client = boto3.client('ec2', region_name=n)
+        # client = boto3.client('ec2', region_name=n)
+        client = get_creds('ec2', Id=ACCOUNT_ID, region=n)
         response = client.describe_security_groups()
         for m in response['SecurityGroups']:
             if "0.0.0.0/0" in str(m['IpPermissions']):
@@ -1928,7 +1942,8 @@ def control_4_3_ensure_default_security_groups_restricts_traffic(regions):
     description = "Ensure the default security group of every VPC restricts all traffic"
     scored = True
     for n in regions:
-        client = boto3.client('ec2', region_name=n)
+        # client = boto3.client('ec2', region_name=n)
+        client = get_creds('ec2', Id=ACCOUNT_ID, region=n)
         response = client.describe_security_groups(
             Filters=[
                 {
@@ -1962,7 +1977,8 @@ def control_4_4_ensure_route_tables_are_least_access(regions):
     description = "Ensure routing tables for VPC peering are least access"
     scored = False
     for n in regions:
-        client = boto3.client('ec2', region_name=n)
+        # client = boto3.client('ec2', region_name=n)
+        client = get_creds('ec2', Id=ACCOUNT_ID, region=n)
         response = client.describe_route_tables()
         for m in response['RouteTables']:
             for o in m['Routes']:
@@ -1992,7 +2008,8 @@ def control_4_5_ensure_route_tables_are_least_access(regions):
     description = "Ensure routing tables for VPC peering are least access"
     scored = False
     for n in regions:
-        client = boto3.client('ec2', region_name=n)
+        # client = boto3.client('ec2', region_name=n)
+        client = get_creds('ec2', Id=ACCOUNT_ID, region=n)
         response = client.describe_route_tables()
         for m in response['RouteTables']:
             for o in m['Routes']:
@@ -2069,8 +2086,21 @@ def get_regions():
     Returns:
         TYPE: Description
     """
-    client = boto3.client('ec2')
-    region_response = client.describe_regions()
+    # client = boto3.client('ec2')
+    client = ""
+    region_response = ""
+    i=0
+    while i<5:
+        try:
+            client = get_creds('ec2', Id=ACCOUNT_ID)
+            region_response = client.describe_regions()
+            break
+        except Exception as e:
+            time.sleep(2)
+            i += 1
+            if i == 5:
+                raise e
+
     regions = [region['RegionName'] for region in region_response['Regions']]
     return regions
 
@@ -2083,7 +2113,8 @@ def get_cloudtrails(regions):
     """
     trails = dict()
     for n in regions:
-        client = boto3.client('cloudtrail', region_name=n)
+        # client = boto3.client('cloudtrail', region_name=n)
+        client = get_creds('cloudtrail', Id=ACCOUNT_ID, region=n)
         response = client.describe_trails()
         temp = []
         for m in response['trailList']:
@@ -2121,7 +2152,8 @@ def is_active_multiregion_cloudtrail(trail, region):
         bool: True if the given trail is multiregion and logging is true
     """
     if trail['IsMultiRegionTrail']:
-        client = boto3.client('cloudtrail', region_name=region)
+        # client = boto3.client('cloudtrail', region_name=region)
+        client = get_creds('cloudtrail', Id=ACCOUNT_ID, region=region)
         response = client.get_trail_status(
             Name=trail['TrailARN']
         )
@@ -2393,7 +2425,7 @@ def get_creds(aws_service,**kwargs):
             raise e
             #return my_logging(e,"error")
 
-def insert_data(account_id, account_name, data_json, date_action, type_role):
+def insert_data(account_id, account_name, data_json, date_action):
     '''
     Insert the name account create to make the index
     '''
@@ -2401,11 +2433,10 @@ def insert_data(account_id, account_name, data_json, date_action, type_role):
     table = dynamodb.Table("octopus_account_compliance")
 
     item = {
-        "DateAction": date_action,
+        "DateAction": date_action+"-CIS",
         "Account": account_id,
         "Name": account_name,
-        "DataCompliance": dumps(data_json, ensure_ascii=False),
-        "TypeRole": type_role,
+        "DataCompliance": json.dumps(data_json, ensure_ascii=False),
         "TypeCompliance":"CIS"
         }
 
@@ -2422,19 +2453,20 @@ def lambda_handler(event, context):
 
     if "Records" in event:
         for msg in event['Records']:
-            data = loads(msg['body'])
+            data = json.loads(msg['body'])
             
+            global ACCOUNT_ID
+            global IAM_CLIENT
+            global S3_CLIENT
             ACCOUNT_ID = data['account_id']
             date_action = data['date_action']
             account_name = data['account_name']
             type_role = ""#data['type_role']
+            print("Checando: ",ACCOUNT_ID, account_name)
 
             try:
                 IAM_CLIENT = get_creds("iam",Id=ACCOUNT_ID)
                 S3_CLIENT = get_creds("s3",Id=ACCOUNT_ID)
-                
-                # attaching permission to use EC2/VPC/S3/KMS and also IAM
-                IAM_CLIENT.attach_role_policy(PolicyArn="arn:aws:iam::aws:policy/ReadOnlyAccess", RoleName="octopusmngt")
             except Exception as e:
                 lista_compliance = [
                     { 
@@ -2460,7 +2492,7 @@ def lambda_handler(event, context):
             cred_report = get_cred_report()
             password_policy = get_account_password_policy()
             cloud_trails = get_cloudtrails(region_list)
-            accountNumber = get_account_number()
+            accountNumber = ACCOUNT_ID # get_account_number()
 
             # Run individual controls.
             # Comment out unwanted controls
@@ -2529,29 +2561,28 @@ def lambda_handler(event, context):
             controls.append(control4)
 
             # Build JSON structure for console output if enabled
-            if SCRIPT_OUTPUT_JSON:
-                json_output(controls)
+            # if SCRIPT_OUTPUT_JSON:
+            #     json_output(controls)
 
-            # Create HTML report file if enabled
-            if S3_WEB_REPORT:
-                htmlReport = json2html(controls, accountNumber)
-                if S3_WEB_REPORT_OBFUSCATE_ACCOUNT:
-                    for n, _ in enumerate(htmlReport):
-                        htmlReport[n] = re.sub(r"\d{12}", "111111111111", htmlReport[n])
-                signedURL = s3report(htmlReport, accountNumber)
-                if OUTPUT_ONLY_JSON is False:
-                    print("SignedURL:\n" + signedURL)
-                if SEND_REPORT_URL_TO_SNS is True:
-                    send_results_to_sns(signedURL)
+            # # Create HTML report file if enabled
+            # if S3_WEB_REPORT:
+            #     htmlReport = json2html(controls, accountNumber)
+            #     if S3_WEB_REPORT_OBFUSCATE_ACCOUNT:
+            #         for n, _ in enumerate(htmlReport):
+            #             htmlReport[n] = re.sub(r"\d{12}", "111111111111", htmlReport[n])
+            #     signedURL = s3report(htmlReport, accountNumber)
+            #     if OUTPUT_ONLY_JSON is False:
+            #         print("SignedURL:\n" + signedURL)
+            #     if SEND_REPORT_URL_TO_SNS is True:
+            #         send_results_to_sns(signedURL)
 
             # Report back to Config if we detected that the script is initiated from Config Rules
-            if configRule:
-                evalAnnotation = shortAnnotation(controls)
-                set_evaluation(invokingEvent, event, evalAnnotation)
+            # if configRule:
+            #     evalAnnotation = shortAnnotation(controls)
+            #     set_evaluation(invokingEvent, event, evalAnnotation)
 
-            IAM_CLIENT.detach_role_policy(PolicyArn="arn:aws:iam::aws:policy/ReadOnlyAccess", RoleName="octopusmngt")
 
-            insert_data(ACCOUNT_ID, account_name, lista_compliance, date_action)
+            insert_data(ACCOUNT_ID, account_name, controls, date_action)
 
 
 if __name__ == '__main__':

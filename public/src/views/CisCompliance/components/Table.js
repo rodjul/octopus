@@ -12,6 +12,8 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 
 
 const columns = [
+    { field: 'account_id', title: 'Account\u00a0ID', headerStyle: {fontWeight: 'bolder',} },
+    { field: 'account_name', title: 'Nome', headerStyle: {fontWeight: 'bolder',} },
     { field: 'title', title: 'Title', headerStyle: {fontWeight: 'bolder',} },
     { field: 'compliance', title: 'Compliance', align: 'justify', format: value => value.toLocaleString(), headerStyle: {fontWeight: 'bolder',} },
     { field: 'offenders', title: 'Offenders',  align: 'justify', format: value => value.toLocaleString(), headerStyle: {fontWeight: 'bolder',} },
@@ -686,19 +688,31 @@ const AccountsTable = (props) => {
         }
     };    
     let rows = [];
-    console.log(test);
-    for(let i=1; i<=Object.keys(accounts).length ; i++){
-        for(let j=1; j<=Object.keys(accounts[i]).length ; j++){
-            let data = test[i][j];
-            rows.push(
-                {
-                    "title":data['ControlId'] +" "+data['Description'],
-                    "compliance":data['Result'],
-                    "offenders":data['Offenders'].toString(),
-                    "failReason":data['failReason']
+    console.log("Accounts: ",accounts);
+    if(accounts.length){
+        // para cada conta
+        accounts.map( account => {
+            // obtemos o conteudo do compliance
+            let data_content = JSON.parse(account['DataCompliance']);
+            
+            for(let i=0; i<Object.keys(data_content).length ; i++){
+                for(let j=0; j<Object.keys(data_content[i]).length ; j++){
+                    let data = data_content[i][j];
+                    rows.push(
+                        {
+                            "account_id":account['Account'],
+                            "account_name":account['Name'],
+                            "title":data['ControlId'] +" "+data['Description'],
+                            "compliance":data['Result'],
+                            "offenders":data['Offenders'].toString(),
+                            "failReason":data['failReason']
+                        }
+                    );
                 }
-            );
-        }
+            }
+            console.log(rows);
+        });
+
     }
 
 
@@ -808,20 +822,11 @@ const AccountsTable = (props) => {
                     </DialogContentText>
                     </DialogContent>
                     <DialogActions>
-                    {disabledButtonRequestCompliance ? (
-                        <Button disabled
-                        variant="contained" color="primary">
-                            Sim
-                        </Button>
-                    ) : (
                         <Button
                         onClick={requestNewCompliance} 
                         variant="contained" color="primary">
                             Sim
                         </Button>
-                    )
-                
-                    }
                     
                     <Button onClick={handleCloseAddNewCheck} variant="contained" color="secondary" autoFocus>
                         Não

@@ -147,7 +147,7 @@ functions:
     handler: src/lambda_controller_compliance_iam.lambda_handler
     environment:
       URL_SQS_IAM: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
-      URL_SQS_CIS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
+      URL_SQS_CIS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_cis_new_check}"
       PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
       LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
       # octopus_resource: "totvs-cloudformation-templates"
@@ -195,7 +195,7 @@ functions:
           method: get
           cors: true
       - http:
-          path: /policy/compliance/dates_available
+          path: /policy/compliance/dates-available
           method: get
           cors: true          
       - sqs:
@@ -402,18 +402,19 @@ resources:
             KeyType: HASH
           - AttributeName: Account
             KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: "2"
+          WriteCapacityUnits: "2"
         GlobalSecondaryIndexes:
           - IndexName: indexTypeCompliance
             KeySchema:
-              - AttributeName: TypeCompliance
-                KeyType: RANGE
+            - AttributeName: TypeCompliance
+              KeyType: HASH
             Projection:
-              # NonKeyAttributes:
-              #   - count
-              ProjectionType: KEYS_ONLY             
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+              ProjectionType: KEYS_ONLY          
+            ProvisionedThroughput:
+              ReadCapacityUnits: "2"
+              WriteCapacityUnits: "2"
         TableName: octopus_account_compliance
 
     DynamoDbAPolicies:

@@ -16,7 +16,7 @@ def insert_data(account_id, account_name, data_json, date_action, type_role):
     table = dynamodb.Table("octopus_account_compliance")
 
     item = {
-        "DateAction": date_action,
+        "DateAction": date_action+"-IAM",
         "Account": account_id,
         "Name": account_name,
         "DataCompliance": dumps(data_json, ensure_ascii=False),
@@ -169,7 +169,7 @@ def get_date_actions():
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_account_compliance")
     date_actions = table.scan(FilterExpression=Attr("TypeCompliance").eq("IAM"))
-    dates =  list( set( [date['DateAction'] for date in date_actions['Items']] ) )
+    dates =  list( set( [date['DateAction'].split("-")[0] for date in date_actions['Items']] ) )
     dates.sort()
     return dates
 
@@ -197,9 +197,14 @@ def get_compliance(event):
     content = ""
     if date_input != "":
         try:
-            content = table.scan(FilterExpression=Attr("DateAction").eq(date_input) 
-                                & Attr("TypeRole").eq(type_role)
+            # content = table.scan(FilterExpression=Attr("DateAction").eq(date_input) 
+            content = table.scan(FilterExpression=Attr("TypeRole").eq(type_role)
                                 & Attr("TypeCompliance").eq("IAM"))['Items']
+            temp = []
+            for row in content:
+                if row['DateAction'].split("-")[0] == date_input:
+                    temp.append(row)
+            content = row
         except KeyError as e:
             print(e)
             content = ""

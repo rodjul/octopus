@@ -32,7 +32,7 @@ def get_date_actions():
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_account_compliance")
     date_actions = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))
-    dates =  list( set( [date['DateAction'] for date in date_actions['Items']] ) )
+    dates =  list( set( [date['DateAction'].split("-")[0] for date in date_actions['Items']] ) )
     dates.sort()
     return dates
 
@@ -58,8 +58,13 @@ def get_compliance(event):
     content = ""
     if date_input != "":
         try:
-            content = table.scan(FilterExpression=Attr("DateAction").eq(date_input)
-                                & Attr("TypeCompliance").eq("CIS"))['Items']
+            # content = table.scan(FilterExpression=Attr("DateAction").eq(date_input)
+            content = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))['Items']
+            temp = []
+            for row in content:
+                if row['DateAction'].split("-")[0] == date_input:
+                    temp.append(row)
+            content = row
         except KeyError as e:
             print(e)
             content = ""
@@ -72,11 +77,11 @@ def lambda_handler(event, context):
     print("Debug:",event)
            
     if event['httpMethod'] == "GET":
-        if event['resource'] == "/policy/compliance/dates_available":
+        if event['resource'] == "/policy/compliance/cis/dates-available":
             dates = dates = get_date_actions()
             return {"statusCode":200, "body":dumps({"error":False, "dates_available":dates}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
     
-        elif event['resource'] == "/policy/compliance/check":
+        elif event['resource'] == "/policy/compliance/cis/check":
             return get_compliance(event)
         
