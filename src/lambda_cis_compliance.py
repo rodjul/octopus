@@ -46,6 +46,7 @@ def get_compliance(event):
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
         
     dates = get_date_actions()
+    # if the value is null, get the lastest date available
     if date_input == "":
         try:
             date_input = dates[len(dates)-1]
@@ -63,8 +64,9 @@ def get_compliance(event):
             temp = []
             for row in content:
                 if row['DateAction'].split("-")[0] == date_input:
+                    row['DateAction'] = row['DateAction'].split("-")[0]
                     temp.append(row)
-            content = row
+            content = temp
         except KeyError as e:
             print(e)
             content = ""
@@ -78,7 +80,7 @@ def lambda_handler(event, context):
            
     if event['httpMethod'] == "GET":
         if event['resource'] == "/policy/compliance/cis/dates-available":
-            dates = dates = get_date_actions()
+            dates = get_date_actions()
             return {"statusCode":200, "body":dumps({"error":False, "dates_available":dates}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
     

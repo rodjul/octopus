@@ -2488,7 +2488,16 @@ def lambda_handler(event, context):
             #     configRule = False
 
             # Globally used resources
-            region_list = get_regions()
+            try:
+                region_list = get_regions()
+            except Exception as e:
+                print("Exception ao obter get_regions(): ",e)
+                lista_compliance = [[]
+                    {"ControlId": "0", "Description": "Falha ao acessar a conta", "Result": False, "Offenders": "", "failReason": "STS"}
+                ]]
+                insert_data(ACCOUNT_ID, account_name, lista_compliance, date_action)
+                continue
+
             cred_report = get_cred_report()
             password_policy = get_account_password_policy()
             cloud_trails = get_cloudtrails(region_list)

@@ -185,6 +185,7 @@ def get_compliance(event):
         
     
     dates = get_date_actions()
+    # if the value is null, get the lastest date available
     if date_input == "":
         try:
             date_input = dates[len(dates)-1]
@@ -203,8 +204,9 @@ def get_compliance(event):
             temp = []
             for row in content:
                 if row['DateAction'].split("-")[0] == date_input:
+                    row['DateAction'] = row['DateAction'].split("-")[0]
                     temp.append(row)
-            content = row
+            content = temp
         except KeyError as e:
             print(e)
             content = ""

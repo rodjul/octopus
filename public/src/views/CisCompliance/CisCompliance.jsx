@@ -88,10 +88,11 @@ export default class CisCompliance extends React.Component {
             let accounts = [];
             if(!Array.isArray( data['content'] ) ){
                 accounts.push(data['content']);
-            }else accounts = data['content'];
+            }else accounts = data['content']; 
 
+  
             this.setState( {accounts,
-                            dates_available: data['dates_available'],
+                            // dates_available: data['dates_available'],
                             // loading:false 
                         } );
             console.log(this.state.accounts);
@@ -120,14 +121,14 @@ export default class CisCompliance extends React.Component {
     }
     
      render(){
-        const { accounts, dates_available } = this.state;
+        const { accounts, dates_available, dynamicModalTable } = this.state;
 
                         
         return (
             <AccountsTable 
                 accounts={accounts}
                 dates_available={dates_available}
-                
+                dynamicModalTable={dynamicModalTable}
                 requestNewCompliance={this.requestNewCompliance.bind(this)}
                 getCompliance={this.getCompliance.bind(this)}
                 onChangeTypeRole={this.onChangeTypeRole.bind(this)}
