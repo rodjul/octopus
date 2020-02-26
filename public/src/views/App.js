@@ -5,7 +5,7 @@ import './App.css';
 import CreateAccount from './CreateAccount/CreateAccount';
 // import withAuth from './Login/withAuth';
 import LoginForm from './Login/LoginForm';
-import ManageIAM from './ManagePolicies/ManageIAM';
+import ManageIAM from './ManageIAM/ManageIAM';
 import AccountsCompliance from './CheckCompliance/AccountsCompliance';
 import CisCompliance from './CisCompliance/CisCompliance';
 import RolesAccounts from './ManageRolesAccount/RolesAccounts';

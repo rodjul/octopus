@@ -203,6 +203,7 @@ const AccountsTable = (props) => {
                         exportButton: true,
                         pageSize: 25,
                         pageSizeOptions: [25,50,100,200],
+                        exportAllData: true,
                         // filtering: true,
                     }}
                     actions={[
