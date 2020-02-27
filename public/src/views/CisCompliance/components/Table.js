@@ -102,8 +102,8 @@ const AccountsTable = (props) => {
     }
 
     const handleCloseRenderModalTableOffender = () => {
-        setContentRenderModalTableOffender("");
         setRenderModalTableOffender(false);
+        // setContentRenderModalTableOffender("");
     } 
     
 
@@ -400,18 +400,21 @@ const AccountsTable = (props) => {
 
     const renderModalTableOffender = (rowData) => {
         // console.log("openRenderModalTableOffender: ",openRenderModalTableOffender);
-        if(rowData.offenders.length)
-        {
-            return (
-                <>
-                    <Button 
-                    onClick={() => {console.log(true);handleClickRenderModalTableOffender(rowData.offenders)}} 
-                    >
-                    Expandir
-                    </Button>
-                    
-                </>
-            );
+        if(rowData.offenders.length){
+            if(rowData.offenders.split(",").length > 1){
+                return (
+                    <>
+                        <Button variant="contained"
+                        onClick={() => handleClickRenderModalTableOffender(rowData.offenders)} 
+                        >
+                        Expandir
+                        </Button>
+                        
+                    </>
+                );
+            }
+            return rowData.offenders;
+
         }
         return "";
     }
@@ -434,7 +437,7 @@ const AccountsTable = (props) => {
                         { field: 'compliance', title: 'Compliance', align: 'justify', format: value => value.toLocaleString(), headerStyle: { fontWeight: 'bolder', } },
                         {
                             field: 'offenders', title: 'Offenders', align: 'justify', format: value => value.toLocaleString(), headerStyle: { fontWeight: 'bolder', },
-                            cellStyle: { width: "30em", wordWrap: "break-word" },
+                            cellStyle: { maxWidth: "17em", wordWrap: "break-word" },
                             render: rowData => renderModalTableOffender(rowData),
                         },
                         { field: 'failReason', title: 'Fail\u00a0Reason', align: 'justify', format: value => value.toFixed(2), headerStyle: { fontWeight: 'bolder', } }
@@ -543,6 +546,11 @@ const AccountsTable = (props) => {
 
                         </DialogContentText>
                     </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => handleCloseRenderModalTableOffender()} variant="contained" color="primary" autoFocus>
+                            Fechar
+                        </Button>
+                    </DialogActions>
                 </Dialog>
              
 

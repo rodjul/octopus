@@ -44,7 +44,7 @@ export default class AccountsCompliance extends React.Component {
                 });
             }
 
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/dates_available", {
+            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/dates-available", {
                 method:"GET", mode:"cors"
             })
             .then(resp => resp.json())

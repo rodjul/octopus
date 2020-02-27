@@ -31,8 +31,15 @@ def get_date_actions():
     # obter da data mais recente quando na 1 vez
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_account_compliance")
-    date_actions = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))
-    dates =  list( set( [date['DateAction'].split("-")[0] for date in date_actions['Items']] ) )
+    response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))
+    dates = []
+    
+    while 'LastEvaluatedKey' in response:
+        for item in response['Items']:
+            dates.append(item['DateAction'].split("-")[0])
+        response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"),
+                            ExclusiveStartKey=response['LastEvaluatedKey'])
+    dates = list(set(dates))
     dates.sort()
     return dates
 
@@ -60,12 +67,17 @@ def get_compliance(event):
     if date_input != "":
         try:
             # content = table.scan(FilterExpression=Attr("DateAction").eq(date_input)
-            content = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))['Items']
+            response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))
             temp = []
-            for row in content:
-                if row['DateAction'].split("-")[0] == date_input:
-                    row['DateAction'] = row['DateAction'].split("-")[0]
-                    temp.append(row)
+            while 'LastEvaluatedKey' in response:
+                for row in response['Items']:
+                    if row['DateAction'].split("-")[0] == date_input:
+                        row['DateAction'] = row['DateAction'].split("-")[0]
+                        temp.append(row)
+
+                response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"),
+                                    ExclusiveStartKey=response['LastEvaluatedKey'])
+            
             content = temp
         except KeyError as e:
             print(e)

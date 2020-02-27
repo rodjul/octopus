@@ -191,11 +191,11 @@ functions:
       - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"        
     events:
       - http:
-          path: /policy/compliance/check
+          path: /policy/compliance/iam/check
           method: get
           cors: true
       - http:
-          path: /policy/compliance/dates-available
+          path: /policy/compliance/iam/dates-available
           method: get
           cors: true          
       - sqs:

@@ -2492,7 +2492,7 @@ def lambda_handler(event, context):
                 region_list = get_regions()
             except Exception as e:
                 print("Exception ao obter get_regions(): ",e)
-                lista_compliance = [
+                lista_compliance = [[
                     {"ControlId": "0", "Description": "Falha ao acessar a conta", "Result": False, "Offenders": "", "failReason": "STS"}
                 ]]
                 insert_data(ACCOUNT_ID, account_name, lista_compliance, date_action)
