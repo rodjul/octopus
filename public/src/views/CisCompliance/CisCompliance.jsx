@@ -10,19 +10,8 @@ export default class CisCompliance extends React.Component {
       this.state = {
         accounts: [],
         dates_available: [],
-        type_roles: [],
-        type_role_selected: "",
         date_check_selected: "None",
         loading: true,
-        filter_text: {
-                "account_id": "", //[], 
-                "account_name": "", //[],
-                "role_name": "", //[],
-                "role_policy": "", //[],
-                "compliance": "", //[],
-                "status": "", //[],
-                "policies_adicionais": "" //[]
-            },
         };
     }
     
@@ -30,40 +19,27 @@ export default class CisCompliance extends React.Component {
      * Request the type role available and dates from the checks
      */
     componentDidMount(){
-        fetch(process.env.REACT_APP_ENDPOINT+"/role/available")
-        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/available")
+
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates-available", {
+            method:"GET", mode:"cors"
+        })
         .then(resp => resp.json())
         .then(data => {
-            if(data.message === "Internal server error"){
-                console.error("Error in fetching data");
-            }else{
-                this.setState({ 
-                    type_roles: data.type_roles,
-                    type_role_selected: data.type_roles[0]
-                });
-            }
-
-            fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates-available", {
-                method:"GET", mode:"cors"
-            })
-            .then(resp => resp.json())
-            .then(data => {
-                this.setState( {dates_available: data['dates_available']} );
-            })
-            
-            // fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action=", {
-            //     method:"GET", mode:"cors"
-            // })
-            // .then(resp => resp.json())
-            // .then(data => {
-            //     console.log(data);
-            //     this.setState( {accounts:data['content'],
-            //                     dates_available: data['dates_available'],
-            //                     loading:false } );
-            //     //  console.log(this.state.accounts);
-            // })
-
+            this.setState( {dates_available: data['dates_available']} );
         })
+        
+        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action=", {
+        //     method:"GET", mode:"cors"
+        // })
+        // .then(resp => resp.json())
+        // .then(data => {
+        //     console.log(data);
+        //     this.setState( {accounts:data['content'],
+        //                     dates_available: data['dates_available'],
+        //                     loading:false } );
+        //     //  console.log(this.state.accounts);
+        // })
+
     }
 
     /**
@@ -76,10 +52,10 @@ export default class CisCompliance extends React.Component {
      * When change the date of check compliance, request the data from this specfic date and account type.
      * @param {Object} e 
      */
-    getCompliance(e){
+    async getCompliance(e){
         this.setState({accounts:[]});
 
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/check?date_action="+this.state.date_check_selected, {
+        await fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/check?date_action="+this.state.date_check_selected, {
             method:"GET", mode:"cors"
         })
         .then(resp => resp.json())
@@ -96,27 +72,41 @@ export default class CisCompliance extends React.Component {
                             // loading:false 
                         } );
             console.log(this.state.accounts);
+            return "ok";
         })   
     }
 
     /**
      * Request a new check from a specfic account/role type. Pass as parameters the date and account type
      */
-    requestNewCompliance(){
+    async requestNewCompliance(){
         let today = new Date();
         let dd = String(today.getDate()).padStart(2, '0');
         let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
         let yyyy = today.getFullYear();
         let date_format = dd + mm + yyyy;
 
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/new",{
+        return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/new",{
             method:"POST", mode:"cors",
             body: JSON.stringify( {"date_action":date_format, "type_role": this.state.type_role_selected} )
         })
-        .then( resp => resp.json())
-        .then( _ => {
-            this.setState( {accounts: [], dates_available: [], loading: true } );
-            this.componentDidMount(); // TODO: colocar refresh a cada 5 seg
+        .then( resp => {
+            if( resp.status === 502 ){
+                return {"error":true, "message":"Ocorreu um erro ao executar a ação"};
+            }else if( resp.status === 400 ){
+                return {"error":true, "message":"Todos os campos precisam ser preenchidos"};
+            }else if( resp.status === 200 ){
+                //this.setState( {accounts: [], dates_available: [], loading: true } );
+                //this.componentDidMount(); // TODO: colocar refresh a cada 5 seg
+
+                fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates-available", {
+                    method:"GET", mode:"cors"
+                }).then(resp => resp.json()).then(data => {
+                    this.setState( {dates_available: data['dates_available']} );
+                })
+
+                return {"error":false, "message":"Executado com sucesso"};
+            }            
         })
     }
     

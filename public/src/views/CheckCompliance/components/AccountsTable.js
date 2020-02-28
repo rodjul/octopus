@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import { makeStyles } from '@material-ui/core/styles';
 import {Fab, Box, Button, InputLabel, Select, FormControl, MenuItem, Typography } from "@material-ui/core";
 import MaterialTable from 'material-table';
@@ -10,6 +11,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 
+import AlertMessage from "../../../components/AlertMessage";
 
 const columns = [
     { field: 'account_id', title: 'Account\u00a0ID', headerStyle: {fontWeight: 'bolder',} },
@@ -91,11 +93,16 @@ const useStyles = makeStyles(theme => ({
 
 const AccountsTable = (props) => {
     const classes = useStyles();
-    const [page, setPage] = React.useState(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState(50);
     const [openRefresh, setOpenRefresh] = React.useState(false);
     const [openAddNewCheck, setOpenAddNewCheck] = React.useState(false);
     const [disabledButtonRequestCompliance, setDisabledButtonRequestCompliance] = React.useState(true);
+
+    // AlertMessage
+    const handleOpenAlert = elem => setOpenAlert(elem);
+    const [isLoading, setLoading] = React.useState(false);
+    const [openAlert, setOpenAlert] = React.useState(false);
+    const [typeMessage, setTypeMessage] = React.useState("");
+    const [messageAlert, setMessageAlert] = React.useState("");
 
     const handleClickOpenRefresh = () => setOpenRefresh(true);
 
@@ -108,51 +115,36 @@ const AccountsTable = (props) => {
         setOpenAddNewCheck(false);
     }
 
-    const handleChangePage = (event, newPage) => {
-        setPage(newPage);
-    };
-
-    const handleChangeRowsPerPage = event => {
-        setRowsPerPage(+event.target.value);
-        setPage(0);
-    };
-
     const onChangeTypeRole = e => {
         setDisabledButtonRequestCompliance(false);
         props.onChangeTypeRole(e);
     }
 
-    const requestNewCompliance = () => {
+    const requestNewCompliance = async () => {
         setOpenAddNewCheck(false);
-        props.requestNewCompliance();
+
+        return;
+        setLoading(true);
+        
+        await props.requestNewCompliance()
+        .then( data => {
+            if(!data['error']){
+                setLoading(false);
+    
+                setOpenAlert(true);
+                setTypeMessage("success");
+                setMessageAlert(data.message);
+                
+            }else{
+                setLoading(false);
+    
+                setOpenAlert(true);
+                setTypeMessage("error");
+                setMessageAlert(data.message);
+                
+            }
+        });
     }
-
-    // const requestNewCompliance = () => {
-    //     props.requestNewCompliance;
-    //     if (!loading) {
-    //         setLoading(true);
-    //         setSuccess(false);
-            
-    //         let resp = await onSubmit(event);
-    //         resp = JSON.parse(resp);
-    //         console.log(resp);
-    //         if(!resp['error']){
-    //             setLoading(false);
-
-    //             setOpenAlert(true);
-    //             setTypeMessage("success");
-    //             setMessageAlert("CriaÃ§Ã£o da conta com sucesso");
-                
-    //             setLoadTable(true);
-    //         }else{
-    //             setLoading(false);
-
-    //             setOpenAlert(true);
-    //             setTypeMessage("error");
-    //             setMessageAlert("Ocorreu um erro ao criar a conta. Contate o suporte");
-                
-    //         }
-    // }
 
 
     const type_roles = props.type_roles;
@@ -182,7 +174,7 @@ const AccountsTable = (props) => {
     return (
         <main className={classes.content}>
             <Typography className={classes.titleHeader} variant="h4" noWrap >
-                Compliance das contas
+                IAM Compliance
             </Typography>
             <Box boxShadow={3}>
 
@@ -199,6 +191,7 @@ const AccountsTable = (props) => {
                     // isLoading={rows.length ? false: true}
                     columns={columns}
                     data={rows}
+                    isLoading={isLoading}
                     options={{
                         exportButton: true,
                         pageSize: 25,
@@ -321,12 +314,21 @@ const AccountsTable = (props) => {
 
 
              
-
+                <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} openAlertCallback={handleOpenAlert}/>
             </Box>
         </main>
         
     );
 }
 
+AccountsTable.propTypes = {
+    onChangeTypeRole: PropTypes.func.isRequired
+    // data: (elem) => {
+    //     if(elem.id === "type-roles"){
+    //         console.log(elem);
+    //     }
+    // }
+    // value: PropTypes.object.isRequired
+};
 
 export default AccountsTable;

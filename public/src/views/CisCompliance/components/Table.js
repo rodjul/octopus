@@ -11,6 +11,7 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { DepartureBoardTwoTone } from "@material-ui/icons";
 
+import AlertMessage from "../../../components/AlertMessage";
 
 
 const useStyles = makeStyles(theme => ({
@@ -89,6 +90,13 @@ const AccountsTable = (props) => {
     const [openRenderModalTableOffender, setRenderModalTableOffender] = React.useState(false);
     const [contentRenderModalTableOffender, setContentRenderModalTableOffender] = React.useState("");
     const [disabledButtonRequestCompliance, setDisabledButtonRequestCompliance] = React.useState(true);
+
+    // AlertMessage
+    const handleOpenAlert = elem => setOpenAlert(elem);
+    const [isLoading, setLoading] = React.useState(false);
+    const [openAlert, setOpenAlert] = React.useState(false);
+    const [typeMessage, setTypeMessage] = React.useState("");
+    const [messageAlert, setMessageAlert] = React.useState("");
     
     const handleClickOpenRefresh = () => setOpenRefresh(true);
     
@@ -113,37 +121,30 @@ const AccountsTable = (props) => {
         setOpenAddNewCheck(false);
     }
 
-    const requestNewCompliance = () => {
+    const requestNewCompliance = async () => {
         setOpenAddNewCheck(false);
-        props.requestNewCompliance();
+        setLoading(true);
+
+        await props.requestNewCompliance()
+        .then( data => {
+            if(!data['error']){
+                setLoading(false);
+    
+                setOpenAlert(true);
+                setTypeMessage("success");
+                setMessageAlert(data.message);
+                
+            }else{
+                setLoading(false);
+    
+                setOpenAlert(true);
+                setTypeMessage("error");
+                setMessageAlert(data.message);
+                
+            }
+        });
     }
 
-    // const requestNewCompliance = () => {
-    //     props.requestNewCompliance;
-    //     if (!loading) {
-    //         setLoading(true);
-    //         setSuccess(false);
-            
-    //         let resp = await onSubmit(event);
-    //         resp = JSON.parse(resp);
-    //         console.log(resp);
-    //         if(!resp['error']){
-    //             setLoading(false);
-
-    //             setOpenAlert(true);
-    //             setTypeMessage("success");
-    //             setMessageAlert("CriaÃ§Ã£o da conta com sucesso");
-                
-    //             setLoadTable(true);
-    //         }else{
-    //             setLoading(false);
-
-    //             setOpenAlert(true);
-    //             setTypeMessage("error");
-    //             setMessageAlert("Ocorreu um erro ao criar a conta. Contate o suporte");
-                
-    //         }
-    // }
 
     const test = {"content": [
         {
@@ -443,6 +444,7 @@ const AccountsTable = (props) => {
                         { field: 'failReason', title: 'Fail\u00a0Reason', align: 'justify', format: value => value.toFixed(2), headerStyle: { fontWeight: 'bolder', } }
                     ]}
                     data={rows}
+                    isLoading={isLoading}
                     options={{
                         exportButton: true,
                         pageSize: 25,
@@ -494,9 +496,13 @@ const AccountsTable = (props) => {
                     </DialogContent>
                     <DialogActions>
                     <Button 
-                    onClick={() => {
-                        props.getCompliance();
+                    onClick={async () => {
+                        setLoading(true);
                         handleCloseRefresh();
+                        await props.getCompliance()
+                        .then( _ => {
+                            setLoading(false);
+                        })
                     }} 
                     variant="contained" color="primary">
                         Obter
@@ -555,6 +561,7 @@ const AccountsTable = (props) => {
              
 
             </Box>
+            <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} openAlertCallback={handleOpenAlert}/>
         </main>
         
     );

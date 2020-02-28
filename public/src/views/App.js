@@ -51,7 +51,7 @@ class App  extends React.Component {
                             <Route path="/create-account" component={(CreateAccount)} />
                             <Route path="/manage-roles-accounts" component={RolesAccounts} />
                             <Route path="/manage-iam" component={ManageIAM} />
-                            <Route path="/accounts-compliance" component={AccountsCompliance} />
+                            <Route path="/iam-compliance" component={AccountsCompliance} />
                             <Route path="/cis-compliance" component={CisCompliance} />
                         </>
                     ):(

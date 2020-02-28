@@ -30,15 +30,19 @@ def get_date_actions():
     # obter todos as datas e dps retornar no json as datas disponiveis
     # obter da data mais recente quando na 1 vez
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table("octopus_account_compliance")
-    response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))
+    table = dynamodb.Table("octopus_account_compliance_dates")
+    response = table.scan(FilterExpression=Attr("DateAction").contains("CIS"))
     dates = []
     
+    for item in response['Items']:
+        dates.append(item['DateAction'].split("-")[0])
+
     while 'LastEvaluatedKey' in response:
+        response = table.scan(FilterExpression=Attr("DateAction").contains("CIS"),
+                            ExclusiveStartKey=response['LastEvaluatedKey'])
         for item in response['Items']:
             dates.append(item['DateAction'].split("-")[0])
-        response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"),
-                            ExclusiveStartKey=response['LastEvaluatedKey'])
+
     dates = list(set(dates))
     dates.sort()
     return dates
@@ -69,14 +73,20 @@ def get_compliance(event):
             # content = table.scan(FilterExpression=Attr("DateAction").eq(date_input)
             response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))
             temp = []
+            
+            for row in response['Items']:
+                if row['DateAction'].split("-")[0] == date_input:
+                    row['DateAction'] = row['DateAction'].split("-")[0]
+                    temp.append(row)
+            
             while 'LastEvaluatedKey' in response:
+                response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"),
+                                    ExclusiveStartKey=response['LastEvaluatedKey'])
                 for row in response['Items']:
                     if row['DateAction'].split("-")[0] == date_input:
                         row['DateAction'] = row['DateAction'].split("-")[0]
                         temp.append(row)
 
-                response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"),
-                                    ExclusiveStartKey=response['LastEvaluatedKey'])
             
             content = temp
         except KeyError as e:

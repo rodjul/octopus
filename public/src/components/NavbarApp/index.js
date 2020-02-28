@@ -83,7 +83,7 @@ const NavbarApp = () => {
                     <NavLink to="/create-account" className="nav-link" activeClassName="nav_clicked">Criar conta</NavLink>
                     <NavLink to="/manage-roles-accounts" className="nav-link" activeClassName="nav_clicked">Gerenciar tipos de conta</NavLink>
                     <NavLink to="/manage-policies" className="nav-link" activeClassName="nav_clicked">Gerenciar policies</NavLink>
-                    <NavLink to="/accounts-compliance" className="nav-link" activeClassName="nav_clicked">Compliance das contas</NavLink>
+                    <NavLink to="/accounts-compliance" className="nav-link" activeClassName="nav_clicked">IAM Compliance</NavLink>
 
                     {/* <NavDropdown title="Dropdown" id="basic-nav-dropdown">
             <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
@@ -110,15 +110,15 @@ const NavbarApp2 = (props) => {
     const classes = useStyles();
     const theme = useTheme();
     const [mobileOpen, setMobileOpen] = React.useState(false);
-    const titleLocationText = {
-        "/login": "Dashboard",
-        "/create-account": "Criar conta",
-        "/manage-roles-accounts": "Gerenciar tipos de conta",
-        "/manage-policies": "Gerenciar policies",
-        "/accounts-compliance": "Compliance das contas",
-    }
+    // const titleLocationText = {
+    //     "/login": "Dashboard",
+    //     "/create-account": "Criar conta",
+    //     "/manage-roles-accounts": "Gerenciar tipos de conta",
+    //     "/manage-policies": "Gerenciar policies",
+    //     "/accounts-compliance": "IAM Compliance",
+    // }
     
-    const [appbarTitle, setAppbarTitle] = React.useState( titleLocationText[props.appbarTitle] );
+    // const [appbarTitle, setAppbarTitle] = React.useState( titleLocationText[props.appbarTitle] );
     
 
     const handleDrawerToggle = () => {
@@ -150,9 +150,9 @@ const NavbarApp2 = (props) => {
                     <ListItemIcon><Edit /></ListItemIcon>
                     <ListItemText primary="Gerenciar IAM" />
                 </ListItem>
-                <ListItem button key="Compliance das contas" onClick={() => onClickRoute("/accounts-compliance")} >
+                <ListItem button key="IAM Compliance" onClick={() => onClickRoute("/iam-compliance")} >
                     <ListItemIcon><Assessment /></ListItemIcon>
-                    <ListItemText primary="Compliance das contas" />
+                    <ListItemText primary="IAM Compliance" />
                 </ListItem>
                 <ListItem button key="CIS Compliance" onClick={() => onClickRoute("/cis-compliance")} >
                     <ListItemIcon><Assessment /></ListItemIcon>

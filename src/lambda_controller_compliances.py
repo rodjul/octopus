@@ -5,6 +5,15 @@ from os import environ
 from datetime import datetime
 import requests
 
+def insert_date(type_compliance, date_action):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_account_compliance_dates")
+
+    item = {
+        "DateAction": date_action+"-"+type_compliance.upper(),
+    }
+
+    table.put_item( Item=item )
 
 def lambda_handler(event,context):
     print("Debug:",event)
@@ -41,6 +50,8 @@ def lambda_handler(event,context):
     sqs_client = boto3.client("sqs")
 
     if event['resource'] == "/policy/compliance/iam/new":
+        insert_date("IAM",date_action)
+
         for account in accounts['accounts']:
             sqs_client.send_message(
                 QueueUrl=environ['URL_SQS_IAM'],
@@ -52,6 +63,8 @@ def lambda_handler(event,context):
                     })
             )
     elif event['resource'] == "/policy/compliance/cis/new":
+        insert_date("CIS",date_action)
+        
         for account in accounts['accounts']:
             sqs_client.send_message(
                 QueueUrl=environ['URL_SQS_CIS'],

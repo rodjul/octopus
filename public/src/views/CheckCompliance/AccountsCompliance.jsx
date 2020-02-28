@@ -96,21 +96,34 @@ export default class AccountsCompliance extends React.Component {
     /**
      * Request a new check from a specfic account/role type. Pass as parameters the date and account type
      */
-    requestNewCompliance(){
+    async requestNewCompliance(){
         let today = new Date();
         let dd = String(today.getDate()).padStart(2, '0');
         let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
         let yyyy = today.getFullYear();
         let date_format = dd + mm + yyyy;
 
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/new",{
+        return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/new",{
             method:"POST", mode:"cors",
             body: JSON.stringify( {"date_action":date_format, "type_role": this.state.type_role_selected} )
         })
-        .then( resp => resp.json())
-        .then( _ => {
-            this.setState( {accounts: [], dates_available: [], loading: true } );
-            this.componentDidMount(); // TODO: colocar refresh a cada 5 seg
+        .then( resp => {
+            if( resp.status === 502 ){
+                return {"error":true, "message":"Ocorreu um erro ao executar a ação"};
+            }else if( resp.status === 400 ){
+                return {"error":true, "message":"Todos os campos precisam ser preenchidos"};
+            }else if( resp.status === 200 ){
+                //this.setState( {accounts: [], dates_available: [], loading: true } );
+                //this.componentDidMount(); // TODO: colocar refresh a cada 5 seg
+
+                fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates-available", {
+                    method:"GET", mode:"cors"
+                }).then(resp => resp.json()).then(data => {
+                    this.setState( {dates_available: data['dates_available']} );
+                })
+
+                return {"error":false, "message":"Executado com sucesso"};
+            }            
         })
     }
     

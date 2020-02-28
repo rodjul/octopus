@@ -144,7 +144,7 @@ functions:
 
   # send the data to sqs
   controller_compliance_new_check: 
-    handler: src/lambda_controller_compliance_iam.lambda_handler
+    handler: src/lambda_controller_compliances.lambda_handler
     environment:
       URL_SQS_IAM: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
       URL_SQS_CIS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_cis_new_check}"
@@ -155,10 +155,10 @@ functions:
     memorySize: 256
     timeout: 30 # 30 seconds
     role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
-    name: ${self:service}-controller_compliance_iam-${self:provider.stage}
+    name: ${self:service}-controller_compliances-${self:provider.stage}
     package:
       include:
-        - src/lambda_controller_compliance_iam.py
+        - src/lambda_controller_compliances.py
         - src/model/*.py
     layers:
       - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"
@@ -416,6 +416,20 @@ resources:
               ReadCapacityUnits: "2"
               WriteCapacityUnits: "2"
         TableName: octopus_account_compliance
+
+    DynamoDbAccountComplianceDates:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: DateAction
+            AttributeType: S
+        KeySchema:
+          - AttributeName: DateAction
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_account_compliance_dates
 
     DynamoDbAPolicies:
       Type: 'AWS::DynamoDB::Table'

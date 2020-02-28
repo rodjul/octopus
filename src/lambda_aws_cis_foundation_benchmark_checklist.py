@@ -2468,13 +2468,9 @@ def lambda_handler(event, context):
                 IAM_CLIENT = get_creds("iam",Id=ACCOUNT_ID)
                 S3_CLIENT = get_creds("s3",Id=ACCOUNT_ID)
             except Exception as e:
-                lista_compliance = [
-                    { 
-                        "1":{
-                            "1": {"ControlId": "0", "Description": "Falha ao acessar a conta", "Result": False, "Offenders": "", "failReason": "STS"}
-                        }
-                    }
-                ]
+                lista_compliance = [[
+                    {"ControlId": "0", "Description": "Falha ao acessar a conta", "Result": False, "Offenders": "", "failReason": "STS"}
+                ]]
                 insert_data(ACCOUNT_ID, account_name, lista_compliance, date_action)
                 continue
 

@@ -167,15 +167,19 @@ def get_date_actions():
     # obter todos as datas e dps retornar no json as datas disponiveis
     # obter da data mais recente quando na 1 vez
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table("octopus_account_compliance")
-    response = table.scan(FilterExpression=Attr("TypeCompliance").eq("IAM"))
+    table = dynamodb.Table("octopus_account_compliance_dates")
+    response = table.scan(FilterExpression=Attr("DateAction").contains("IAM"))
     dates = []
     
+    for item in response['Items']:
+        dates.append(item['DateAction'].split("-")[0])
+
     while 'LastEvaluatedKey' in response:
+        response = table.scan(FilterExpression=Attr("DateAction").contains("IAM"),
+                            ExclusiveStartKey=response['LastEvaluatedKey'])
         for item in response['Items']:
             dates.append(item['DateAction'].split("-")[0])
-        response = table.scan(FilterExpression=Attr("TypeCompliance").eq("IAM"),
-                            ExclusiveStartKey=response['LastEvaluatedKey'])
+    
     dates = list(set(dates))
     dates.sort()
     return dates
@@ -209,14 +213,20 @@ def get_compliance(event):
             response = table.scan(FilterExpression=Attr("TypeRole").eq(type_role)
                                 & Attr("TypeCompliance").eq("IAM"))
             temp = []
+            
+            for row in response['Items']:
+                if row['DateAction'].split("-")[0] == date_input:
+                    row['DateAction'] = row['DateAction'].split("-")[0]
+                    temp.append(row)
+            
             while 'LastEvaluatedKey' in response:
+                response = table.scan(FilterExpression=Attr("TypeRole").eq(type_role)
+                                & Attr("TypeCompliance").eq("IAM"))
                 for row in response['Items']:
                     if row['DateAction'].split("-")[0] == date_input:
                         row['DateAction'] = row['DateAction'].split("-")[0]
                         temp.append(row)
 
-                response = table.scan(FilterExpression=Attr("TypeRole").eq(type_role)
-                                & Attr("TypeCompliance").eq("IAM"))
             
             content = temp
         except KeyError as e:
