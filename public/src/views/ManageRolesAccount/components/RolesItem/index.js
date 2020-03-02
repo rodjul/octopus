@@ -233,12 +233,12 @@ const RolesItem = (
                                     (
                                     <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={ handleClickModalDelete }
                                     html
-                                    style={{position:"relative", left:"54em"}} >
+                                    style={{display:"flex", marginLeft:"auto"}} >
                                         Deletar
                                     </Button>
                                     ) : (
                                     <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} 
-                                    style={{position:"relative", left:"54em", visibility:"hidden"}} >
+                                    style={{display:"flex", marginLeft:"auto", visibility:"hidden"}} >
                                         Deletar
                                     </Button>
                                     )                                    

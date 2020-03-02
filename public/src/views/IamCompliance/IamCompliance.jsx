@@ -2,7 +2,7 @@ import React from 'react';
 
 import AccountsTable from "./components/AccountsTable";
 
-import "./AccountsCompliance.css";
+import "./IamCompliance.css";
 
 export default class AccountsCompliance extends React.Component {
     constructor(props) {
@@ -15,16 +15,7 @@ export default class AccountsCompliance extends React.Component {
         date_check_selected: "",
         loading: true,
         showModal: false,
-        filter_text: {
-                "account_id": "", //[], 
-                "account_name": "", //[],
-                "role_name": "", //[],
-                "role_policy": "", //[],
-                "compliance": "", //[],
-                "status": "", //[],
-                "policies_adicionais": "" //[]
-            },
-        };
+      }
     }
     
     /**
@@ -80,7 +71,7 @@ export default class AccountsCompliance extends React.Component {
     getCompliance(e){
         this.setState({accounts:[]});
 
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action="+this.state.date_check_selected+"&type_role="+this.state.type_role_selected, {
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/check?date_action="+this.state.date_check_selected+"&type_role="+this.state.type_role_selected, {
             method:"GET", mode:"cors"
         })
         .then(resp => resp.json())
@@ -116,7 +107,7 @@ export default class AccountsCompliance extends React.Component {
                 //this.setState( {accounts: [], dates_available: [], loading: true } );
                 //this.componentDidMount(); // TODO: colocar refresh a cada 5 seg
 
-                fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates-available", {
+                fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/dates-available", {
                     method:"GET", mode:"cors"
                 }).then(resp => resp.json()).then(data => {
                     this.setState( {dates_available: data['dates_available']} );
@@ -128,10 +119,7 @@ export default class AccountsCompliance extends React.Component {
     }
     
      render(){
-        const { showModal, filter_text, accounts, loading, dates_available, type_roles, type_role_selected} = this.state;
-        let img_loading = "";
-        if(loading) img_loading = <img className="centralize-img" src="images/loading-spinning-bubbles.svg" /> ;
-        //img_loading = <img src="images/loading-spinning-bubbles.svg" /> ;
+        const { accounts, dates_available, type_roles} = this.state;
                 
         let roles = [];
         let policy= [];

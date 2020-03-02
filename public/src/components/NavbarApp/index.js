@@ -1,6 +1,5 @@
 ﻿import React from "react"
 import { NavLink } from 'react-router-dom';
-import { Navbar, Nav } from "react-bootstrap";
 
 import PropTypes from 'prop-types';
 import AppBar from '@material-ui/core/AppBar';
@@ -9,23 +8,18 @@ import Divider from '@material-ui/core/Divider';
 import Drawer from '@material-ui/core/Drawer';
 import Hidden from '@material-ui/core/Hidden';
 import IconButton from '@material-ui/core/IconButton';
+import Collapse from '@material-ui/core/Collapse';
 // import InboxIcon from '@material-ui/icons/MoveToInbox';
 // import MailIcon from '@material-ui/icons/Mail';
 // import MenuIcon from '@material-ui/icons/Menu';
 import {
-    Menu as MenuIcon,
-    Dashboard,
-    Add,
-    Edit,
-    Assessment
+    Dashboard, Add, Edit, Assessment, ExpandLess, ExpandMore
 } from '@material-ui/icons';
 
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 
 
@@ -69,56 +63,22 @@ const useStyles = makeStyles(theme => ({
         flexGrow: 1,
         padding: theme.spacing(3),
     },
+    nested: {
+        paddingLeft: theme.spacing(4),
+    },
 }));
 
 
-const NavbarApp = () => {
-    return (
-        <Navbar bg="light" expand="lg">
-            <Navbar.Brand href="#">Octopus</Navbar.Brand>
-            <Navbar.Toggle aria-controls="basic-navbar-nav" />
-            <Navbar.Collapse id="basic-navbar-nav">
-                <Nav className="mr-auto">
-                    <NavLink to="/login" className="nav-link" activeClassName="nav_clicked">Login</NavLink>
-                    <NavLink to="/create-account" className="nav-link" activeClassName="nav_clicked">Criar conta</NavLink>
-                    <NavLink to="/manage-roles-accounts" className="nav-link" activeClassName="nav_clicked">Gerenciar tipos de conta</NavLink>
-                    <NavLink to="/manage-policies" className="nav-link" activeClassName="nav_clicked">Gerenciar policies</NavLink>
-                    <NavLink to="/accounts-compliance" className="nav-link" activeClassName="nav_clicked">IAM Compliance</NavLink>
-
-                    {/* <NavDropdown title="Dropdown" id="basic-nav-dropdown">
-            <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
-            <NavDropdown.Item href="#action/3.2">Another action</NavDropdown.Item>
-            <NavDropdown.Item href="#action/3.3">Something</NavDropdown.Item>
-            <NavDropdown.Divider />
-            <NavDropdown.Item href="#action/3.4">Separated link</NavDropdown.Item>
-            </NavDropdown> */}
-
-                </Nav>
-
-                {/* <Form inline>
-            <FormControl type="text" placeholder="Search" className="mr-sm-2" />
-            <Button variant="outline-success">Search</Button>
-        </Form> */}
-
-            </Navbar.Collapse>
-        </Navbar>
-    );
-}
-
-const NavbarApp2 = (props) => {
+const NavbarApp = (props) => {
     const { container } = props;
     const classes = useStyles();
     const theme = useTheme();
     const [mobileOpen, setMobileOpen] = React.useState(false);
-    // const titleLocationText = {
-    //     "/login": "Dashboard",
-    //     "/create-account": "Criar conta",
-    //     "/manage-roles-accounts": "Gerenciar tipos de conta",
-    //     "/manage-policies": "Gerenciar policies",
-    //     "/accounts-compliance": "IAM Compliance",
-    // }
     
-    // const [appbarTitle, setAppbarTitle] = React.useState( titleLocationText[props.appbarTitle] );
+    const [openCollapse, setOpenCollapse] = React.useState(false);
+    const handleClick = () => {
+        setOpenCollapse(!openCollapse);
+    };
     
 
     const handleDrawerToggle = () => {
@@ -150,14 +110,26 @@ const NavbarApp2 = (props) => {
                     <ListItemIcon><Edit /></ListItemIcon>
                     <ListItemText primary="Gerenciar IAM" />
                 </ListItem>
-                <ListItem button key="IAM Compliance" onClick={() => onClickRoute("/iam-compliance")} >
-                    <ListItemIcon><Assessment /></ListItemIcon>
-                    <ListItemText primary="IAM Compliance" />
+
+                <ListItem button onClick={handleClick}>
+                    <ListItemIcon>
+                    <Assessment />
+                    </ListItemIcon>
+                    <ListItemText primary="Gerenciar Compliances" />
+                    {openCollapse ? <ExpandLess /> : <ExpandMore />}
                 </ListItem>
-                <ListItem button key="CIS Compliance" onClick={() => onClickRoute("/cis-compliance")} >
-                    <ListItemIcon><Assessment /></ListItemIcon>
-                    <ListItemText primary="CIS Compliance" />
-                </ListItem>
+                <Collapse in={openCollapse} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                    <ListItem button className={classes.nested} key="IAM" onClick={() => onClickRoute("/iam-compliance")} >
+                        <ListItemIcon><Assessment /></ListItemIcon>
+                        <ListItemText primary="IAM" />
+                    </ListItem>
+                    <ListItem button className={classes.nested} key="CIS" onClick={() => onClickRoute("/cis-compliance")} >
+                        <ListItemIcon><Assessment /></ListItemIcon>
+                        <ListItemText primary="CIS" />
+                    </ListItem>
+                    </List>
+                </Collapse>
             </List>
             {/* <Divider />
         <List>
@@ -226,11 +198,11 @@ const NavbarApp2 = (props) => {
     );
 }
 
-NavbarApp2.propTypes = {
+NavbarApp.propTypes = {
     /**
      * Injected by the documentation to work in an iframe.
      * You won't need it on your project.
      */
     container: PropTypes.instanceOf(typeof Element === 'undefined' ? Object : Element),
 };
-export default NavbarApp2;
+export default NavbarApp;

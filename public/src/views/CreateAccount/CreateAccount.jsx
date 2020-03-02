@@ -76,7 +76,6 @@ export default class CreateAccount extends Component {
         // console.log("Event:",this.state);
         
 
-        return JSON.stringify({"error":false, "content":"COLOCAR ALGO"});
         //fetch('/api/authenticate', {
         //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
         const self = this;

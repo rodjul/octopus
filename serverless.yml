@@ -406,9 +406,20 @@ resources:
           ReadCapacityUnits: "2"
           WriteCapacityUnits: "2"
         GlobalSecondaryIndexes:
-          - IndexName: indexTypeCompliance
+          - IndexName: DateAction-index
             KeySchema:
-            - AttributeName: TypeCompliance
+            - AttributeName: DateAction
+              KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY          
+            ProvisionedThroughput:
+              ReadCapacityUnits: "2"
+              WriteCapacityUnits: "2"
+          - IndexName: DateAction-TypeRole-index
+            KeySchema:
+            - AttributeName: DateAction
+              KeyType: HASH
+            - AttributeName: TypeRole
               KeyType: HASH
             Projection:
               ProjectionType: KEYS_ONLY          

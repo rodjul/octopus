@@ -5,7 +5,7 @@ from os import environ
 from json import loads, dumps
 import hashlib
 import datetime 
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Attr, Key
 
 
 def insert_data(account_id, account_name, data_json, date_action, type_role):
@@ -209,25 +209,21 @@ def get_compliance(event):
     content = ""
     if date_input != "":
         try:
-            # content = table.scan(FilterExpression=Attr("DateAction").eq(date_input) 
-            response = table.scan(FilterExpression=Attr("TypeRole").eq(type_role)
-                                & Attr("TypeCompliance").eq("IAM"))
+            # response = table.scan(FilterExpression=Key("DateAction").eq(date_input+"-IAM") & Attr("TypeRole").eq(type_role))
+            response = table.query(IndexName='DateAction-TypeRole-index',
+                KeyConditionExpression=Key("DateAction").eq(date_input+"-IAM") & Key("TypeRole").eq(type_role))
             temp = []
             
             for row in response['Items']:
-                if row['DateAction'].split("-")[0] == date_input:
-                    row['DateAction'] = row['DateAction'].split("-")[0]
-                    temp.append(row)
+                temp.append(row)
             
             while 'LastEvaluatedKey' in response:
-                response = table.scan(FilterExpression=Attr("TypeRole").eq(type_role)
-                                & Attr("TypeCompliance").eq("IAM"))
+                response = table.query(IndexName='DateAction-TypeRole-index',
+                                    KeyConditionExpression=Key("DateAction").eq(date_input+"-IAM") & Key("TypeRole").eq(type_role),
+                                    ExclusiveStartKey=response['LastEvaluatedKey'])
                 for row in response['Items']:
-                    if row['DateAction'].split("-")[0] == date_input:
-                        row['DateAction'] = row['DateAction'].split("-")[0]
-                        temp.append(row)
+                    temp.append(row)
 
-            
             content = temp
         except KeyError as e:
             print(e)
@@ -253,6 +249,6 @@ def lambda_handler(event, context):
             return {"statusCode":200, "body":dumps({"error":False, "dates_available":dates}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
     
-        elif event['resource'] == "/policy/compliance/check":
+        elif event['resource'] == "/policy/compliance/iam/check":
             return get_compliance(event)
         

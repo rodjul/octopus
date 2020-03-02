@@ -96,6 +96,10 @@ const AccountsTable = (props) => {
     const [openRefresh, setOpenRefresh] = React.useState(false);
     const [openAddNewCheck, setOpenAddNewCheck] = React.useState(false);
     const [disabledButtonRequestCompliance, setDisabledButtonRequestCompliance] = React.useState(true);
+    
+    // select handle values
+    const [dataSelect, setDataSelect] = React.useState("");
+    const [accountSelect, setAccountSelect] = React.useState("");
 
     // AlertMessage
     const handleOpenAlert = elem => setOpenAlert(elem);
@@ -106,7 +110,11 @@ const AccountsTable = (props) => {
 
     const handleClickOpenRefresh = () => setOpenRefresh(true);
 
-    const handleCloseRefresh = () => setOpenRefresh(false);
+    const handleCloseRefresh = () => {
+        setOpenRefresh(false);
+        setAccountSelect("");
+        setDataSelect("");
+    }
 
     const handleClickOpenAdd = () => setOpenAddNewCheck(true);
 
@@ -123,7 +131,6 @@ const AccountsTable = (props) => {
     const requestNewCompliance = async () => {
         setOpenAddNewCheck(false);
 
-        return;
         setLoading(true);
         
         await props.requestNewCompliance()
@@ -153,7 +160,7 @@ const AccountsTable = (props) => {
 
 
     let rows = [];
-    if(accounts.length){
+    if(accounts && accounts.length){
         accounts.map(elem => {
             JSON.parse(elem['DataCompliance']).map(elem2 => {
                 // id: 'Account', title: 'Account\u00a0ID'; id: 'Name', title: 'Name\u00a0Account'; id: 'name', title: 'Role\u00a0Name';
@@ -169,7 +176,7 @@ const AccountsTable = (props) => {
         });
     }
     
-    console.log("Accounts: ",accounts);
+    // console.log("Accounts: ",accounts);
 
     return (
         <main className={classes.content}>
@@ -217,7 +224,7 @@ const AccountsTable = (props) => {
 
                 <Dialog
                     open={openRefresh}
-                    onClose={handleCloseRefresh}
+                    onClose={() => handleCloseRefresh()}
                     aria-labelledby="alert-dialog-title"
                     aria-describedby="alert-dialog-description"
                 >
@@ -227,7 +234,10 @@ const AccountsTable = (props) => {
                         <FormControl style={{width:"10em", marginRight:"1em"}}>
                             <InputLabel id="controlled-open-select-label-tipo-da-conta">Data da ação</InputLabel>
                             <Select required labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"
-                            onChange={e => props.onChangeDataCheck(e)}
+                            onChange={e => {
+                                setDataSelect(e.target.value);
+                                props.onChangeDataCheck(e)
+                            }}
                             >   
                                 {accounts && accounts.slice(0,1).map((elem,index) =>{
                                     return <MenuItem selected className="filter_selected" key='selected'>{elem['DateAction']}</MenuItem>;
@@ -242,7 +252,10 @@ const AccountsTable = (props) => {
                         <FormControl style={{width:"10em"}}>
                             <InputLabel id="controlled-open-select-label-tipo-da-conta">Tipo da conta</InputLabel>
                             <Select required labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"
-                            onChange={e => props.onChangeTypeRole(e)}
+                            onChange={e => {
+                                setAccountSelect(e.target.value);
+                                props.onChangeTypeRole(e);
+                            }}
                             >   
                                 {type_roles && type_roles.map((elem,index) =>{
                                     return <MenuItem key={elem} value={elem}>{elem}</MenuItem>;
@@ -253,14 +266,31 @@ const AccountsTable = (props) => {
                     </DialogContentText>
                     </DialogContent>
                     <DialogActions>
-                    <Button 
-                    onClick={() => {
-                        props.getCompliance();
-                        handleCloseRefresh();
-                    }} 
-                    variant="contained" color="primary">
-                        Obter
-                    </Button>
+                    {accountSelect!=="" && dataSelect!=="" ? 
+                    (
+                        <Button 
+                        onClick={() => {
+                            // both values need to have values setted
+                            if(accountSelect !== "" && dataSelect !== ""){
+                                props.getCompliance();
+                                handleCloseRefresh();
+                            }
+                        }} 
+                        variant="contained" color="primary">
+                            Obter
+                        </Button>
+                    )
+                    :
+                    (
+                        <Button 
+                        disabled
+                        variant="contained" color="primary">
+                            Obter
+                        </Button>
+                    )
+                    
+                    }
+                    
                     <Button onClick={handleCloseRefresh} variant="contained" color="primary">
                         Fechar
                     </Button>
@@ -279,8 +309,11 @@ const AccountsTable = (props) => {
                         Essa ação irá acessar as contas do Organizations e fazer a partir das roles do tipo "
                         <FormControl style={{width:"10em"}}>
                             {/* <InputLabel id="controlled-open-select-label-tipo-da-conta">Tipo da conta</InputLabel> */}
-                            <Select required labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"
-                            onChange={e => onChangeTypeRole(e)}
+                            <Select required={true} labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"
+                            onChange={e => {
+                                setAccountSelect(e.target.value);
+                                onChangeTypeRole(e);
+                            }}
                             >   
                                 {type_roles && type_roles.map((elem,index) =>{
                                     return <MenuItem key={elem} value={elem}>{elem}</MenuItem>;
@@ -322,7 +355,9 @@ const AccountsTable = (props) => {
 }
 
 AccountsTable.propTypes = {
-    onChangeTypeRole: PropTypes.func.isRequired
+    // onChangeTypeRole: PropTypes.func.isRequired
+    onChange: PropTypes.func,
+    required: PropTypes.bool,
     // data: (elem) => {
     //     if(elem.id === "type-roles"){
     //         console.log(elem);

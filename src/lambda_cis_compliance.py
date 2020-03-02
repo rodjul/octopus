@@ -5,7 +5,7 @@ from os import environ
 from json import loads, dumps
 import hashlib
 import datetime 
-from boto3.dynamodb.conditions import Attr
+from boto3.dynamodb.conditions import Key,Attr
 
 
 # def insert_data(account_id, account_name, data_json, date_action):
@@ -70,23 +70,21 @@ def get_compliance(event):
     content = ""
     if date_input != "":
         try:
-            # content = table.scan(FilterExpression=Attr("DateAction").eq(date_input)
-            response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"))
+            # response = table.scan(FilterExpression=Key("DateAction").eq(date_input+"-CIS"))
+            response = table.query(IndexName='DateAction-index',
+                KeyConditionExpression=Key("DateAction").eq(date_input+"-CIS"))
+           
             temp = []
             
             for row in response['Items']:
-                if row['DateAction'].split("-")[0] == date_input:
-                    row['DateAction'] = row['DateAction'].split("-")[0]
-                    temp.append(row)
+                temp.append(row)
             
             while 'LastEvaluatedKey' in response:
-                response = table.scan(FilterExpression=Attr("TypeCompliance").eq("CIS"),
+                response = table.query(IndexName='DateAction-index',
+                                    KeyConditionExpression=Key("DateAction").eq(date_input+"-CIS"),
                                     ExclusiveStartKey=response['LastEvaluatedKey'])
                 for row in response['Items']:
-                    if row['DateAction'].split("-")[0] == date_input:
-                        row['DateAction'] = row['DateAction'].split("-")[0]
-                        temp.append(row)
-
+                    temp.append(row)
             
             content = temp
         except KeyError as e:
