@@ -68,10 +68,10 @@ export default class AccountsCompliance extends React.Component {
      * When change the date of check compliance, request the data from this specfic date and account type.
      * @param {Object} e 
      */
-    getCompliance(e){
+    async getCompliance(e){
         this.setState({accounts:[]});
 
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/check?date_action="+this.state.date_check_selected+"&type_role="+this.state.type_role_selected, {
+        return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/check?date_action="+this.state.date_check_selected+"&type_role="+this.state.type_role_selected, {
             method:"GET", mode:"cors"
         })
         .then(resp => resp.json())
@@ -80,7 +80,7 @@ export default class AccountsCompliance extends React.Component {
                             dates_available: data['dates_available'],
                             // loading:false 
                         } );
-            // console.log(this.state.accounts);
+            return {"error":false, "message":"Executado com sucesso"};
         })   
     }
 
