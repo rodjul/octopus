@@ -239,14 +239,6 @@ const AccountsTable = (props) => {
             </Typography>
             <Box boxShadow={3}>
 
-                {/* <div style={{marginBot:"1em"}}>
-                   <Button className="space" variant="contained" color="primary"
-                    //onClick={this.handleShow.bind(this)} 
-                    >
-                        Novo check
-                    </Button>
-                </div> */}
-
                 <MaterialTable
                     title="Resultados"
                     // isLoading={rows.length ? false: true}
@@ -336,7 +328,7 @@ const AccountsTable = (props) => {
                             }}
                             >   
                                 {accounts && accounts.slice(0,1).map((elem,index) =>{
-                                    return <MenuItem selected className="filter_selected" key='selected'>{elem['DateAction']}</MenuItem>;
+                                    return <MenuItem selected className="filter_selected" key='selected'>{elem['DateAction'].split("-")[0]}</MenuItem>;
                                 })}
                                 {/* available values */}
                                 {dates_available && dates_available.map((elem,index) =>{
