@@ -149,7 +149,7 @@ const AccountsTable = (props) => {
         });
     }
 
-    
+
     let rows = [];
     if(accounts && accounts.length){
         // para cada conta

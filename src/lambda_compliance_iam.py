@@ -112,9 +112,26 @@ def check_compliance(event):
                                 hash_child  = hashlib.md5( str(policy_master_content['PolicyDocument']).encode() ).hexdigest() 
                             
                             
-                            if hash_master != hash_child or policies_adicionais_status:
+                            if hash_master != hash_child and policies_adicionais_status:
                                 lista_compliance.append({"name":role_master['role_name'],"policy":policy_child['PolicyName'], "compliance":False,
-                                                "status":"Policy possui modificações e/ou policy adicionais", "policies_adicionais":policies_adicionais })
+                                                "status":"Policy possui modificações na policy e policy adicionais",
+                                                "policies_adicionais":policies_adicionais,
+                                                "info":{
+                                                    "policy_not_in_compliance": dumps(policy_child_content['PolicyVersion']['Document']), 
+                                                    "policy_master": dumps(policy_master_content['PolicyDocument'])
+                                                    }
+                                                })
+                            elif hash_master != hash_child:
+                                lista_compliance.append({"name":role_master['role_name'],"policy":policy_child['PolicyName'], "compliance":False,
+                                                "status":"Policy possui modificações", "policies_adicionais":"N/A",
+                                                "info":{
+                                                    "policy_not_in_compliance": dumps(policy_child_content['PolicyVersion']['Document']), 
+                                                    "policy_master": dumps(policy_master_content['PolicyDocument'])
+                                                    }                                                
+                                                })
+                            elif policies_adicionais_status:
+                                lista_compliance.append({"name":role_master['role_name'],"policy":policy_child['PolicyName'], "compliance":False,
+                                                "status":"Policy possui policy adicionais", "policies_adicionais":policies_adicionais })
                                 
                             else:
                                 lista_compliance.append({"name":role_master['role_name'],"policy":policy_child['PolicyName'], "compliance":True,
