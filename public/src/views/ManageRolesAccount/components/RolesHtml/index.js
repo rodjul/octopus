@@ -5,16 +5,19 @@ const RolesHtml = (
     {
         role_type, index, policies_selected, policies_available, onChangeSelect
     }) =>{
-    console.log("policies_selected:",policies_selected);
-    let tmp = []
-    for(var i=0; i<policies_selected.length; i++){
-        tmp.push({"value":policies_selected[i], "label":policies_selected[i]});
-    }
 
+    let policiesFormat = []
+    
+    for(var i=0; i<policies_selected.length; i++){
+        policiesFormat.push({"value":policies_selected[i], "label":policies_selected[i]});
+    }
+    
     // this condition is to be certain that are results to be render when doing componentDidMount
     // without this, the first value the will come is null ([]) and the react-select will not update their values
     // making the html select render with blank results, where in reality there are results
-    if(role_type !== "New type" && policies_selected.length){
+
+    // if(role_type !== "New type" && policies_selected.length){
+    if(policies_selected.length){
         return (
             <div className="" key={`${role_type}~${index}`}>
                                     
@@ -23,7 +26,7 @@ const RolesHtml = (
                     <div className="col-sm-12">
                         <Select key={`${role_type}~${index}`} className="policies" closeMenuOnSelect={false} isMulti 
                         options={policies_available} 
-                        defaultValue={tmp}
+                        defaultValue={policiesFormat}
                         onChange={e_arr => onChangeSelect(e_arr, "policies", index, role_type)}
                         />
                     </div>
@@ -34,7 +37,6 @@ const RolesHtml = (
     }
     return (
         <div className="" key={`${role_type}~${index}`}>
-                                
             <div className="form-group row">
                 <label htmlFor="policies_role" className="col-sm-2 col-form-label bolder">Roles: </label>
                 <div className="col-sm-12">

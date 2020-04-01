@@ -237,7 +237,7 @@ const PoliciesHtml = (props) => {
     return (
         <main className={classes.content}>
             <Typography className={classes.titleHeader} variant="h4" noWrap >
-                Gerenciar policies
+                Gerenciar IAM
             </Typography>
             <Box boxShadow={3}>
                 {/* <div className={classes.paper} > */}
@@ -250,151 +250,166 @@ const PoliciesHtml = (props) => {
 
                 {policies.length ? (
                     <>
-                <TabPanel value={valueTitleTabIndex} index="iam_policy">
-                    <div className={classes.root}>
-                        <Tabs
-                            orientation="vertical"
-                            variant="scrollable"
-                            value={valueIndexPolicies}
-                            onChange={handleChangePolicies}
-                            aria-label="Vertical policies"
-                            className={classes.tabs}
-                        >
-                            {policies.map((policy, index) => {
-                                return <Tab className={classes.tabsMain}  key={`${policy['Name']}~${index}`} label={policy['Name']} {...a11yProps(index)} />
-                            })}
-               
-                        </Tabs>
-                        {policies.map((policy, index) => {
-                            return (
-                                <TabPanel index={index} value={valueIndexPolicies}  key={`${policy['Name']}~${index}`} className={classes.tabContent}>
-                                    <PoliciesItem key={`${policy['Name']}~${index}`}
-                                        policy_name={policy['Name']}
-                                        description={policy['Description']}
-                                        path={policy['Path']}
-                                        policy_document={policy['PolicyDocument']}
-                                        index={index}
-                                        handleJson={props.handleJson}
-                                        // handleForm={props.handleForm}
-                                        handleForm={onChangeForms.bind(this)}
-                                        handleRemoveFields={props.handleRemoveFields}
-                                    />
-                                </TabPanel>
-                            )
-                        })}
-    
-                    </div>
-
+                        <TabPanel value={valueTitleTabIndex} index="iam_roles">
+                            <div className={classes.root}>
+                                <Tabs
+                                    orientation="vertical"
+                                    variant="scrollable"
+                                    value={valueIndexRoles}
+                                    onChange={handleChangeRoles}
+                                    aria-label="Vertical roles"
+                                    className={classes.tabs}
+                                    style={{
+                                        // backgroundColor:"red"
+                                        minWidth: "15em",
+                                        maxWidth: "15em"
+                                    }}
+                                >
+                                    {props.roles.map((role, index) => {
+                                        return <Tab className={classes.tabsMain}  key={`${role['role_name']}~${index}`} label={role['role_name']} {...a11yProps(index)} />
+                                    })}
                     
-                    <Zoom key="primary" unmountOnExit in={1 === 1} onClick={ () => handleAddFields("policy")} >
-                        <Tooltip title="Criar um nova policy" aria-label="add" placement="top" arrow>
-                            <Fab aria-label="Add policy" className={classes.fabAdd} color="primary">
-                                <AddIcon  />
-                            </Fab>
-                        </Tooltip>
-                    </Zoom>
-                </TabPanel>
-                
-                <TabPanel value={valueTitleTabIndex} index="iam_trust_relantionship" >
-                    <div className={classes.root}>
-                        <Tabs
-                            orientation="vertical"
-                            variant="scrollable"
-                            value={valueIndexTrusts}
-                            onChange={handleChangeTrusts}
-                            aria-label="Vertical trust relationship"
-                            className={classes.tabs}
-                        >
-                            {trusts.map((trust, index) => {
-                                return <Tab className={classes.tabsMain} key={`${trust['Name']}~${index}`} label={trust['Name']} {...a11yProps(index)} />
-                            })}
-                        </Tabs>
-                        {trusts.map((trust, index) => {
-                            return (
-                                <TabPanel index={index} value={valueIndexTrusts} key={`${trust['Name']}~${index}`} className={classes.tabContent}>
-                                    <p className="disclaimer">OBS: os documentos que possuírem "ACCOUNT_ID" no lugar da Account ID, irão ser interpretados pelo código para serem substituídos pelo valor do Account ID.</p>
-                                    <TrustItem key={`${trust['Name']}~${index}`}
-                                        trust_name={trust['Name']}
-                                        policy_document={trust['AssumeRolePolicyDocument']}
-                                        index={index}
-                                        handleJson={props.handleJson}
-                                        handleForm={onChangeForms.bind(this)}
-                                        handleRemoveFields={props.handleRemoveFields}
-                                    />
-                                </TabPanel>
-                            )
-                        })}
-                    </div>
-                
-                    <Zoom key="primary" unmountOnExit  in={1 === 1}  onClick={ () => handleAddFields("trustrelationships")} >
-                        <Tooltip title="Criar um novo trust relationship" aria-label="add" placement="top" arrow>
-                            <Fab aria-label="Add trust relationship" className={classes.fabAdd} color="primary">
-                                <AddIcon />
-                            </Fab>
-                        </Tooltip>
-                    </Zoom>
-                </TabPanel>
+                                </Tabs>
+                                {props.roles.map((role, index) => {
+                                    return (
+                                        <TabPanel index={index} value={valueIndexRoles}  key={`${role['role_name']}~${index}`} className={classes.tabContent}>
+                                            <RolesHtml key={`${role['role_name']}~${index}`}
+                                                role_name={role['role_name']}
+                                                role_description={role['role_description']}
+                                                policy_arn_aws={role['policy_arn_aws']}
+                                                trust_select={role['trust_relationship']}
+                                                policies_select={
+                                                    role['policies'] === undefined ? [] : role['policies']
+                                                }
+                                                policies_available={policies_available}
+                                                trusts_available={trusts}
+                                                index={index}
+                                                handleForm={props.onChangeForms.bind(this)}
+                                                handleRemoveFields={props.handleRemoveFields}
+                                                handleChangePolicyARN={props.handleChangePolicyARN.bind(this)}
+                                                onChangeSelect={handleSelect.bind(this)}
+                                            /> 
+                                        </TabPanel>
+                                    )
+                                })}   
+            
+                            </div>
 
-                <TabPanel value={valueTitleTabIndex} index="iam_roles">
-                    <div className={classes.root}>
-                        <Tabs
-                            orientation="vertical"
-                            variant="scrollable"
-                            value={valueIndexRoles}
-                            onChange={handleChangeRoles}
-                            aria-label="Vertical roles"
-                            className={classes.tabs}
-                        >
-                            {props.roles.map((role, index) => {
-                                return <Tab className={classes.tabsMain}  key={`${role['role_name']}~${index}`} label={role['role_name']} {...a11yProps(index)} />
-                            })}
-               
-                        </Tabs>
-                        {props.roles.map((role, index) => {
-                            return (
-                                <TabPanel index={index} value={valueIndexRoles}  key={`${role['role_name']}~${index}`} className={classes.tabContent}>
-                                    <RolesHtml key={`${role['role_name']}~${index}`}
-                                        role_name={role['role_name']}
-                                        role_description={role['role_description']}
-                                        policy_arn_aws={role['policy_arn_aws']}
-                                        trust_select={role['trust_relationship']}
-                                        policies_select={
-                                            role['policies'] === undefined ? [] : role['policies']
-                                        }
-                                        policies_available={policies_available}
-                                        trusts_available={trusts}
-                                        index={index}
-                                        handleForm={props.onChangeForms.bind(this)}
-                                        handleRemoveFields={props.handleRemoveFields}
-                                        handleChangePolicyARN={props.handleChangePolicyARN.bind(this)}
-                                        onChangeSelect={handleSelect.bind(this)}
-                                    /> 
-                                </TabPanel>
-                            )
-                        })}   
-    
-                    </div>
-
+                            
+                            <Zoom key="primary" unmountOnExit in={1 === 1} onClick={ () => handleAddFields("role")} >
+                                <Tooltip title="Criar uma nova role" aria-label="add" placement="top" arrow>
+                                    <Fab aria-label="Add role" className={classes.fabAdd} color="primary">
+                                        <AddIcon  />
+                                    </Fab>
+                                </Tooltip>
+                            </Zoom>
+                        </TabPanel>
+                        
+                        <TabPanel value={valueTitleTabIndex} index="iam_policy">
+                            <div className={classes.root}>
+                                <Tabs
+                                    orientation="vertical"
+                                    variant="scrollable"
+                                    value={valueIndexPolicies}
+                                    onChange={handleChangePolicies}
+                                    aria-label="Vertical policies"
+                                    className={classes.tabs}
+                                    style={{
+                                        // backgroundColor:"red"
+                                        minWidth: "15em",
+                                        maxWidth: "15em"
+                                    }}
+                                >
+                                    {policies.map((policy, index) => {
+                                        return <Tab className={classes.tabsMain}  key={`${policy['Name']}~${index}`} label={policy['Name']} {...a11yProps(index)} />
+                                    })}
                     
-                    <Zoom key="primary" unmountOnExit in={1 === 1} onClick={ () => handleAddFields("role")} >
-                        <Tooltip title="Criar uma nova role" aria-label="add" placement="top" arrow>
-                            <Fab aria-label="Add role" className={classes.fabAdd} color="primary">
-                                <AddIcon  />
-                            </Fab>
-                        </Tooltip>
-                    </Zoom>
-                </TabPanel>
-                
-                <Zoom key="primary" unmountOnExit  in={1 === 1} onClick={() => saveData()}>
-                    <Tooltip title="Salvar" aria-label="add" placement="top" arrow>
-                        <Fab aria-label="Save" className={classes.fabSave} color="primary">
-                            <SaveIcon  />
-                            {loading && <CircularProgress size={68} className={classes.fabProgress} />}
-                        </Fab>
-                    </Tooltip>
-                </Zoom>
+                                </Tabs>
+                                {policies.map((policy, index) => {
+                                    return (
+                                        <TabPanel index={index} value={valueIndexPolicies}  key={`${policy['Name']}~${index}`} className={classes.tabContent}>
+                                            <PoliciesItem key={`${policy['Name']}~${index}`}
+                                                policy_name={policy['Name']}
+                                                description={policy['Description']}
+                                                path={policy['Path']}
+                                                policy_document={policy['PolicyDocument']}
+                                                index={index}
+                                                handleJson={props.handleJson}
+                                                // handleForm={props.handleForm}
+                                                handleForm={onChangeForms.bind(this)}
+                                                handleRemoveFields={props.handleRemoveFields}
+                                            />
+                                        </TabPanel>
+                                    )
+                                })}
+            
+                            </div>
 
-                </>
+                            
+                            <Zoom key="primary" unmountOnExit in={1 === 1} onClick={ () => handleAddFields("policy")} >
+                                <Tooltip title="Criar um nova policy" aria-label="add" placement="top" arrow>
+                                    <Fab aria-label="Add policy" className={classes.fabAdd} color="primary">
+                                        <AddIcon  />
+                                    </Fab>
+                                </Tooltip>
+                            </Zoom>
+                        </TabPanel>
+                        
+                        <TabPanel value={valueTitleTabIndex} index="iam_trust_relantionship" >
+                            <div className={classes.root}>
+                                <Tabs
+                                    orientation="vertical"
+                                    variant="scrollable"
+                                    value={valueIndexTrusts}
+                                    onChange={handleChangeTrusts}
+                                    aria-label="Vertical trust relationship"
+                                    className={classes.tabs}
+                                    style={{
+                                        // backgroundColor:"red"
+                                        minWidth: "15em",
+                                        maxWidth: "15em"
+                                    }}
+                                >
+                                    {trusts.map((trust, index) => {
+                                        return <Tab className={classes.tabsMain} key={`${trust['Name']}~${index}`} label={trust['Name']} {...a11yProps(index)} />
+                                    })}
+                                </Tabs>
+                                {trusts.map((trust, index) => {
+                                    return (
+                                        <TabPanel index={index} value={valueIndexTrusts} key={`${trust['Name']}~${index}`} className={classes.tabContent}>
+                                            <p className="disclaimer">OBS: os documentos que possuírem "ACCOUNT_ID" no lugar da Account ID, irão ser interpretados pelo código para serem substituídos pelo valor do Account ID.</p>
+                                            <TrustItem key={`${trust['Name']}~${index}`}
+                                                trust_name={trust['Name']}
+                                                policy_document={trust['AssumeRolePolicyDocument']}
+                                                index={index}
+                                                handleJson={props.handleJson}
+                                                handleForm={onChangeForms.bind(this)}
+                                                handleRemoveFields={props.handleRemoveFields}
+                                            />
+                                        </TabPanel>
+                                    )
+                                })}
+                            </div>
+                        
+                            <Zoom key="primary" unmountOnExit  in={1 === 1}  onClick={ () => handleAddFields("trustrelationships")} >
+                                <Tooltip title="Criar um novo trust relationship" aria-label="add" placement="top" arrow>
+                                    <Fab aria-label="Add trust relationship" className={classes.fabAdd} color="primary">
+                                        <AddIcon />
+                                    </Fab>
+                                </Tooltip>
+                            </Zoom>
+                        </TabPanel>
+
+                        <Zoom key="primary" unmountOnExit  in={1 === 1} onClick={() => saveData()}>
+                            <Tooltip title="Salvar" aria-label="add" placement="top" arrow>
+                                <Fab aria-label="Save" className={classes.fabSave} color="primary">
+                                    <SaveIcon  />
+                                    {loading && <CircularProgress size={68} className={classes.fabProgress} />}
+                                </Fab>
+                            </Tooltip>
+                        </Zoom>
+
+                    </>
                 ):(
                     <CircularProgress style={{display:"grid",margin:"auto"}}/>
                 )

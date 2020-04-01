@@ -493,35 +493,35 @@ resources:
         QueueName: ${self:custom.sqs_compliance_cis_new_check}
         VisibilityTimeout: 600 
     
-    # # Specifying the S3 Bucket
-    # StaticSite:
-    #   Type: AWS::S3::Bucket
-    #   Properties:
-    #     AccessControl: PublicRead
-    #     BucketName: "octopus-site"
-    #     WebsiteConfiguration:
-    #       IndexDocument: index.html
-    #       ErrorDocument: index.html
+    # Specifying the S3 Bucket
+    StaticSite:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: PublicRead
+        BucketName: "octopus-site"
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
 
-    # StaticSiteS3BucketPolicy:
-    #   Type: AWS::S3::BucketPolicy
-    #   Properties:
-    #     Bucket:
-    #       Ref: StaticSite
-    #     PolicyDocument:
-    #       Statement:
-    #         - Sid: PublicReadGetObject
-    #           Effect: Allow
-    #           Principal: "*"
-    #           Action:
-    #           - s3:GetObject
-    #           Resource:
-    #             Fn::Join: ["", ["arn:aws:s3:::",{"Ref": "StaticSite"},"/*"]]
-    #           Condition:
-    #             IpAddress: 
-    #               aws:SourceIp: 
-    #                 - "187.94.52.20/32"
-    #                 # - "187.94.48.0/20"
-    #                 # - "138.219.88.0/22"
-    #                 # - "189.89.32.0/20"
-    #                 # - "181.41.160.0/19"
+    StaticSiteS3BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: StaticSite
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action:
+              - s3:GetObject
+              Resource:
+                Fn::Join: ["", ["arn:aws:s3:::",{"Ref": "StaticSite"},"/*"]]
+              Condition:
+                IpAddress: 
+                  aws:SourceIp: 
+                    - "187.94.52.20/32"
+                    # - "187.94.48.0/20"
+                    # - "138.219.88.0/22"
+                    # - "189.89.32.0/20"
+                    # - "181.41.160.0/19"

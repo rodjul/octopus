@@ -1,18 +1,17 @@
 import React from "react";
 import { Form, Modal } from "react-bootstrap";
-import { makeStyles } from '@material-ui/core/styles';
 import { 
     Fab, Box, Zoom, Button, CircularProgress, Tooltip, Typography, Tab, Tabs, 
     DialogTitle, DialogContentText, DialogContent, DialogActions, Dialog
 } from "@material-ui/core";
 
 import PropTypes from 'prop-types';
-import { green } from '@material-ui/core/colors';
 import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon, Info as InfoIcon } from '@material-ui/icons';
 
 import RolesHtml from "../RolesHtml";
 import AlertMessage from "../../../../components/AlertMessage";
 
+import styles from "./styles";
 
 function TabPanel(props) {
     const { children, value, index, ...other} = props;
@@ -45,84 +44,12 @@ return {
 }
 
 
-const useStyles = makeStyles(theme => ({
-    formStyle: {
-        padding: "2vw",
-        width: "40vw",
-    },
-    content: {
-        overflow: "none",
-        // marginTop: 64,
-        flexGrow: 1,
-        marginLeft: 240,
-        paddingLeft: 20,
-        paddingRight: 20,
-        // padding: theme.spacing(3),
-        "@media (max-width: 600px)":{
-            marginLeft: 0,
-            paddingLeft: 20,
-      }
-    },
-    titleHeader: {
-        // marginTop: 0,
-        // flexGrow: 1,
-        // marginLeft: 240,
-        // paddingLeft: 20,
-        // padding: theme.spacing(3),
-        paddingBottom: theme.spacing(4),
-        "@media (max-width: 600px)":{
-            marginLeft: 0,
-            paddingLeft: 20,
-      }
-    },
-    root: {
-        flexGrow: 1,
-        backgroundColor: theme.palette.background.paper,
-        display: 'flex',
-        // height: 224,
-        "@media (max-height: 840px)":{
-            height: "38em",
-        },
-        "@media (min-height: 841px)":{
-            height: "60em",
-        }
-        // height: "1%",
-      },
-    tabs: {
-        borderRight: `1px solid ${theme.palette.divider}`,
-    },
-    tabsMain: {
-        // color: "#DCDCDC",
-        // backgroundColor: "#17192b",
-        fontWeight: "bolder",
-    },
-    tabContent: {
-        width: "100%",
-        overflowY: "scroll",
-    },
-    fabAdd: {
-        position: 'absolute',
-        bottom: theme.spacing(5),
-        right: theme.spacing(5),
-    },
-    fabSave: {
-        position: 'absolute',
-        bottom: theme.spacing(5),
-        right: theme.spacing(13),
-    },
-    fabProgress: {
-        color: green[500],
-        position: 'absolute',
-        top: -6,
-        left: -6,
-        zIndex: 1,
-    }
-}));
+const useStyles = styles;
 
 
 const RolesItem = (
     {
-        role_type, description, roles, roles_available, delete_roletype, roles_select, roles_created_local,
+        role_type, description, roles, roles_available, delete_roletype, roles_select,
         handleAddFieldsParent, onChangeRoleTypeSelect, handleRemoveFields, handleDeleteRole, 
         onChangeForms, onChangeSelect, onSubmit
     }) => {
@@ -137,9 +64,11 @@ const RolesItem = (
     
     const handleClickModalDelete = () => setOpenModalDelete(true);
     const handleCloseModalDelete = () => setOpenModalDelete(false);
-    const handleDeleteRoleModal = () => {
+    const handleDeleteRoleModalConfirm = () => {
         handleDeleteRole();
         handleCloseModalDelete();
+        
+        if(valueIndex) setValue(valueIndex -1);
     }
 
     const handleOpenAlert = elem => setOpenAlert(elem);
@@ -216,10 +145,14 @@ const RolesItem = (
                         onChange={handleChange}
                         aria-label="Vertical type of roles by account"
                         className={classes.tabs}
+                        style={{
+                            minWidth: "15em",
+                            maxWidth: "15em"
+                        }}
                     >
                         {roles_available.map((role, index) => {
                             // return <Tab className={classes.tabsMain} key={`${role}~${index}`} label={<><AddIcon  style={{verticalAlign: 'middle'}} />  {role}</>} {...a11yProps(index)}  /> 
-                            return <Tab className={classes.tabsMain} data-value={role}  key={`${role}~${index}`} label={role} {...a11yProps(index)} />
+                            return <Tab className={classes.tabsMain} data-value={role['name']}  key={`${role['name']}~${index}`} label={role['name']} {...a11yProps(index)} />
                             // return <div style={{flexDirection:'row', zIndex:"-1"}} ><AddIcon fontSize="large"/><Tab style={{zIndex:99}} className={classes.tabsMain} data-value={role}  key={`${role}~${index}`} label={role} {...a11yProps(index)} /></div>
                         })}
             
@@ -227,33 +160,24 @@ const RolesItem = (
                     {roles_available.length ? (
                         roles_available.map((role, index) => {
                             return (
-                                <TabPanel key={`${role}'~'${index}`} index={index} value={valueIndex} className={classes.tabContent}>
-                                    
-                                    {delete_roletype != "não declarado" ?
-                                    (
+                                <TabPanel key={`${role['name']}'~'${index}`} index={index} value={valueIndex} className={classes.tabContent}>
                                     <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} onClick={ handleClickModalDelete }
-                                    html
+                                    html="true"
                                     style={{display:"flex", marginLeft:"auto"}} >
                                         Deletar
                                     </Button>
-                                    ) : (
-                                    <Button variant="contained" color="secondary" startIcon={<DeleteIcon />} 
-                                    style={{display:"flex", marginLeft:"auto", visibility:"hidden"}} >
-                                        Deletar
-                                    </Button>
-                                    )                                    
-                                    }
                                     
                                     <div className="form-group row" style={{marginTop: "-2em"}}>
                                         <label htmlFor="name_trust" style={{marginLeft: "0.8em"}} className="col-form-label bolder">Tipo da conta: </label>
-                                        <Tooltip title="O nome da conta tem que ser único" arrow>
+                                        <Tooltip title="O nome da conta tem que ser único" style={{marginTop: "7px", marginLeft: "5px", fontSize: "20px"}} arrow>
                                             <InfoIcon size="small" color="primary"/>
                                         </Tooltip>
 
                                         <div className="col-sm-12">
                                             <input key={role_type} required type="text" name="role_type"
-                                                onChange={(e) => handleChangeForms("role_type", null, e)}
-                                                className="form-control" placeholder="policies-cloud" defaultValue={role_type} />
+                                                onChange={(e) => handleChangeForms("role_type", index, e, role['name'])}
+                                                className="form-control" placeholder="policies-cloud" defaultValue={role['name']} 
+                                            />
                                         </div>
                                     </div>
 
@@ -261,21 +185,20 @@ const RolesItem = (
                                         <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Descrição: </label>
                                         <div className="col-sm-12">
                                             <input key={description} required type="text" name="description"
-                                                onChange={(e) => handleChangeForms("description",null,e)}
+                                                onChange={(e) => handleChangeForms("description",index, e, role['name'])}
                                                 className="form-control" placeholder="This document..." defaultValue={description} />
                                         </div>
                                     </div>
                                         
 
                                     <RolesHtml
-                                        key={`${role}'~'${index}`}
-                                        role_type={role_type}
-                                        role_description={"role['role_description']"}
-                                        policy_arn_aws={"role['policy_arn_aws']"}
-                                        trust_select={"role['trust_relationship']"}
-                                        policies_selected={ roles }
+                                        key={`${role['name']}'~'${index}`}
+                                        role_type={role['name']}
+                                        index={index}
+                                        // policies_selected={ roles }
+                                        policies_selected={ role['roles'] ? role['roles'] : [] }
                                         policies_available={roles_select}
-                                        
+
                                         handleForm={handleChangeForms.bind(this)}
                                         handleRemoveFields={handleRemoveFields}
                                         onChangeSelect={onChangeSelect.bind(this)}
@@ -291,14 +214,14 @@ const RolesItem = (
                                         <DialogTitle id="alert-dialog-title">{"Deletando "+role_type}</DialogTitle>
                                         <DialogContent>
                                             <DialogContentText id="alert-dialog-description">
-                                                Deseja realmente deletar {role}? Essa ação é irreversível.
+                                                Deseja realmente deletar {role['name']}? Essa ação é irreversível.
                                             </DialogContentText>
                                         </DialogContent>
                                         <DialogActions>
                                             <Button onClick={handleCloseModalDelete} color="secondary">
                                                 Não
                                             </Button>
-                                            <Button onClick={handleDeleteRoleModal} color="primary" autoFocus>
+                                            <Button onClick={handleDeleteRoleModalConfirm} color="primary" autoFocus>
                                                 Sim
                                             </Button>
                                         </DialogActions>
