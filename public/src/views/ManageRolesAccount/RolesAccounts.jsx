@@ -259,13 +259,8 @@ export default class RolesAccount extends React.Component {
         let format = [];
         roles_available.filter(value => value.hasOwnProperty("roles")).map( value => format.push( value ) );
                 
-        let url = ""; let method = ""; let action = "";
-        if(this.state.delete_roletype === "new item"){
-            url = process.env.REACT_APP_ENDPOINT+"/role/new";
-            method = "POST";
-            // action = "Inserir";
-        }
-        
+        let url = process.env.REACT_APP_ENDPOINT+"/role/new";
+        let method = "POST";
         
         return await fetch(url,{ 
             method: method, 
