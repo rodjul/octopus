@@ -79,7 +79,6 @@ export default class RolesAccount extends React.Component {
                 this.setState({roles_available: type_roles});
             }
         
-            
             // get the roles available which were created at Manage IAM
             fetch(process.env.REACT_APP_ENDPOINT+"/policy/available/role")
             .then(resp => resp.json())
@@ -116,6 +115,10 @@ export default class RolesAccount extends React.Component {
             let new_available = roles_available;
             new_available.splice(findIndex, 1);
 
+            if(new_available.length === 0){
+                new_available.push({"name":"New type 1", "type":"new type", "description":"Description of this"});  
+            }
+
             this.setState({ 
                 roles_available: new_available,
                 role_type: new_available.length ? new_available[new_available.length -1]['name'] : "New type 1",
@@ -142,7 +145,7 @@ export default class RolesAccount extends React.Component {
         
                 // if the available roles (created) is empty, add default form
                 if(new_available.length === 0){
-                    new_available.push("New type 1");  
+                    new_available.push({"name":"New type 1", "type":"new type", "description":"Description of this"});  
                 } 
 
                 // console.log(this.state);
