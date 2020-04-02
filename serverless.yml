@@ -338,10 +338,10 @@ functions:
           path: /role/new
           method: post
           cors: true          
-      - http:
-          path: /role/update
-          method: put
-          cors: true
+      # - http:
+      #     path: /role/update
+      #     method: put
+      #     cors: true
       - http:
           path: /role/delete
           method: delete

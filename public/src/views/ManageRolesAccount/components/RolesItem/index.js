@@ -49,7 +49,7 @@ const useStyles = styles;
 
 const RolesItem = (
     {
-        role_type, description, roles, roles_available, delete_roletype, roles_select,
+        role_type, roles_available, roles_select,
         handleAddFieldsParent, onChangeRoleTypeSelect, handleRemoveFields, handleDeleteRole, 
         onChangeForms, onChangeSelect, onSubmit
     }) => {
@@ -65,7 +65,7 @@ const RolesItem = (
     const handleClickModalDelete = () => setOpenModalDelete(true);
     const handleCloseModalDelete = () => setOpenModalDelete(false);
     const handleDeleteRoleModalConfirm = () => {
-        handleDeleteRole();
+        handleDeleteRole(valueIndex);
         handleCloseModalDelete();
         
         if(valueIndex) setValue(valueIndex -1);
@@ -184,9 +184,9 @@ const RolesItem = (
                                     <div className="form-group row">
                                         <label htmlFor="name_trust" className="col-sm-2 col-form-label bolder">Descrição: </label>
                                         <div className="col-sm-12">
-                                            <input key={description} required type="text" name="description"
-                                                onChange={(e) => handleChangeForms("description",index, e, role['name'])}
-                                                className="form-control" placeholder="This document..." defaultValue={description} />
+                                            <input key={ role['description'] } required type="text" name="description"
+                                                onChange={(e) => handleChangeForms("description",index, e, role['description'])}
+                                                className="form-control" placeholder="This document..." defaultValue={ role['description']} />
                                         </div>
                                     </div>
                                         
