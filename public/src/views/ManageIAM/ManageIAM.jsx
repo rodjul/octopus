@@ -40,7 +40,9 @@ export default class ManageIAM extends React.PureComponent {
         // Roles  - Name, Policies[], PolicyArnAWS[] , TrustRelationship
         // TrustRelationships - Name, AssumeRolePolicyDocument
         // fetch(process.env.REACT_APP_ENDPOINT+"/policy/default")
-        fetch(process.env.REACT_APP_ENDPOINT+"/policy/content")
+        fetch(process.env.REACT_APP_ENDPOINT+"/policy/content", {
+            headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+        })
         .then(resp => resp.json())
         .then(data => {
             if(data.message === "Internal server error"){
@@ -194,7 +196,7 @@ export default class ManageIAM extends React.PureComponent {
             //Roles: this.state.roles,
         //};
         return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/update",{
-            method:"POST", mode:"cors",
+            method:"POST", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
             body: JSON.stringify( {
                 "policies":this.state.policies, 
                 "trusts_relationship":this.state.trusts,
@@ -241,7 +243,7 @@ export default class ManageIAM extends React.PureComponent {
             let value = e;
             if( localStorage.getItem( value ) === null ){
                 fetch(process.env.REACT_APP_ENDPOINT+"/role/"+value,{
-                    method:"GET", mode:"cors"
+                    method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
                 })
                 .then(resp => resp.json())
                 .then(data => {
@@ -338,7 +340,8 @@ export default class ManageIAM extends React.PureComponent {
     requestDeleteRoleType(){
         fetch(process.env.REACT_APP_ENDPOINT+"/role/delete",{
             method:"DELETE", mode:"cors",
-            body: JSON.stringify( {"role_type":this.state.delete_roletype} )
+            body: JSON.stringify( {"role_type":this.state.delete_roletype} ),
+            headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
         })
         .then(resp => resp.json())
         .then( _ => {

@@ -29,6 +29,8 @@ provider:
         - "logs:*"
       Resource: 
         Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  apiKeys:
+    - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
 
 plugins:
   - serverless-plugin-log-retention
@@ -88,6 +90,7 @@ functions:
           path: /account/create
           method: post
           cors: true
+          private: true
   
   request_account_id_created:
     handler: src/lambda_get_account_id_created.lambda_handler
@@ -104,6 +107,7 @@ functions:
           path: /account/id/{name_account}
           method: get
           cors: true
+          private: true
 
   request_login_checktoken:
     handler: src/lambda_login_check_token.lambda_handler
@@ -120,6 +124,7 @@ functions:
           path: /account/checkToken
           method: post
           cors: true
+          private: true
 
   request_get_account_organizations:
     handler: src/lambda_get_accounts_organizations.lambda_handler
@@ -141,6 +146,7 @@ functions:
           path: /account/organizations
           method: get
           cors: true
+          private: true
 
   # send the data to sqs
   controller_compliance_new_check: 
@@ -168,10 +174,12 @@ functions:
           path: /policy/compliance/iam/new
           method: post
           cors: true
+          private: true
       - http:
           path: /policy/compliance/cis/new
           method: post
           cors: true
+          private: true
   
   # receive the sqs data and also the requests from api gateway
   compliance_iam_account:
@@ -194,10 +202,12 @@ functions:
           path: /policy/compliance/iam/check
           method: get
           cors: true
+          private: true
       - http:
           path: /policy/compliance/iam/dates-available
           method: get
-          cors: true          
+          cors: true
+          private: true       
       - sqs:
          arn: 
           "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_new_check}"
@@ -221,10 +231,12 @@ functions:
           path: /policy/compliance/cis/check
           method: get
           cors: true
+          private: true
       - http:
           path: /policy/compliance/cis/dates-available
           method: get
           cors: true
+          private: true
   
   # receive the sqs data
   proccess_data_cis_compliance:
@@ -270,18 +282,22 @@ functions:
           path: /policy/available/trust
           method: get
           cors: true
+          private: true
       - http:
           path: /policy/available/iam
           method: get
           cors: true
+          private: true
       - http:
           path: /policy/available/role
           method: get
           cors: true
+          private: true
       - http:
           path: /policy/update
           method: post
           cors: true
+          private: true
       # - http:
       #     path: /policy/{policy_name}
       #     method: get
@@ -330,14 +346,17 @@ functions:
           path: /role/available
           method: get
           cors: true
+          private: true
       - http:
           path: /role/{role_type}
           method: get
           cors: true
+          private: true #https://serverless.com/framework/docs/providers/aws/events/apigateway#setting-api-keys-for-your-rest-api
       - http:
           path: /role/new
           method: post
-          cors: true          
+          cors: true 
+          private: true
       # - http:
       #     path: /role/update
       #     method: put
@@ -346,6 +365,7 @@ functions:
           path: /role/delete
           method: delete
           cors: true
+          private: true
 
 
 resources:
@@ -372,156 +392,4 @@ resources:
         ResponseType: DEFAULT_5XX
         RestApiId:
           Ref: 'ApiGatewayRestApi'
-         
-    DynamoDbOctopusAccount:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: NameAccount
-            AttributeType: S
-        KeySchema:
-          - AttributeName: NameAccount
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: octopus_account
-
-    DynamoDbAccountCompliance:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: DateAction
-            AttributeType: S
-          - AttributeName: Account
-            AttributeType: S
-          - AttributeName: TypeCompliance
-            AttributeType: S
-        KeySchema:
-          - AttributeName: DateAction
-            KeyType: HASH
-          - AttributeName: Account
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: "2"
-          WriteCapacityUnits: "2"
-        GlobalSecondaryIndexes:
-          - IndexName: DateAction-index
-            KeySchema:
-            - AttributeName: DateAction
-              KeyType: HASH
-            Projection:
-              ProjectionType: KEYS_ONLY          
-            ProvisionedThroughput:
-              ReadCapacityUnits: "2"
-              WriteCapacityUnits: "2"
-          - IndexName: DateAction-TypeRole-index
-            KeySchema:
-            - AttributeName: DateAction
-              KeyType: HASH
-            - AttributeName: TypeRole
-              KeyType: HASH
-            Projection:
-              ProjectionType: KEYS_ONLY          
-            ProvisionedThroughput:
-              ReadCapacityUnits: "2"
-              WriteCapacityUnits: "2"
-        TableName: octopus_account_compliance
-
-    DynamoDbAccountComplianceDates:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: DateAction
-            AttributeType: S
-        KeySchema:
-          - AttributeName: DateAction
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: octopus_account_compliance_dates
-
-    DynamoDbAPolicies:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: PolicyName
-            AttributeType: S
-          - AttributeName: Type
-            AttributeType: S
-        KeySchema:
-          - AttributeName: PolicyName
-            KeyType: HASH
-          - AttributeName: Type
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: octopus_policy
-
-    DynamoDbRoleType:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          - AttributeName: RoleType
-            AttributeType: S
-        KeySchema:
-          - AttributeName: RoleType
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: octopus_role_type
-
-
-    SQSCreateAccount:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: ${self:custom.sqs_name}
-        VisibilityTimeout: 500 
     
-    SQSComplianceNewCheck:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: ${self:custom.sqs_compliance_new_check}
-        VisibilityTimeout: 500 
-    
-    SQSComplianceCISNewCheck:
-      Type: "AWS::SQS::Queue"
-      Properties:
-        QueueName: ${self:custom.sqs_compliance_cis_new_check}
-        VisibilityTimeout: 600 
-    
-    # Specifying the S3 Bucket
-    StaticSite:
-      Type: AWS::S3::Bucket
-      Properties:
-        AccessControl: PublicRead
-        BucketName: "octopus-site"
-        WebsiteConfiguration:
-          IndexDocument: index.html
-          ErrorDocument: index.html
-
-    StaticSiteS3BucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket:
-          Ref: StaticSite
-        PolicyDocument:
-          Statement:
-            - Sid: PublicReadGetObject
-              Effect: Allow
-              Principal: "*"
-              Action:
-              - s3:GetObject
-              Resource:
-                Fn::Join: ["", ["arn:aws:s3:::",{"Ref": "StaticSite"},"/*"]]
-              Condition:
-                IpAddress: 
-                  aws:SourceIp: 
-                    - "187.94.52.20/32"
-                    # - "187.94.48.0/20"
-                    # - "138.219.88.0/22"
-                    # - "189.89.32.0/20"
-                    # - "181.41.160.0/19"

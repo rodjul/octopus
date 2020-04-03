@@ -21,25 +21,12 @@ export default class CisCompliance extends React.Component {
     componentDidMount(){
 
         fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates-available", {
-            method:"GET", mode:"cors"
+            method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
         })
         .then(resp => resp.json())
         .then(data => {
             this.setState( {dates_available: data['dates_available']} );
         })
-        
-        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/check?date_action=", {
-        //     method:"GET", mode:"cors"
-        // })
-        // .then(resp => resp.json())
-        // .then(data => {
-        //     console.log(data);
-        //     this.setState( {accounts:data['content'],
-        //                     dates_available: data['dates_available'],
-        //                     loading:false } );
-        //     //  console.log(this.state.accounts);
-        // })
-
     }
 
     /**
@@ -56,7 +43,7 @@ export default class CisCompliance extends React.Component {
         this.setState({accounts:[]});
 
         await fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/check?date_action="+this.state.date_check_selected, {
-            method:"GET", mode:"cors"
+            method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
         })
         .then(resp => resp.json())
         .then(data => {
@@ -87,7 +74,7 @@ export default class CisCompliance extends React.Component {
         let date_format = dd + mm + yyyy;
 
         return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/new",{
-            method:"POST", mode:"cors",
+            method:"POST", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
             body: JSON.stringify( {"date_action":date_format, "type_role": this.state.type_role_selected} )
         })
         .then( resp => {
@@ -100,7 +87,7 @@ export default class CisCompliance extends React.Component {
                 //this.componentDidMount(); // TODO: colocar refresh a cada 5 seg
 
                 fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/cis/dates-available", {
-                    method:"GET", mode:"cors"
+                    method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
                 }).then(resp => resp.json()).then(data => {
                     this.setState( {dates_available: data['dates_available']} );
                 })

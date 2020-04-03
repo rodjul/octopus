@@ -21,8 +21,9 @@ export default class CreateAccount extends Component {
     
 
     componentDidMount(){
-        fetch(process.env.REACT_APP_ENDPOINT+"/role/available")
-        // fetch(process.env.REACT_APP_ENDPOINT+"/policy/available")
+        fetch(process.env.REACT_APP_ENDPOINT+"/role/available",{
+            headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+        })
         .then(resp => resp.json())
         .then(data => {
             if(data.message === "Internal server error"){
@@ -57,33 +58,14 @@ export default class CreateAccount extends Component {
 
     onSubmit = (event) => {
         event.preventDefault();
-
-        // let render_html = "<div id='temporary'>\n\
-        // <img id='loader' style='display:block; margin:auto' src='images/loading-spinning-bubbles.svg' alt='loading' >\n\
-        // <p id='output_text' style='font-size:1.3em'>Enviando os dados..</p>\n\
-        // </div>";
-
-        //$("#output").after(render_html);
-        // document.getElementById("output").innerHTML = render_html;
-        
-        // // // remover isso
-        // this.sleep(1000).then( () =>{ document.getElementById("output_text").textContent = "Criando a conta...";  }  );
-        // this.sleep(2000).then( () =>{ document.getElementById("temporary").remove(); }  );
-        // this.sleep(3000).then( () =>{ 
-        //     if(!this.state.load_table) this.setState({load_table : true})
-        // });
-        
-        // console.log("Event:",this.state);
-        
-
-        //fetch('/api/authenticate', {
         //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
         const self = this;
         fetch(process.env.REACT_APP_ENDPOINT + '/account/create', {
             method: 'POST',
             body: JSON.stringify(this.state),
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                "X-Api-Key": process.env.X_API_KEY_AWS,
             }
         })
         .then(res => {
@@ -97,7 +79,10 @@ export default class CreateAccount extends Component {
                 var interval = setInterval(function () {
                     fetch("https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev/account/id/" + name, {
                         method: "GET",
-                        headers: { "Content-Type": "application/json" },
+                        headers: { 
+                            "Content-Type": "application/json",
+                            "X-Api-Key": process.env.X_API_KEY_AWS,
+                        },
                     })
                     .then(response => response.json()) // convertendo o result pra json
                     .then(data => {

@@ -26,7 +26,8 @@ export default function withAuth(ComponentToProtect) {
         mode: 'cors',
         //body: JSON.stringify(this.state.token),
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          "X-Api-Key": process.env.X_API_KEY_AWS,
         }
       }).then(res => {
           //console.log(ComponentToProtect);
