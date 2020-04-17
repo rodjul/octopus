@@ -23,9 +23,9 @@ export default class RolesAccount extends React.Component {
      * When the components are ready, execute this first and fetch for the roles available, then fetch for the policies
      */
      componentDidMount(){
-
+        
         fetch(process.env.REACT_APP_ENDPOINT+"/role/available", {
-            headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+            headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
         })
         // fetch(process.env.REACT_APP_ENDPOINT+"/policy/available")
         .then(resp => resp.json())
@@ -43,7 +43,7 @@ export default class RolesAccount extends React.Component {
                     let data = undefined;
                     if( localStorage.getItem( value ) === null ){
                         data = await fetch(process.env.REACT_APP_ENDPOINT+"/role/"+value,{
-                            method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+                            method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
                         })
                         .then(resp => resp.json())
                         .then(data => {
@@ -83,7 +83,7 @@ export default class RolesAccount extends React.Component {
         
             // get the roles available which were created at Manage IAM
             fetch(process.env.REACT_APP_ENDPOINT+"/policy/available/role", { 
-                headers: {"X-Api-Key": process.env.X_API_KEY_AWS} 
+                headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS} 
             })
             .then(resp => resp.json())
             .then(data => {
@@ -138,7 +138,7 @@ export default class RolesAccount extends React.Component {
             let name = roles_available[index]['name'];
 
             fetch(process.env.REACT_APP_ENDPOINT+"/role/delete",{
-                method:"DELETE", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+                method:"DELETE", mode:"cors", headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
                 body: JSON.stringify( {"role_type": name} )
             })
             .then(resp => resp.json())
@@ -270,7 +270,7 @@ export default class RolesAccount extends React.Component {
             method: "POST", 
             mode:"cors", 
             body: JSON.stringify( format ),
-            headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+            headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
         })
         .then( resp =>{
             // console.log("Data: ",resp);

@@ -23,7 +23,7 @@ export default class AccountsCompliance extends React.Component {
      */
     componentDidMount(){
         fetch(process.env.REACT_APP_ENDPOINT+"/role/available",{
-            headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+            headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
         })
         .then(resp => resp.json())
         .then(data => {
@@ -37,7 +37,7 @@ export default class AccountsCompliance extends React.Component {
             }
 
             fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/dates-available", {
-                method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+                method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
             })
             .then(resp => resp.json())
             .then(data => {
@@ -61,7 +61,7 @@ export default class AccountsCompliance extends React.Component {
         this.setState({accounts:[]});
 
         return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/check?date_action="+this.state.date_check_selected+"&type_role="+this.state.type_role_selected, {
-            method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+            method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
         })
         .then(resp => resp.json())
         .then(data => {
@@ -84,7 +84,7 @@ export default class AccountsCompliance extends React.Component {
         let date_format = dd + mm + yyyy;
 
         return await fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/new",{
-            method:"POST", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+            method:"POST", mode:"cors", headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
             body: JSON.stringify( {"date_action":date_format, "type_role": this.state.type_role_selected} )
         })
         .then( resp => {
@@ -97,7 +97,7 @@ export default class AccountsCompliance extends React.Component {
                 //this.componentDidMount(); // TODO: colocar refresh a cada 5 seg
 
                 fetch(process.env.REACT_APP_ENDPOINT+"/policy/compliance/iam/dates-available", {
-                    method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+                    method:"GET", mode:"cors", headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
                 }).then(resp => resp.json()).then(data => {
                     this.setState( {dates_available: data['dates_available']} );
                 })

@@ -27,7 +27,7 @@ export default function withAuth(ComponentToProtect) {
         //body: JSON.stringify(this.state.token),
         headers: {
           'Content-Type': 'application/json',
-          "X-Api-Key": process.env.X_API_KEY_AWS,
+          "X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS,
         }
       }).then(res => {
           //console.log(ComponentToProtect);

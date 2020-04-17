@@ -22,7 +22,7 @@ export default class CreateAccount extends Component {
 
     componentDidMount(){
         fetch(process.env.REACT_APP_ENDPOINT+"/role/available",{
-            headers: {"X-Api-Key": process.env.X_API_KEY_AWS},
+            headers: {"X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS},
         })
         .then(resp => resp.json())
         .then(data => {
@@ -65,7 +65,7 @@ export default class CreateAccount extends Component {
             body: JSON.stringify(this.state),
             headers: {
                 'Content-Type': 'application/json',
-                "X-Api-Key": process.env.X_API_KEY_AWS,
+                "X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS,
             }
         })
         .then(res => {
@@ -81,7 +81,7 @@ export default class CreateAccount extends Component {
                         method: "GET",
                         headers: { 
                             "Content-Type": "application/json",
-                            "X-Api-Key": process.env.X_API_KEY_AWS,
+                            "X-Api-Key": process.env.REACT_APP_X_API_KEY_AWS,
                         },
                     })
                     .then(response => response.json()) // convertendo o result pra json
