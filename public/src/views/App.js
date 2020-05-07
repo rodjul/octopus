@@ -28,7 +28,7 @@ class App  extends React.Component {
     }
 
     changeLoginStatus = value => {
-      console.log(value);
+    //   console.log(value);
       this.setState({ logged: value })
 
     }
@@ -39,7 +39,7 @@ class App  extends React.Component {
         // console.log(<withAuth/>);
         // console.log( <withAuth./> );
 
-        console.log(window.location.pathname);
+        // console.log(window.location.pathname);
         return (
             // <section className="container">
             <Router history={hist}>

@@ -109,7 +109,7 @@ const RolesItem = (
 
     async function saveData(){
         setLoading(true);
-        console.log("openalert: ",openAlert);
+        // console.log("openalert: ",openAlert);
         await onSubmit(valueIndex)
         .then(data => {
             if(!data['error']){

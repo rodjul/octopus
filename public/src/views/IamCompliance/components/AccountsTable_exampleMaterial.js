@@ -133,7 +133,7 @@ const AccountsTable = (props) => {
         });
     }
     
-    console.log("Accounts: ",accounts);
+    // console.log("Accounts: ",accounts);
 
     return (
         <main className={classes.content}>

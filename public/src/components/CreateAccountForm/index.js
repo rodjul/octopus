@@ -102,7 +102,7 @@ const useStyles = makeStyles(theme => ({
 
 const CreateAccount = (
     {
-        email_form, name_form, type_roles, 
+        type_roles, 
         onSubmit, handleSelectAccountType, handleForm,
         validateForm,
         //  load_table ,
@@ -112,6 +112,7 @@ const CreateAccount = (
     const [loading, setLoading] = React.useState(false);
     const [success, setSuccess] = React.useState(false);
     const [loadTable, setLoadTable] = React.useState(false);
+    const [createdAccounts, setCreatedAccounts] = React.useState([]);
     const timer = React.useRef();
 
     const [openAlert, setOpenAlert] = React.useState(false);
@@ -137,8 +138,9 @@ const CreateAccount = (
             
             let resp = await onSubmit(event);
             resp = JSON.parse(resp);
-            console.log(resp);
+            // console.log(resp);
             if(!resp['error']){
+                setCreatedAccounts(resp['accounts'])
                 setLoading(false);
 
                 setOpenAlert(true);
@@ -151,7 +153,11 @@ const CreateAccount = (
 
                 setOpenAlert(true);
                 setTypeMessage("error");
-                setMessageAlert("Ocorreu um erro ao criar a conta. Contate o suporte");
+                if(resp.hasOwnProperty("message")){
+                    setMessageAlert(resp['message']);
+                }else{
+                    setMessageAlert("Ocorreu um erro ao criar a conta. Contate o suporte");
+                }
                 
             }
 
@@ -178,15 +184,18 @@ const CreateAccount = (
                     <Grid container direction="column" alignItems="center" justify="center">
                         <FormControl className={classes.formStyle} noValidate autoComplete="off">
 
-                            <TextField id="standard-basic" type="text" label="Email" style={{ margin: 0 }} placeholder="Email" 
-                            // helperText="Full width!" 
-                            fullWidth margin="normal" name="email"
-                            />
-
                             <TextField id="standard-basic" type="text" label="Nome da conta" style={{ marginTop: 12 }} placeholder="Nome da conta" 
                             // helperText="Full width!" 
                             fullWidth margin="normal" name="name"
+                            onChange={e => handleForm(e)}
                             />
+
+                            <TextField id="standard-basic" type="text" label="Email" style={{ margin: 0 }} placeholder="Email" 
+                            // helperText="Full width!" 
+                            fullWidth margin="normal" name="email"
+                            onChange={e => handleForm(e)}
+                            />
+
                             <FormControl>
                                 <InputLabel id="controlled-open-select-label-tipo-da-conta">Tipo da conta</InputLabel>
                                 <Select labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"
@@ -196,6 +205,7 @@ const CreateAccount = (
                                 // value={age}
                                 onChange={e => handleSelectAccountType(e)}
                                 >   
+                                    <MenuItem key="Cloud" value="Cloud">Cloud</MenuItem>
                                     {type_roles && type_roles.map((elem, index) => {
                                         return <MenuItem key={`${elem+'-'+index}`} value={elem}>{elem}</MenuItem>
                                     })}
@@ -217,33 +227,6 @@ const CreateAccount = (
 
                         </FormControl>
                     </Grid>
-                    {/* <form className="" onSubmit={onSubmit} >
-                        <FormGroup controlId="email" bssize="large">
-                            <FormLabel>Email</FormLabel>
-                            <FormControl autoFocus name="email" type="email" placeholder="conta@cloudtotvs.com.br" defaultValue={email_form} onChange={handleForm}></FormControl>
-                        </FormGroup>
-
-                        <FormGroup controlId="name" bssize="large">
-                            <FormLabel>Nome da conta</FormLabel>
-                            <FormControl autoFocus name="name" type="name" placeholder="nome da conta" defaultValue={name_form} onChange={handleForm}></FormControl>
-                        </FormGroup>
-                        
-                        <FormGroup controlId="conta.controlSelect">
-                            <FormLabel>Tipo da conta</FormLabel>
-                            <Form.Control as="select" className=""
-                            onChange={e => handleSelectAccountType(e)}
-                            >
-                                {type_roles && type_roles.map((elem, index) => {
-                                    return <option key={elem} value={elem} >{elem}</option>;
-                                })}
-                            </Form.Control>
-                        </FormGroup>
-                        <Button block bssize="large" disabled={!validateForm()} type="submit">
-                            Criar conta
-                    </Button>
-                        <div id="output"></div>
-                    </form> */}
-
                 </div>
             </Box>
             {loadTable ? (
@@ -255,21 +238,18 @@ const CreateAccount = (
                                 <TableCell>Nome da conta</TableCell>
                                 <TableCell align="center">Email da conta</TableCell>
                                 <TableCell align="center">Account ID</TableCell>
+                                <TableCell align="center">Tipo da conta</TableCell>
                             </TableRow>
                             </TableHead>
                             <TableBody>
-                            {/* {rows.map(row => ( */}
-                                <TableRow key="nome da conta A">
-                                <TableCell>nome da conta A</TableCell>
-                                <TableCell align="center">nome-da-conta-a@cloudtotvs.com.br</TableCell>
-                                <TableCell align="center">987598715987</TableCell>
+                            {createdAccounts.map(account => (
+                                <TableRow key={`${account['name']+'-'+account['account_id']}`}>
+                                    <TableCell>{account['name']}</TableCell>
+                                    <TableCell align="center">{account['email']}</TableCell>
+                                    <TableCell align="center">{account['account_id']}</TableCell>
+                                    <TableCell align="center">{account['account_type']}</TableCell>
                                 </TableRow>
-                                <TableRow key="nome da conta b">
-                                <TableCell>nome da conta b</TableCell>
-                                <TableCell align="center">nome-da-conta-a@cloudtotvs.com.br</TableCell>
-                                <TableCell align="center">987598715987</TableCell>
-                                </TableRow>
-                            {/* ))} */}
+                            ))}
                             </TableBody>
                         </Table>
                     </TableContainer>

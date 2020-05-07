@@ -47,7 +47,7 @@ export default class CisCompliance extends React.Component {
         })
         .then(resp => resp.json())
         .then(data => {
-            console.log("Data: ",data);
+            // console.log("Data: ",data);
             let accounts = [];
             if(!Array.isArray( data['content'] ) ){
                 accounts.push(data['content']);
@@ -58,7 +58,7 @@ export default class CisCompliance extends React.Component {
                             // dates_available: data['dates_available'],
                             // loading:false 
                         } );
-            console.log(this.state.accounts);
+            // console.log(this.state.accounts);
             return "ok";
         })   
     }

@@ -33,7 +33,7 @@ export default class RolesAccount extends React.Component {
             if(data.message === "Internal server error"){
                 console.error("Error in fetching data");
             }
-            console.log("data role available: ",data);
+            // console.log("data role available: ",data);
 
             if(data.type_roles.length){
                 let formatData = [];
@@ -90,7 +90,7 @@ export default class RolesAccount extends React.Component {
                 if(data.error === true){
                     console.error("Error in fetching data");
                 }else{
-                    console.log("Data policy available role: ",data);
+                    // console.log("Data policy available role: ",data);
                     let roles_ar = [];
                     data.policies.map( (elem,index) => roles_ar[index] = { "value":elem, "label":elem } );
                     this.setState({ roles_select: roles_ar });
@@ -223,7 +223,7 @@ export default class RolesAccount extends React.Component {
             newData[index]["description"] = event.target.value;
             
         }else{
-            console.log("Chegou aquu, n sei oq é");
+            // console.log("Chegou aquu, n sei oq é");
             this.state.roles[index][event.target.name] = event.target.value;
         }
     }

@@ -105,7 +105,7 @@ export default class ManageIAM extends React.PureComponent {
             const values = [...this.state.policies];
             values.push({ Name: 'New-Policy', Description:"", Path:"", PolicyDocument:{"null":true} });
             this.setState({policies : values});
-            console.log("State policies: ",this.state.policies);
+            // console.log("State policies: ",this.state.policies);
         }
     };
 
@@ -319,7 +319,7 @@ export default class ManageIAM extends React.PureComponent {
      * @param {int} index
      */
     onChangeSelect = (selectedOption, type, index, role_name) => {
-        console.log(selectedOption, type, index, role_name);
+        // console.log(selectedOption, type, index, role_name);
         //console.log(this.state.roles);
         if(type === "policies"){
             if( selectedOption !== null) this.state.roles[index][type].push(selectedOption[selectedOption.length -1].value);

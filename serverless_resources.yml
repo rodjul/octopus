@@ -46,14 +46,49 @@ custom:
   sqs_name: "CreateAccount"
   sqs_compliance_new_check: "ComplianceNewCheck"
   sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
+  bucket_name:
+    dev: "octopus-site"
+    prod: "octopus-site-prod"
   s3Sync:
-    - bucketName: "octopus-site"
+    - bucketName: ${self:custom.bucket_name.${opt:stage}, self:custom.bucket_name.dev}
       localDir: public/build/
 
 
 
 resources:
   Resources:
+
+    #https://www.serverless.com/framework/docs/providers/aws/guide/iam/
+    RoleOctopusLambda:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: octopus_lambda # required if you want to use 'serverless deploy --function' later on
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+          - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+          - arn:aws:iam::aws:policy/AmazonS3FullAccess
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+          - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+          - arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+        Policies:
+          - PolicyName: policy-octopus_assumerole
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - sts:AssumeRole
+                  Resource:
+                    - 'arn:aws:iam::*:role/octopusmngt'
         
     DynamoDbOctopusAccount:
       Type: 'AWS::DynamoDB::Table'

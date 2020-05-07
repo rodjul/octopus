@@ -38,8 +38,8 @@ export default class CreateAccount extends Component {
     }
 
     validateForm() {
-        console.log(1);
-        return this.state.email.length > 0 && this.state.name.length > 0;
+        // console.log(1);
+        return this.state.email.length > 0 && this.state.name.length > 0 && this.state.account_type.length > 0;
     }
 
     handleInputChange = (event) => {
@@ -54,10 +54,33 @@ export default class CreateAccount extends Component {
 
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
-      }
+    }
 
     onSubmit = (event) => {
         event.preventDefault();
+        // console.log(event, event.target);
+        // console.log(this.state);
+
+        if(!this.validateForm()){
+            return JSON.stringify( {"error":true, "message":"Os campos precisam ser preenchidos"} );
+        }
+        
+        // return JSON.stringify( {"error":false, 
+        //     "accounts":[ 
+        //         { 
+        //             name: this.state.name, 
+        //             email: this.state.email, 
+        //             "account_id":"0123456789",
+        //             "account_type": this.state.account_type,
+        //         }, 
+        //         { 
+        //             name: "seginfo-products.aws", 
+        //             email: "seginfo-products.aws@email.com.br", 
+        //             "account_id":"9876543210",
+        //             "account_type": "Siem",
+        //         } 
+        //     ]} );
+
         //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
         const self = this;
         fetch(process.env.REACT_APP_ENDPOINT + '/account/create', {
@@ -77,7 +100,7 @@ export default class CreateAccount extends Component {
 
                 // definimos um intervalo a cada 2 segundos para obter o resultado 
                 var interval = setInterval(function () {
-                    fetch("https://dq8yro2vbd.execute-api.us-east-2.amazonaws.com/dev/account/id/" + name, {
+                    fetch(process.env.REACT_APP_ENDPOINT+"/account/id/" + name, {
                         method: "GET",
                         headers: { 
                             "Content-Type": "application/json",
@@ -89,7 +112,7 @@ export default class CreateAccount extends Component {
                         let tryCount = self.state.fetch_vars.tryCount;
                         let retryLimit = self.state.fetch_vars.retryLimit;
 
-                        console.log(data);
+                        // console.log(data);
 
                         if (!(data.message.startsWith("AccountId: "))) {
                             if (tryCount <= retryLimit) {
@@ -105,22 +128,24 @@ export default class CreateAccount extends Component {
 
                         let format = "";
                         if (tryCount > retryLimit) {
-                            format = { name: self.state.name, email: self.state.email, accountid: "ERRO EM OBTER ACCOUNTID" };
+                            format = { name: self.state.name, email: self.state.email, "account_id": "ERRO EM OBTER ACCOUNTID", "account_type":self.state.account_type };
                         } else {
                             let accountid = data.message.split("AccountId: ")[1];
-                            format = { name: self.state.name, email: self.state.email, accountid };
+                            format = { name: self.state.name, email: self.state.email, "account_id":accountid, "account_type":self.state.account_type  };
                         }
 
                         let prv = [...self.state.lists, format];
                         // colocando o valor da nova conta
                         self.setState({ lists: prv });
-
+                        
+                        return JSON.stringify( {"error":false, "accounts": this.state.lists} );
                         //document.getElementById("output").innerHTML += "<p style='font-size:1.5em'>Conta: "+name+" - "+data.message+"</p>";
                     })
                     .catch(err => {
                         console.error(err);
                         //alert('Error logging in please try again');
-                        document.getElementById("output").innerHTML = "<p>Erro em obter account id da conta:" + name + "</p>";
+                        // document.getElementById("output").innerHTML = "<p>Erro em obter account id da conta:" + name + "</p>";
+                        return JSON.stringify( {"error":true} );
                     });
 
                 }, 2000); // usando setInterval para executar a cada 2 segundos
@@ -130,12 +155,14 @@ export default class CreateAccount extends Component {
 
             } else {
                 const error = new Error(res.error);
-                throw error;
+                // throw error;
+                console.error(error);
+                return JSON.stringify( {"error":true} );
             }
         })
         .catch(err => {
             console.error(err);
-            alert('Error logging in please try again');
+            return JSON.stringify( {"error":true} );
         });
     }
 
@@ -147,8 +174,6 @@ export default class CreateAccount extends Component {
         return (
             <>
                 <CreateAccountForm 
-                email_form={this.state.email} 
-                name_form={this.state.name} 
                 type_roles={type_roles}
                 onSubmit={this.onSubmit.bind(this)}
                 handleSelectAccountType={this.handleSelectAccountType.bind(this)}
