@@ -139,7 +139,7 @@ resources:
             - AttributeName: TypeRole
               KeyType: RANGE
             Projection:
-              ProjectionType: KEYS_ONLY          
+              ProjectionType: ALL     
             ProvisionedThroughput:
               ReadCapacityUnits: "2"
               WriteCapacityUnits: "2"
