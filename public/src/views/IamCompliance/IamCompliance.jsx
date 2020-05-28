@@ -120,7 +120,7 @@ export default class AccountsCompliance extends React.Component {
         //console.log();
         if(accounts && !(accounts.length === 0) ){
             accounts.map((elem,index) =>{
-                console.log(elem);
+                // console.log(elem);
                 JSON.parse(elem['DataCompliance']).map(elem => {
                     roles.push(elem['name']);
                     
