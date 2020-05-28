@@ -1,7 +1,7 @@
-import React, {useState} from "react";
+import React from "react";
 import {Fab, Box, Zoom, Tabs, Tab, Typography, CircularProgress, Tooltip} from "@material-ui/core";
 import { makeStyles } from '@material-ui/core/styles';
-import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon } from '@material-ui/icons';
+import {Add as AddIcon, Save as SaveIcon } from '@material-ui/icons';
 
 import PropTypes from 'prop-types';
 
@@ -141,10 +141,10 @@ const PoliciesHtml = (props) => {
     const [messageAlert, setMessageAlert] = React.useState("");
 
     const policies_available = props.policies_available;
-    const handleChangeForms = props.handleChangeForms;
-    const handleRemoveFields = props.handleRemoveFields;
-    const handleChangePolicyARN = props.handleChangePolicyARN;
-    const onChangeSelect = props.onChangeSelect;
+    // const handleChangeForms = props.handleChangeForms;
+    // const handleRemoveFields = props.handleRemoveFields;
+    // const handleChangePolicyARN = props.handleChangePolicyARN;
+    // const onChangeSelect = props.onChangeSelect;
 
     const handleOpenAlert = elem => setOpenAlert(elem);
     const handleChangeRoles = (event, newValue) => setValueRoles(newValue);

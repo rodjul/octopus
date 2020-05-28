@@ -1,12 +1,11 @@
 import React from "react";
-import { Form, Modal } from "react-bootstrap";
 import { 
     Fab, Box, Zoom, Button, CircularProgress, Tooltip, Typography, Tab, Tabs, 
     DialogTitle, DialogContentText, DialogContent, DialogActions, Dialog
 } from "@material-ui/core";
 
 import PropTypes from 'prop-types';
-import {Edit, Add as AddIcon, Save as SaveIcon, MoreVert as MoreVertIcon, Delete as DeleteIcon, Info as InfoIcon } from '@material-ui/icons';
+import { Add as AddIcon, Save as SaveIcon, Delete as DeleteIcon, Info as InfoIcon } from '@material-ui/icons';
 
 import RolesHtml from "../RolesHtml";
 import AlertMessage from "../../../../components/AlertMessage";
@@ -89,7 +88,7 @@ const RolesItem = (
 
     const handleChangeForms = (type, index, event) => {
         // console.log(type, index, event.target);
-        if(type === "role_type" || type === "description" || type=="role_description"){
+        if(type === "role_type" || type === "description" || type==="role_description"){
             onChangeForms(type, index, event);
 
         }else if(type === "role_name"){

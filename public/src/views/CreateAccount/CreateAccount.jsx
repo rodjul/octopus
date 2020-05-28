@@ -1,4 +1,4 @@
-import React, { Component, useState } from 'react';
+import React, { Component} from 'react';
 // import "./CreateAccount.css";
 import CreateAccountForm from "../../components/CreateAccountForm";
 
@@ -12,7 +12,7 @@ export default class CreateAccount extends Component {
             account_type: "",
             type_roles: [],
             lists: [],
-            load_table: false,
+            // load_table: false,
             fetch_vars: { tryCount: 0, retryLimit: 30, }, // not the best solution to do fetch retry
         };
 

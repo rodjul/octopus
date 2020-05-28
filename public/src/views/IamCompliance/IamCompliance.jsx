@@ -115,12 +115,12 @@ export default class AccountsCompliance extends React.Component {
         let compliance = [];
         let status = [];
         let policies_adicionais = [];
-        let total_rows = 0;
+        // let total_rows = 0;
         
         //console.log();
         if(accounts && !(accounts.length === 0) ){
-            {accounts.map((elem,index) =>{
-                // console.log(elem);
+            accounts.map((elem,index) =>{
+                console.log(elem);
                 JSON.parse(elem['DataCompliance']).map(elem => {
                     roles.push(elem['name']);
                     
@@ -138,9 +138,9 @@ export default class AccountsCompliance extends React.Component {
                     
                     }else policies_adicionais.push("(empty)");
                 });
-            })}
+            });
 
-            total_rows = policy.length;
+            // total_rows = policy.length;
             roles = [... new Set(roles)]; // removing duplicates
             policy = [... new Set(policy)];
             compliance = [... new Set(compliance)];

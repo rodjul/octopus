@@ -239,7 +239,7 @@ export default class ManageIAM extends React.PureComponent {
      */
     onChangeRoleTypeSelect(e){   
         // console.log("Value: ",e);
-        if(e !== undefined && e.length !== 0 && e != "New type"){
+        if(e !== undefined && e.length !== 0 && e !== "New type"){
             let value = e;
             if( localStorage.getItem( value ) === null ){
                 fetch(process.env.REACT_APP_ENDPOINT+"/role/"+value,{

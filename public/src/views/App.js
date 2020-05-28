@@ -1,10 +1,9 @@
-import React, {useState} from 'react';
+import React from 'react';
 import { Route, Switch, Router } from 'react-router-dom';
-import { Button, FormGroup, FormControl, FormLabel, Navbar, Nav, NavDropdown, Form } from "react-bootstrap";
 import './App.css';
 import CreateAccount from './CreateAccount/CreateAccount';
 // import withAuth from './Login/withAuth';
-import LoginForm from './Login/LoginForm';
+// import LoginForm from './Login/LoginForm';
 import ManageIAM from './ManageIAM/ManageIAM';
 import IamCompliance from './IamCompliance/IamCompliance';
 import CisCompliance from './CisCompliance/CisCompliance';
@@ -12,7 +11,7 @@ import RolesAccounts from './ManageRolesAccount/RolesAccounts';
 
 import LoginPage from './Login/LoginPage';
 import NavbarApp from "../components/NavbarApp";
-import TesteBar from "../components/NavbarApp/testebar";
+// import TesteBar from "../components/NavbarApp/testebar";
 
 import { createBrowserHistory } from "history";
 

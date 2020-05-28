@@ -1,6 +1,6 @@
 import React from "react";
 import { makeStyles } from '@material-ui/core/styles';
-import {Fab, Box, Button, InputLabel, Select, FormControl, MenuItem, Typography } from "@material-ui/core";
+import { Box, Button, InputLabel, Select, FormControl, MenuItem, Typography } from "@material-ui/core";
 import MaterialTable from 'material-table';
 // import { Table, Dropdown, Button, Form, Modal } from "react-bootstrap";
 
@@ -9,7 +9,7 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import { DepartureBoardTwoTone } from "@material-ui/icons";
+// import { DepartureBoardTwoTone } from "@material-ui/icons";
 
 import AlertMessage from "../../../components/AlertMessage";
 
@@ -89,7 +89,7 @@ const AccountsTable = (props) => {
     const [openAddNewCheck, setOpenAddNewCheck] = React.useState(false);
     const [openRenderModalTableOffender, setRenderModalTableOffender] = React.useState(false);
     const [contentRenderModalTableOffender, setContentRenderModalTableOffender] = React.useState("");
-    const [disabledButtonRequestCompliance, setDisabledButtonRequestCompliance] = React.useState(true);
+    // const [disabledButtonRequestCompliance, setDisabledButtonRequestCompliance] = React.useState(true);
 
     // handle values of selct
     const [accountSelect, setAccountSelect] = React.useState("");
@@ -121,7 +121,7 @@ const AccountsTable = (props) => {
     } 
     
     const handleCloseAddNewCheck = () => {
-        setDisabledButtonRequestCompliance(true);
+        // setDisabledButtonRequestCompliance(true);
         setOpenAddNewCheck(false);
     }
 

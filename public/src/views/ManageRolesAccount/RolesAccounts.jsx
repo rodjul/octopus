@@ -180,7 +180,7 @@ export default class RolesAccount extends React.Component {
             let {number_count_new_type } = this.state;
             let count_number = number_count_new_type;
 
-            const roles_available = [... this.state.roles_available];
+            const roles_available = [...this.state.roles_available];
 
             count_number++;
 
