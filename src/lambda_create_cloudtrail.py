@@ -109,7 +109,7 @@ def create_trail(new_account_id):
 
 
 def lambda_handler(event, context):
-    acc_id_new = event['Id'] #the var that we received when creating a new account 
+    acc_id_new = loads(event)['Id'] #the var that we received when creating a new account 
     
     update_policy_bucket(acc_id_new)
     
