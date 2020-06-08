@@ -58,6 +58,7 @@ functions:
       URL_SQS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_name}"
       PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
       octopus_resource: "totvs-cloudformation-templates"
+      lambda_create_cloudtrail: "${self:service}-create_cloudtrail-${self:provider.stage}"
     runtime: python3.6
     memorySize: 256
     timeout: 300 # 300 seconds
@@ -367,6 +368,29 @@ functions:
           cors: true
           private: true
 
+
+  create_cloudtrail:
+    handler: src/lambda_create_cloudtrail.lambda_handler
+    environment:
+      id_cloudtrail: 461835337376
+      bucket_cloudtrail: totvs-cloudtrail
+      name_cloudtrail: totvs-cloudtrail
+    runtime: python3.6
+    memorySize: 256
+    timeout: 600 # 10 minutes
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-create_cloudtrail-${self:provider.stage}
+    package:
+      include:
+        - src/model/*.py
+        - src/lambda_create_cloudtrail.py
+    layers:
+      - "arn:aws:lambda:us-east-2:826839167791:layer:model_octopus:13"        
+    events:      
+      - sqs:
+         arn: 
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_cis_new_check}"
+        batchSize: 2
 
 resources:
   Resources:

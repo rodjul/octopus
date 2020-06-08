@@ -1,6 +1,6 @@
 from os import environ,popen
 from json import loads, dumps
-import octopus
+from model.octopus import get_creds
 import botocore
 
 '''
@@ -11,13 +11,13 @@ Event: {"Id":"0123465789"}
 
 
 acc_id_trail = environ['id_cloudtrail']
-bucket_cloudtrail = environ['bucket_cloudtail']
+bucket_cloudtrail = environ['bucket_cloudtrail']
 name_trail = environ['name_cloudtrail']
 
 
 def update_policy_bucket(acc_id_new):
     #assume role in cloudtrail account
-    s3_client_sts = octopus.get_creds("s3",Id=acc_id_trail)
+    s3_client_sts = get_creds("s3",Id=acc_id_trail)
     
     bucket_empty = False
     try:
@@ -85,9 +85,9 @@ def update_policy_bucket(acc_id_new):
                                         Policy=dumps(new_bucket_policy))
 
 
-def create_trail():
+def create_trail(new_account_id):
     #creating cloudtrail in the new account
-    cloudtrail_client = octopus.get_creds('cloudtrail')
+    cloudtrail_client = get_creds('cloudtrail',Id=new_account_id)
     
     try:
         #creating trail
@@ -113,4 +113,4 @@ def lambda_handler(event, context):
     
     update_policy_bucket(acc_id_new)
     
-    create_trail()
+    create_trail(acc_id_new)

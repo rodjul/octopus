@@ -68,6 +68,24 @@ def create_octopusmngt_role(payer_id,account_id,payer_role):
     )
 
 # ============================================================================#
+#                    CALLS FUNCTION TO CREATE CLOUDTRAIL                      #
+# ============================================================================#
+def create_cloudtrail(account_id):
+    lambda_client = get_creds("lambda")
+    print("create_octopusmngt_role:",lambda_client)
+    
+    return lambda_client.invoke(
+        FunctionName=environ['lambda_create_cloudtrail'],
+        InvocationType="RequestResponse",
+        LogType="Tail",
+        Payload=dumps(
+            {
+                "Id":account_id
+            }
+        )
+    )
+
+# ============================================================================#
 #                          SETS ALIAS FOR NEW ACCOUNT                         #
 # ============================================================================#
 def set_alias(iam_client,account_name):
@@ -173,6 +191,8 @@ def main_function(event):
         # given a cloudformation file, this cloudformation will create the necessay roles for the account
         account_type = event['account_type'].lower()
         setup_roles_account(status["AccountId"], account_type)
+
+        create_cloudtrail(status["AccountId"])
 
     else:
         my_logging("Error on Account Creation: {}".format(status))
