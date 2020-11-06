@@ -1,0 +1,85 @@
+service: octopus-frontend
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "src/model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  stackTags:
+    product: "octopus"        
+
+plugins:
+  - serverless-plugin-log-retention
+  - serverless-s3-sync
+  # - serverless-plugin-split-stacks
+
+custom:
+  awsconfig: ${file(awsconfig.yml):${self:provider.stage}}
+  bucket_name:
+    dev: "octopus-site"
+    prod: "octopus-site-prod"
+  s3Sync:
+    - bucketName: ${self:custom.bucket_name.${opt:stage}, self:custom.bucket_name.dev}
+      localDir: build/
+
+
+
+resources:
+  Resources:
+
+    #Specifying the S3 Bucket
+    StaticSite:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: PublicRead
+        BucketName: ${self:custom.bucket_name.${opt:stage}, self:custom.bucket_name.dev}
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+
+    # StaticSiteS3BucketPolicy:
+    #   Type: AWS::S3::BucketPolicy
+    #   Properties:
+    #     Bucket:
+    #       Ref: StaticSite
+    #     PolicyDocument:
+    #       Statement:
+    #         - Sid: PublicReadGetObject
+    #           Effect: Allow
+    #           Principal: "*"
+    #           Action:
+    #           - s3:GetObject
+    #           Resource:
+    #             Fn::Join: ["", ["arn:aws:s3:::",{"Ref": "StaticSite"},"/*"]]
+    #           Condition:
+    #             IpAddress: 
+    #               aws:SourceIp: 
+    #                 - "187.94.52.20/32"
+    #                 # - "187.94.48.0/20"
+    #                 # - "138.219.88.0/22"
+    #                 # - "189.89.32.0/20"
+    #                 # - "181.41.160.0/19"
