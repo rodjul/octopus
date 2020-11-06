@@ -3,3 +3,7 @@ __pycache__/*
 .serverless/*
 .serverless
 node_modules/*
+**/node_modules/**
+node_modules
+awsconfig.yml
+**/awsconfig.yml/**

@@ -1,0 +1,94 @@
+service: octopus-gcp-resources
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "src/model/*.py"
+  
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  # apiKeys:
+  #   - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"
+
+plugins:
+  - serverless-plugin-log-retention
+  # - serverless-s3-sync
+  # - serverless-plugin-split-stacks
+
+custom:
+  awsconfig: ${file(../../awsconfig.yml):${self:provider.stage}}
+
+
+resources:
+  Resources:
+    DynamoDbProviderGCPIamPolicy:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: project_id
+            AttributeType: S
+          - AttributeName: expiration_ttl
+            AttributeType: S
+        KeySchema:
+          - AttributeName: project_id
+            KeyType: HASH
+          - AttributeName: expiration_ttl
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TimeToLiveSpecification:
+          AttributeName: expiration_ttl
+          Enabled: true
+        TableName: octopus_gcp_iam_policy
+    
+    DynamoDbProviderGCPAccountApi:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: JsonMetadata
+            AttributeType: S
+        KeySchema:
+          - AttributeName: JsonMetadata
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_gcp_account_api
+
+    DynamoDbProviderGCPHistoryModification:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: Timestamp
+            AttributeType: S
+        KeySchema:
+          - AttributeName: Timestamp
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_gcp_history_changes_resource_manager

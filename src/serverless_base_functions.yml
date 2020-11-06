@@ -1,0 +1,372 @@
+service: octopus-api
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "../model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  # # apiName: octopus-${self:provider.stage}
+  # versionFunctions: false
+  # iamRoleStatements:
+  #   - Effect: Allow
+  #     Action:
+  #       - "apigateway:*"
+  #       - "lambda:*"
+  #       - "sqs:*"
+  #       - dynamodb:Query
+  #       - dynamodb:Scan
+  #       - dynamodb:GetItem
+  #       - dynamodb:PutItem
+  #       - dynamodb:UpdateItem
+  #       - dynamodb:DeleteItem
+  #       - "logs:*"
+  #     Resource: 
+  #       Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  # apiKeys:
+  #   - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"  
+
+plugins:
+  - serverless-plugin-log-retention
+custom:
+  awsconfig: ${file(awsconfig.yml):${self:provider.stage}}
+  logRetentionInDays: ${self:custom.awsconfig.log_retention_in_days}
+  userPoolName: "OctopusCognito${self:service}"
+  userPoolClientName: "AppOctopusCognito${self:service}"
+
+
+functions:
+  # AuthorizerCheck:
+  #   handler: providers/aws/proxy/lambda_authorization.lambda_handler
+  #   environment:
+  #     REGION: ${self:provider.region}
+  #     USERPOOL_ID: !Ref CognitoUserPool
+  #     APP_CLIENT_ID: !Ref CognitoUserPoolClient
+  #   cors: true
+  #   runtime: python3.8
+  #   role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+  #   name: ${self:service}-cognito_check_token-${self:provider.stage}
+  #   package:
+  #     include:
+  #       - providers/aws/proxy/lambda_authorization.py
+  #   layers:
+  #     - "arn:aws:lambda:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:3"
+  #     - "arn:aws:lambda:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:layer:requests:3"
+
+  # CheckTokenAuthorizationSSO:
+  AuthorizerCheck:
+    handler: providers/aws/proxy/check_sso_jwt_token.lambda_handler
+    environment:
+      SSO_KEYS: "https://login.microsoftonline.com/common/discovery/keys"
+      APP_CLIENT_ID: "452535ab-99e1-4ef1-abf2-9b1a3aa59d57"
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 300 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-check_sso_jwt_token-${self:provider.stage}
+    package:
+      include:
+        - providers/aws/proxy/check_sso_jwt_token.py
+    layers:
+      - "arn:aws:lambda:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_pythonjose_version}"
+      - "arn:aws:lambda:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:layer:requests:${self:custom.awsconfig.layer_requests_version}"    
+
+  Login:
+    handler: providers/aws/authentication/lambda_login.lambda_handler
+    environment:
+      APP_CLIENT_ID: !Ref CognitoUserPoolClient
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-cognito_login-${self:provider.stage}
+    package:
+      include:
+        - providers/aws/authentication/lambda_login.py
+    # layers:
+    #   - "arn:aws:lambda:us-east-2:777777777777:layer:pythonjose:1"
+    events:
+      - http:
+          path: /login
+          method: post
+          cors: true
+  
+  Logoff:
+    handler: providers/aws/authentication/lambda_login.lambda_handler
+    environment:
+      APP_CLIENT_ID: !Ref CognitoUserPoolClient
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-cognito_logoff-${self:provider.stage}
+    package:
+      include:
+        - providers/aws/authentication/lambda_logoff.py
+    # layers:
+    #   - "arn:aws:lambda:us-east-2:777777777777:layer:pythonjose:1"
+    events:
+      - http:
+          path: /logoff
+          method: get
+          cors: true
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:${self:service}-cognito_check_token-${self:provider.stage}" 
+          authorizer:
+            type: CUSTOM
+            # type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
+
+  ListEventLogs:
+    handler: providers/aws/apigateway/logs/lambda_list_event_logs.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_list_event_logs-${self:provider.stage}
+    package:
+      include:
+        - providers/aws/apigateway/logs/lambda_list_event_logs.py
+        - utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /logs/event
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            # type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
+
+  GetUserPermission:
+    handler: providers/aws/apigateway/users/lambda_get_user_permission.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_get_user_permission-${self:provider.stage}
+    package:
+      include:
+        - providers/aws/apigateway/users/lambda_get_user_permission.py
+        - model/useracl.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"   
+    events:
+      - http:
+          path: /permissions
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            # type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
+
+  ListUsersGroups:
+    handler: providers/aws/apigateway/users/lambda_list_usergroups_permissions.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_list_usergroups_permissions-${self:provider.stage}
+    package:
+      include:
+        - providers/aws/apigateway/users/lambda_list_usergroups_permissions.py
+        - model/useracl.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"   
+    events:
+      - http:
+          path: /usergroups
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            # type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
+
+  ListUsers:
+    handler: providers/aws/apigateway/users/lambda_list_users.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_list_users-${self:provider.stage}
+    package:
+      include:
+        - providers/aws/apigateway/users/lambda_list_users.py
+        - model/useracl.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"   
+    events:
+      - http:
+          path: /users
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            # type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
+  
+  # cognito_test:
+  #   handler: providers/aws/authentication/lambda_test.lambda_handler
+  #   environment:
+  #     #APP_CLIENT_ID: !Ref CognitoUserPoolClient
+  #   runtime: python3.8
+  #   memorySize: 256
+  #   timeout: 30 # 30 seconds
+  #   role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+  #   name: ${self:service}-cognito_test-${self:provider.stage}
+  #   package:
+  #     include:
+  #       - providers/aws/authentication/lambda_test.py
+  #   # layers:
+  #   #   - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.pythonjose}"
+  #   events:
+  #     - http:
+  #         path: /test
+  #         method: get
+  #         cors: true
+  #         # authorizer:
+  #         #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:${self:service}-cognito_check_token-${self:provider.stage}" 
+  #         authorizer:
+  #           type: CUSTOM
+  #           # type: COGNITO_USER_POOLS
+  #           authorizerId:
+  #             Ref: ApiGatewayAuthorizer
+
+
+resources:
+  Resources:
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:service}-${self:provider.stage}
+    GatewayResponseDefault4XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+    GatewayResponseDefault5XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+
+
+    CognitoUserPool:
+      Type: "AWS::Cognito::UserPool"
+      Properties:
+        MfaConfiguration: OFF
+        UserPoolName: ${self:custom.userPoolName}
+        # UsernameAttributes:
+        #   - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 12
+            RequireLowercase: False
+            RequireNumbers: True
+            RequireSymbols: False
+            RequireUppercase: True
+
+    CognitoUserPoolClient:
+      Type: "AWS::Cognito::UserPoolClient"
+      Properties:
+        ClientName: ${self:custom.userPoolClientName}
+        ExplicitAuthFlows: 
+          - ALLOW_USER_PASSWORD_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        GenerateSecret: False
+        PreventUserExistenceErrors: ENABLED
+        UserPoolId:
+          Ref: CognitoUserPool
+
+    ApiGatewayAuthorizer:
+      DependsOn:
+        - AuthorizerCheckLambdaFunction
+        - ApiGatewayRestApi
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: proxy-authorizer
+        IdentitySource: method.request.header.Authorization
+        AuthorizerUri:
+          Fn::Join:
+            - ''
+            - 
+              - 'arn:aws:apigateway:'
+              - ${self:provider.region}
+              - ':lambda:path/2015-03-31/functions/'
+              - Fn::GetAtt: "AuthorizerCheckLambdaFunction.Arn"
+              - "/invocations"
+
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Type: TOKEN
+        ProviderARNs:
+          - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:${self:service}-cognito_check_token-${self:provider.stage}"  
+
+    # ApiGatewayAuthorizer:
+    #   DependsOn:
+    #     - ApiGatewayRestApi
+    #   Type: AWS::ApiGateway::Authorizer
+    #   Properties:
+    #     Name: cognito-authorizer
+    #     IdentitySource: method.request.header.Authorization
+    #     RestApiId:
+    #       Ref: ApiGatewayRestApi
+    #     Type: COGNITO_USER_POOLS
+    #     ProviderARNs:
+    #       - Fn::GetAtt: [CognitoUserPool, Arn]          
+
+  # The "Outputs" that your AWS CloudFormation Stack should produce.  This allows references between services.
+  Outputs:
+    apiGatewayRestApiId:
+      Value:
+        Ref: ApiGatewayRestApi
+      Export:
+        Name: OctopusApiGateway-restApiId
+    apiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt:
+          - ApiGatewayRestApi
+          - RootResourceId
+      Export:
+        Name: OctopusApiGateway-rootResourceId
+    apiGatewayAuthorizerId:
+      Value:
+        Ref: ApiGatewayAuthorizer
+      Export:
+        Name: OctopusApiGatewayAuthorizer-proxyId

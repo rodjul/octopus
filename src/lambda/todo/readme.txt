@@ -1,0 +1,1 @@
+colocar no octpus o descibre ec2 rds que mostra os IPs + ports outbound inbound

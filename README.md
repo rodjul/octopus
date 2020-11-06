@@ -1,5 +1,9 @@
 # octopus
-A simple project to create and control terraform configuration on a multi-account aws environment
+This project aims to create multi cloud accounts with best practices.
+
+Some of this best practices that are implement are from AWS which contains:
+- Create account with password policy
+- Create cloudtrail
 
 
 

@@ -1,0 +1,9 @@
+{
+  "name": "octopus",
+  "description": "",
+  "version": "0.1.0",
+  "dependencies": {},
+  "devDependencies": {
+    "serverless-plugin-log-retention": "^2.0.0"
+  }
+}

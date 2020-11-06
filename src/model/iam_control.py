@@ -106,28 +106,28 @@ class IamControl:
             return self.iam_client.detach_role_policy(PolicyArn=policy_arn, RoleName=role_name)
         return "Not found"
 
-    def get_document_of_roles(self, role_type):
+    def get_document_of_roles(self, account_type):
         '''
         Returns a dict of IAM policies, roles and trustrelationship
         '''
         dynamodb = boto3.resource('dynamodb')
-        table = dynamodb.Table("octopus_role_type")
 
         roles_json = []
         policy_json = []
         trusts_json = []
         roles_from_type_account = []
 
+        table = dynamodb.Table("octopus_aws_role_type")
         results = table.scan()
         for row in results['Items']:
-            if row['RoleType'].lower() == role_type.lower():
+            if row['RoleType'].lower() == account_type.lower():
                 roles_from_type_account = json.loads(row['Roles'])
                 break
         
-        table = dynamodb.Table("octopus_policy")
+        table = dynamodb.Table("octopus_aws_policy")
         policies =  table.scan()['Items']
         
-        # para cada role da octopus_role_type, procuramos o conteudo da role no octopus_policy 
+        # para cada role da octopus_aws_role_type, procuramos o conteudo da role no octopus_aws_policy 
         for policy in policies:
             for roledb in roles_from_type_account:
                 if policy['Type'] == "ROLE" and policy['PolicyName'] == roledb:
@@ -157,27 +157,28 @@ class IamControl:
             #TrustRelationships - Name, AssumeRolePolicyDocument
             role_name = role['role_name']
             
-            for trust_rel in trusts_json:
-                trust_rel = json.loads(trust_rel['Data'])
+            for trust_relationship in trusts_json:
+                trust_relationship = json.loads(trust_relationship['Data'])
 
                 # after we find the trust, we create the role
-                if trust_rel['Name'] == role['trust_relationship']:
+                # if the role exists or is created, and also exists policies it will create and attach to this role
+                if trust_relationship['Name'] == role['trust_relationship']:
                     # doing replace in the SAML ADFS
-                    if "Federated" in trust_rel['AssumeRolePolicyDocument']['Statement'][0]['Principal'] \
-                        and "ACCOUNT_ID" in trust_rel['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated']:
-                        trust_rel['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'] = \
-                            trust_rel['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'].replace("ACCOUNT_ID",self.account_id)
+                    if "Federated" in trust_relationship['AssumeRolePolicyDocument']['Statement'][0]['Principal'] \
+                        and "ACCOUNT_ID" in trust_relationship['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated']:
+                        trust_relationship['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'] = \
+                            trust_relationship['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'].replace("ACCOUNT_ID",self.account_id)
                     
                     try:
                         self.iam_client.create_role(
                             RoleName=role_name,
-                            AssumeRolePolicyDocument=json.dumps(trust_rel['AssumeRolePolicyDocument'])
+                            AssumeRolePolicyDocument=json.dumps(trust_relationship['AssumeRolePolicyDocument'])
                         )
                         print("Role created: ",role_name)
                     except botocore.exceptions.ClientError as e:
                         if e.response['Error']['Code'] == 'EntityAlreadyExists':
                             print("EntityAlreadyExists Role - ",role_name)
-                    #role_arn = response['Role']['Arn'] #arn:aws:iam::914035169037:role/accessmngt
+                    #role_arn = response['Role']['Arn'] #arn:aws:iam::1234567890:role/accessmngt
                     
                     # if there are policies associated with the role, we find and create
                     if role['policies']:

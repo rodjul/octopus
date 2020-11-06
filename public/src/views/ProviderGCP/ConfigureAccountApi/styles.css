@@ -1,0 +1,68 @@
+/*
+theme.spacing => 8px * X
+*/
+
+/* 
+https://material-ui.com/pt/system/palette/
+https://material-ui.com/pt/customization/palette/
+*/
+
+
+.paper {
+    padding: 8px;
+    color: rgba(0, 0, 0, 0.54);
+    background-color: white;
+}
+
+
+@media screen and (max-width: 600px){
+    .content{
+        margin-left: 0px;
+        padding-left: 20px;
+    }
+}
+
+.titleHeader {
+    padding-bottom: 32px;
+}
+
+@media screen and (max-width: 600px){
+    .titleHeader{
+        margin-left: 0px;
+        padding-left: 20px;
+    }
+}
+
+
+/* #root {
+    flex-grow: 1;
+    background-color: #fff;
+    display: flex;
+}
+
+@media screen and (max-height: 840px){
+    #root{
+        height: 36em;
+    }
+}
+@media screen and (min-height: 841px){
+    #root{
+        height: 50em;
+    }
+} */
+
+.actions {
+    margin: 1rem;
+    display: flex;
+    justify-content: left;
+    align-items: left;
+}
+
+.actions button:first-child{
+    margin-left: 0rem;
+}
+.actions button{
+    margin-left: 1rem;
+}
+
+

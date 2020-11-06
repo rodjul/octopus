@@ -1,0 +1,231 @@
+service: octopus-gcp-api
+
+package:
+  individually: true
+  # excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "../model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  # apiName: octopus-${self:provider.stage}
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': OctopusApiGateway-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': OctopusApiGateway-rootResourceId
+    # websocketApiId:
+    #   'Fn::ImportValue': MyApiGateway-websocketApiId
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "apigateway:*"
+        - "lambda:*"
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  # apiKeys:
+  #   - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"  
+
+plugins:
+  - serverless-plugin-log-retention
+custom:
+  awsconfig: ${file(../../awsconfig.yml):${self:provider.stage}}
+  logRetentionInDays: ${self:custom.awsconfig.log_retention_in_days}
+  apiGatewayAuthorizerID: 
+    'Fn::ImportValue': OctopusApiGatewayAuthorizer-proxyId
+
+
+functions:
+          
+  provider_gcp_list_organizations:
+    handler: apigateway/resourcemanager/lambda_gcp_list_organizations.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_gcp_list_organizations-${self:provider.stage}
+    package:
+      include:
+        - apigateway/resourcemanager/lambda_gcp_list_organizations.py
+        - ../../model/providergcp.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /gcp/organizations
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-${self:provider.stage}" 
+
+  provider_gcp_create_folder:
+    handler: apigateway/resourcemanager/lambda_gcp_create_folder.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_gcp_create_folder-${self:provider.stage}
+    package:
+      include:
+        - apigateway/resourcemanager/lambda_gcp_create_folder.py
+        - ../../model/providergcp.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /gcp/organizations/folders
+          method: post
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-${self:provider.stage}" 
+
+  provider_gcp_create_project:
+    handler: apigateway/resourcemanager/lambda_gcp_create_project.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_gcp_create_project-${self:provider.stage}
+    package:
+      include:
+        - apigateway/resourcemanager/lambda_gcp_create_project.py
+        - ../../model/providergcp.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /gcp/organizations/projects
+          method: post
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-${self:provider.stage}" 
+
+
+  provider_gcp_list_iam_policy_projects:
+    handler: apigateway/iam/lambda_gcp_list_iam_policy_projects.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_gcp_list_iam_policy_projects-${self:provider.stage}
+    package:
+      include:
+        - apigateway/iam/lambda_gcp_list_iam_policy_projects.py
+        - ../../model/providergcp.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /gcp/iam/projects
+          method: GET
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-${self:provider.stage}" 
+  
+  provider_gcp_update_iam_policy_projects:
+    handler: apigateway/iam/lambda_gcp_update_project_iam_policy.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_gcp_update_project_iam_policy-${self:provider.stage}
+    package:
+      include:
+        - apigateway/iam/lambda_gcp_update_project_iam_policy.py
+        - ../../model/providergcp.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /gcp/iam/projects/{resourceName}
+          method: POST
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-${self:provider.stage}" 
+
+  provider_gcp_update_account_api_key:
+    handler: apigateway/accountapi/lambda_update_metadata_account_api.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_update_metadata_account_api-${self:provider.stage}
+    package:
+      include:
+        - apigateway/accountapi/lambda_update_metadata_account_api.py
+        - ../../model/providergcp.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /gcp/accountapi/metadata
+          method: POST
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-${self:provider.stage}" 

@@ -1,10 +1,11 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './views/App';
-//import LoginForm from './LoginForm';
-import logo from './logo.svg';
+import { runWithAdal } from 'react-adal';
+import { authContext } from './adalConfig';
 
-//ReactDOM.render(<LoginForm />, document.getElementById('root'));
-ReactDOM.render(<App />, document.getElementById('root'));
+const DO_NOT_LOGIN = true;
 
+runWithAdal(
+    authContext, 
+    () => {
+    // eslint-disable-next-line
+    require('./indexApp.js');
+},DO_NOT_LOGIN)

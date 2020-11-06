@@ -1,0 +1,19 @@
+.fabAdd {
+    position: absolute !important;
+    bottom: 40px;
+    right: 40px;
+}
+
+.fabSave {
+    position: absolute !important;
+    bottom: 40px; /* 8px * 5 */
+    right: 104px;
+}
+
+.fabProgress {
+    color: green;
+    position: absolute !important;
+    top: -6;
+    left: -6;
+    z-index: 99;
+}

@@ -1,0 +1,122 @@
+service: octopus-resources
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "src/model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  # apiKeys:
+  #   - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"
+
+plugins:
+  - serverless-plugin-log-retention
+  # - serverless-s3-sync
+  # - serverless-plugin-split-stacks
+
+custom:
+  awsconfig: ${file(awsconfig.yml):${self:provider.stage}}
+
+
+resources:
+  Resources:
+
+    #https://www.serverless.com/framework/docs/providers/aws/guide/iam/
+    # RoleOctopusLambda:
+    #   Type: AWS::IAM::Role
+    #   Properties:
+    #     Path: /
+    #     RoleName: octopus_lambda # required if you want to use 'serverless deploy --function' later on
+    #     AssumeRolePolicyDocument:
+    #       Version: '2012-10-17'
+    #       Statement:
+    #         - Effect: Allow
+    #           Principal:
+    #             Service:
+    #               - lambda.amazonaws.com
+    #           Action: sts:AssumeRole
+    #     ManagedPolicyArns:
+    #       - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+    #       - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+    #       - arn:aws:iam::aws:policy/AmazonS3FullAccess
+    #       - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+    #       - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+    #       - arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+    #     Policies:
+    #       - PolicyName: policy-octopus_assumerole
+    #         PolicyDocument:
+    #           Version: '2012-10-17'
+    #           Statement:
+    #             - Effect: Allow
+    #               Action:
+    #                 - sts:AssumeRole
+    #               Resource:
+    #                 - 'arn:aws:iam::*:role/octopusmngt'
+        
+    DynamoDbEventHistoryActions:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: TimestampUTC
+            AttributeType: S
+        KeySchema:
+          - AttributeName: TimestampUTC
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1      
+        TableName: octopus_event_action_log
+
+    DynamoDbOctopusUsers:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: Username
+            AttributeType: S
+        KeySchema:
+          - AttributeName: Username
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1      
+        TableName: octopus_users
+
+    # DynamoDbOctopusUserGroupsACL:
+    #   Type: 'AWS::DynamoDB::Table'
+    #   Properties:
+    #     AttributeDefinitions:
+    #       - AttributeName: TimestampUTC
+    #         AttributeType: S
+    #     KeySchema:
+    #       - AttributeName: TimestampUTC
+    #         KeyType: HASH
+    #     ProvisionedThroughput:
+    #       ReadCapacityUnits: 1
+    #       WriteCapacityUnits: 1      
+    #     TableName: octopus_user_groups
+   

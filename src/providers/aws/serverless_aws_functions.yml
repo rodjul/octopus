@@ -1,0 +1,541 @@
+service: octopus-aws-api
+
+package:
+  individually: true
+#   excludeDevDependencies: false
+  exclude:
+    - "**/**"
+#   #include:
+#   #  - "../model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  # apiName: octopus-${self:provider.stage}
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': OctopusApiGateway-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': OctopusApiGateway-rootResourceId
+    # websocketApiId:
+    #   'Fn::ImportValue': MyApiGateway-websocketApiId
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "apigateway:*"
+        - "lambda:*"
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  # apiKeys:
+  #   - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"  
+
+plugins:
+  - serverless-plugin-log-retention
+custom:
+  awsconfig: ${file(../../awsconfig.yml):${self:provider.stage}}
+  # splitStacks:
+  #   perFunction: true
+  #   perType: false
+  #   perGroupFunction: false
+  logRetentionInDays: ${self:custom.awsconfig.log_retention_in_days}
+  sqs_create_account: "CreateAccount"
+  sqs_compliance_new_check: "ComplianceNewCheck"
+  sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
+  sqs_describe_network_linked_accounts: "DescribeNetworkLinkedAccounts"
+  apiGatewayAuthorizerID: 
+    'Fn::ImportValue': OctopusApiGatewayAuthorizer-proxyId
+
+
+functions:
+          
+  request_creation_account:
+    handler: apigateway/accounts/lambda_controller_creation_account.lambda_handler
+    environment:
+      SQS_CREATE_ACCOUNT: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_create_account}"
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-controller_creation_account-${self:provider.stage}
+    package:
+      include:
+        - apigateway/accounts/lambda_controller_creation_account.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/accounts
+          method: post
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+          # authorizer: 
+          #   arn: arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev
+      # - http:
+      #     path: /accounts/{account_uid}/status
+      #     method: get
+      #     cors: true
+      #     #private: true
+  
+  request_account_id_created:
+    handler: apigateway/accounts/lambda_get_account_id_created.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-get_account_id_created-${self:provider.stage}
+    package:
+      include:
+        - apigateway/accounts/lambda_get_account_id_created.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/accounts/{name_account}
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+
+  request_get_account_organizations:
+    handler: apigateway/accounts/lambda_get_accounts_organizations.lambda_handler
+    environment:
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-get_accounts_organizations-${self:provider.stage}
+    package:
+      include:
+        - ../../model/*.py
+        - apigateway/accounts/lambda_get_accounts_organizations.py
+        - ../../utils/awslogs.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"      
+    events:
+      - http:
+          path: /aws/accounts/organizations
+          method: get
+          cors: true
+          #private: true  
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+      
+  compliance_iam_account:
+    handler: apigateway/compliance/lambda_iam_compliance.lambda_handler
+    environment:
+      URL_SQS_IAM: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
+      octopus_resource: totvs-cloudformation-templates 
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-iam_compliance-${self:provider.stage}
+    package:
+      include:
+        - ../../model/*.py
+        - apigateway/compliance/lambda_iam_compliance.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+    events:
+      - http:
+          path: /aws/policiescompliance/iam
+          method: post
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+      - http:
+          path: /aws/policiescompliance/iam/status
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+      - http:
+          path: /aws/policiescompliance/iam/check
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+      - http:
+          path: /aws/policiescompliance/iam/dates-available
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+
+  request_cis_compliance:
+    handler: apigateway/compliance/lambda_cis_compliance.lambda_handler
+    environment:
+      URL_SQS_CIS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_cis_new_check}"
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-cis_compliance-${self:provider.stage}
+    package:
+      include:
+        - apigateway/compliance/lambda_cis_compliance.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/policiescompliance/cis
+          method: post
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+      - http:
+          path: /aws/policiescompliance/cis/status
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+      - http:
+          path: /aws/policiescompliance/cis/check
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+      - http:
+          path: /aws/policiescompliance/cis/dates-available
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+          # authorizer:
+          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
+
+  requests_policies_iam_list: 
+    handler: apigateway/policies/iam/lambda_list_iam_policy.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_list_iam_policy-${self:provider.stage}
+    package:
+      include:
+        - apigateway/policies/iam/lambda_list_iam_policy.py
+        - ../../model/*.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+    events:
+      - http:
+          path: /aws/policies
+          method: get
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+
+  requests_policies_iam_get: 
+    handler: apigateway/policies/iam/lambda_get_iam_policy.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_get_iam_policy-${self:provider.stage}
+    package:
+      include:
+        - apigateway/policies/iam/lambda_get_iam_policy.py
+        - ../../model/*.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+    events:              
+      - http:
+          path: /aws/policies/{policy_type}
+          method: get
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+
+  requests_policies_iam_delete: 
+    handler: apigateway/policies/iam/lambda_delete_iam_policy.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_delete_iam_policy-${self:provider.stage}
+    package:
+      include:
+        - apigateway/policies/iam/lambda_delete_iam_policy.py
+        - ../../model/*.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+    events:              
+      - http:
+          path: /aws/policies/{policy_type}/{policy_name}
+          method: delete
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+
+  requests_policies_iam_update: 
+    handler: apigateway/policies/iam/lambda_update_iam_policy.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_update_iam_policy-${self:provider.stage}
+    package:
+      include:
+        - apigateway/policies/iam/lambda_update_iam_policy.py
+        - ../../model/*.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+    events:              
+      - http:
+          path: /aws/policies
+          method: put
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+
+  request_account_role_type_list:
+    handler: apigateway/policies/roles/lambda_list_roles.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_list_roles-${self:provider.stage}
+    package:
+      include:
+        - apigateway/policies/roles/lambda_list_roles.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/roles
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}       
+
+  request_account_role_type_update:
+    handler: apigateway/policies/roles/lambda_update_roles.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_update_roles-${self:provider.stage}
+    package:
+      include:
+        - apigateway/policies/roles/lambda_update_roles.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:              
+      - http:
+          path: /aws/roles
+          method: put
+          cors: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+
+  request_account_role_type_delete:
+    handler: apigateway/policies/roles/lambda_delete_role_type.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_delete_role_type-${self:provider.stage}
+    package:
+      include:
+        - apigateway/policies/roles/lambda_delete_role_type.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:              
+      - http:
+          path: /aws/roles/{role_type}
+          method: delete
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}          
+
+  request_new_report_network_linked_accounts:
+    handler: apigateway/networks/lambda_request_new_report_networks.lambda_handler
+    environment:
+      URL_SQS_DESCRIBE_NETWORK: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_describe_network_linked_accounts}"
+      LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_request_new_report_networks-${self:provider.stage}
+    package:
+      include:
+        - apigateway/networks/lambda_request_new_report_networks.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/networks/reports
+          method: post
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+
+  request_list_history_reports_network_linked_accounts:
+    handler: apigateway/networks/lambda_list_history_reports_networks.lambda_handler
+    # environment:
+    #   URL_SQS_DESCRIBE_NETWORK: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_describe_network_linked_accounts}"
+    #   LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_list_history_reports_networks-${self:provider.stage}
+    package:
+      include:
+        - apigateway/networks/lambda_list_history_reports_networks.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/networks/reports
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+
+  request_get_reports_network_linked_accounts:
+    handler: apigateway/networks/lambda_get_reports_networks.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_get_reports_networks-${self:provider.stage}
+    package:
+      include:
+        - apigateway/networks/lambda_get_reports_networks.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/networks/reports/{timestamp}/{type_request}
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}

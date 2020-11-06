@@ -1,0 +1,81 @@
+service: octopuscrontab
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "../model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  apiKeys:
+    - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"    
+
+plugins:
+  - serverless-plugin-log-retention
+custom:
+  awsconfig: ${file(../../awsconfig.yml):${self:provider.stage}}
+  logRetentionInDays: ${self:custom.awsconfig.log_retention_in_days}
+  # splitStacks:
+  #   perFunction: true
+  #   perType: false
+  #   perGroupFunction: false
+  sqs_name: "CreateAccount"
+  sqs_compliance_new_check: "ComplianceNewCheck"
+  sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
+  sqs_gcp_iam_policy: "ProviderGCPGetIamPolicyProjects"
+  # s3Sync:
+  #   - bucketName: "octopus-site"
+  #     localDir: public/build/
+
+
+functions:
+  # send the data to sqs
+  schedule_cis_compliance: 
+    handler: crontab/schedule_cis_compliance.lambda_handler
+    environment:
+      URL_SQS_IAM: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
+      URL_SQS_CIS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_cis_new_check}"
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      LAMBDA_ORGANIZATION: octopus-aws-api-get_accounts_organizations-${self:provider.stage}
+      # octopus_resource: "totvs-cloudformation-templates"
+    runtime: python3.6
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-schedule_cis_compliance-${self:provider.stage}
+    package:
+      include:
+        - crontab/schedule_cis_compliance.py
+        - ../../model/*.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:requests:1"
+    events:
+      - schedule:
+          name: octopusschedule_7_days
+          rate: rate(7 days)
+          enabled: true
+  

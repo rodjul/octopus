@@ -1,0 +1,35 @@
+.cardHidden {
+    opacity: 0; 
+    transform: translate3d(0, -60px, 0);
+}
+
+.title{
+    font-weight: bolder;
+    text-align: center;
+}
+
+.background {
+    background-image: url( "../../assets/img/pexels-elina-sazonova-4403896.jpg");
+    background-size: cover;
+    background-position: top center;
+}
+
+.pageHeader {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+#root {
+    flex-grow: 1;
+}
+
+.paperForm {
+    align-items: center;
+    justify-content: center;
+    padding: 1.4em;
+    overflow: hidden;
+};
+

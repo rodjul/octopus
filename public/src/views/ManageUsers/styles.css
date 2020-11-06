@@ -1,0 +1,59 @@
+/*
+theme.spacing => 8px * X
+*/
+
+/* 
+https://material-ui.com/pt/system/palette/
+https://material-ui.com/pt/customization/palette/
+*/
+
+
+.paper {
+    padding: 8px;
+    color: rgba(0, 0, 0, 0.54);
+    background-color: white;
+}
+
+
+@media screen and (max-width: 600px){
+    .content{
+        margin-left: 0px;
+        padding-left: 20px;
+    }
+}
+
+.titleHeader {
+    padding-bottom: 32px;
+}
+
+@media screen and (max-width: 600px){
+    .titleHeader{
+        margin-left: 0px;
+        padding-left: 20px;
+    }
+}
+
+/* https://github.com/reactstrap/reactstrap/issues/1183 */
+/* .table-responsive{ height:400px; overflow:auto; } thead tr:nth-child(1) th{ background: white; position: sticky; top: 0; z-index: 10; } */
+/* 
+.tableHeader{
+    min-width: 8em
+} */
+
+
+
+.actions {
+    margin: 1rem;
+    display: flex;
+    justify-content: left;
+    align-items: left;
+}
+
+.actions button:first-child{
+    margin-left: 0rem;
+}
+.actions button{
+    margin-left: 1rem;
+}
+
+

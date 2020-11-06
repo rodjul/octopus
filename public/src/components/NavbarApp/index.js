@@ -2,134 +2,96 @@
 // import { NavLink } from 'react-router-dom';
 
 import PropTypes from 'prop-types';
-// import AppBar from '@material-ui/core/AppBar';
-import CssBaseline from '@material-ui/core/CssBaseline';
-import Divider from '@material-ui/core/Divider';
-import Drawer from '@material-ui/core/Drawer';
-import Hidden from '@material-ui/core/Hidden';
-// import IconButton from '@material-ui/core/IconButton';
-import Collapse from '@material-ui/core/Collapse';
+// import Hidden from '@material-ui/core/Hidden';
+// import Collapse from '@material-ui/core/Collapse';
 // import InboxIcon from '@material-ui/icons/MoveToInbox';
 // import MailIcon from '@material-ui/icons/Mail';
 // import MenuIcon from '@material-ui/icons/Menu';
+// import SettingsIcon from '@material-ui/icons/Settings';
 import {
-    Dashboard, Add, Edit, Assessment, ExpandLess, ExpandMore
+    Dashboard, Add, Edit, Assessment, ExpandLess, ExpandMore, 
+    AccountCircle, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
+    Menu as MenuIcon
 } from '@material-ui/icons';
-
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
+import {
+    AppBar, Toolbar, Typography, List, ListItem, ListItemIcon, ListItemText, Menu, MenuItem, IconButton, Drawer, Divider, CssBaseline
+} from "@material-ui/core";
 
 
+// import ListItem from '@material-ui/core/ListItem';
+// import ListItemIcon from '@material-ui/core/ListItemIcon';
+// import ListItemText from '@material-ui/core/ListItemText';
+import { useTheme } from '@material-ui/core/styles';
 
-const drawerWidth = 240;
+import { NavLink} from "react-router-dom";
+import clsx from 'clsx';
 
-const useStyles = makeStyles(theme => ({
-    root: {
-        display: 'flex',
-    },
-    drawer: {
-        [theme.breakpoints.up('sm')]: {
-            width: drawerWidth,
-            flexShrink: 0,
-        },
-    },
-    appBar: {
-        [theme.breakpoints.up('sm')]: {
-            width: `calc(100% - ${drawerWidth}px)`,
-            marginLeft: drawerWidth,
-        },
-    },
-    menuButton: {
-        marginRight: theme.spacing(2),
-        [theme.breakpoints.up('sm')]: {
-            display: 'none',
-        },
-    },
-    // toolbar: theme.mixins.toolbar,
-    drawerPaper: {
-        width: drawerWidth,
-        backgroundColor: "#17192b",
-    },
-    fontStyle: {
-        color: "#DCDCDC",
-        "& svg": {
-            color: "#DCDCDC",
-        }
-    },
-    content: {
-        flexGrow: 1,
-        padding: theme.spacing(3),
-    },
-    nested: {
-        paddingLeft: theme.spacing(4),
-    },
-}));
+import styles from "./components/styles.js";
+
+import MenuAccount from "./components/MenuAccount";
+import ProviderAWS from "./components/ProviderAWS";
+import ProviderGCP from "./components/ProviderGCP";
 
 
 const NavbarApp = (props) => {
     const { container } = props;
-    const classes = useStyles();
+    const classes = styles();
     const theme = useTheme();
-    const [mobileOpen, setMobileOpen] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
     
     const [openCollapse, setOpenCollapse] = React.useState(false);
     const handleClick = () => {
         setOpenCollapse(!openCollapse);
     };
     
+    const [openCollapse2, setOpenCollapse2] = React.useState(false);
+    const handleClick2 = () => {
+        setOpenCollapse2(!openCollapse2);
+    };
+    
 
-    const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
+    const handleDrawerOpen = () => {
+        setOpen(true);
+    };
+    
+    const handleDrawerClose = () => {
+        setOpen(false);
     };
 
-    const onClickRoute = (e) => {
-        props.history.push(e);
-    }
+    const isActive = match => window.location.pathname === match ? classes.active : "";
 
     const drawer = (
         <div>
             <div className={classes.toolbar} />
             <Divider />
             <List className={classes.fontStyle}>
-                <ListItem button key="Dashboard" onClick={() => onClickRoute("/login")} >
+                {/* <ListItem button key="Dashboard">
                     <ListItemIcon><Dashboard /></ListItemIcon>
                     <ListItemText primary="Dashboard" />
-                </ListItem>
-                <ListItem button key="Criar conta" onClick={() => onClickRoute("/create-account")} >
-                    <ListItemIcon><Add /></ListItemIcon>
-                    <ListItemText primary="Criar conta" />
-                </ListItem>
-                <ListItem button key="Gerenciar tipos de conta" onClick={() => onClickRoute("/manage-roles-accounts")}  >
-                    <ListItemIcon><Edit /></ListItemIcon>
-                    <ListItemText primary="Gerenciar tipos de conta" />
-                </ListItem>
-                <ListItem button key="Gerenciar policies" onClick={() => onClickRoute("/manage-iam")} >
-                    <ListItemIcon><Edit /></ListItemIcon>
-                    <ListItemText primary="Gerenciar IAM" />
-                </ListItem>
+                </ListItem> */}
+                <ProviderAWS pathname={window.location.pathname} />
+                <ProviderGCP pathname={window.location.pathname} />
 
-                <ListItem button onClick={handleClick}>
-                    <ListItemIcon>
-                    <Assessment />
-                    </ListItemIcon>
-                    <ListItemText primary="Gerenciar Compliances" />
-                    {openCollapse ? <ExpandLess /> : <ExpandMore />}
+                <ListItem button key="Histórico de Eventos" className={`${classes.buttonHover} ${isActive("/event-history")}`}> 
+                    <ListItemIcon><Assessment /></ListItemIcon>
+                    <NavLink to="/event-history" className={classes.links} >
+                        <ListItemText primary="Histórico de Eventos" />
+                    </NavLink>
                 </ListItem>
-                <Collapse in={openCollapse} timeout="auto" unmountOnExit>
-                    <List component="div" disablePadding>
-                    <ListItem button className={classes.nested} key="IAM" onClick={() => onClickRoute("/iam-compliance")} >
-                        <ListItemIcon><Assessment /></ListItemIcon>
-                        <ListItemText primary="IAM" />
-                    </ListItem>
-                    <ListItem button className={classes.nested} key="CIS" onClick={() => onClickRoute("/cis-compliance")} >
-                        <ListItemIcon><Assessment /></ListItemIcon>
-                        <ListItemText primary="CIS" />
-                    </ListItem>
-                    </List>
-                </Collapse>
+                <ListItem button key="Usuários" className={`${classes.buttonHover} ${isActive("/manage-users")}`}> 
+                    <ListItemIcon><Assessment /></ListItemIcon>
+                    <NavLink to="/manage-users" className={classes.links} >
+                        <ListItemText primary="Usuários" />
+                    </NavLink>
+                </ListItem>
+                {/* <ListItem button key="Usuários" className={`${classes.buttonHover} ${isActive("/users")}`}> 
+                    <ListItemIcon><Assessment /></ListItemIcon>
+                    <NavLink to="/users" className={classes.links} >
+                        <ListItemText primary="Histórico de Eventos" />
+                    </NavLink>
+                </ListItem> */}
+                
+                
             </List>
             {/* <Divider />
         <List>
@@ -142,57 +104,64 @@ const NavbarApp = (props) => {
         </List> */}
         </div>
     );
-    // console.log(props);
+    
+    
     return (
         <div className={classes.root}>
             <CssBaseline />
-            {/* <AppBar position="fixed" className={classes.appBar} color="transparent" >
-                 <Toolbar style={{ backgroundColor: "#fff", color:"black"}}>
+            <AppBar
+                position="fixed"
+                className={clsx(classes.appBar, {
+                    [classes.appBarShift]: open,
+                })}
+                // color="transparent"
+            >
+                <Toolbar>
                     <IconButton
                         color="inherit"
                         aria-label="open drawer"
+                        onClick={handleDrawerOpen}
                         edge="start"
-                        onClick={handleDrawerToggle}
-                        className={classes.menuButton}
+                        className={clsx(classes.menuButton, open && classes.hide)}
                     >
                         <MenuIcon />
                     </IconButton>
-                    {/* <Typography variant="h4" noWrap  id="titleHeader" >
-                        Titulo da página
-                    </Typography> */}
-                {/* </Toolbar> 
-            </AppBar> */} */}
-            <nav className={classes.drawer} aria-label="mailbox folders" >
-                {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
-                <Hidden smUp implementation="css">
-                    <Drawer
-                        container={container}
-                        variant="temporary"
-                        anchor={theme.direction === 'rtl' ? 'right' : 'left'}
-                        open={mobileOpen}
-                        onClose={handleDrawerToggle}
-                        classes={{
-                            paper: classes.drawerPaper,
-                        }}
-                        ModalProps={{
-                            keepMounted: true, // Better open performance on mobile.
-                        }}
-                    >
-                        {drawer}
-                    </Drawer>
-                </Hidden>
-                <Hidden xsDown implementation="css" >
-                    <Drawer
-                        classes={{
-                            paper: classes.drawerPaper,
-                        }}
-                        variant="permanent"
-                        open
-                    >
-                        {drawer}
-                    </Drawer>
-                </Hidden>
-            </nav>
+                    <Typography variant="h6" noWrap>
+                        Octopus
+                    </Typography>
+
+                    {/* right side */}
+                    <div className={classes.grow} />
+                    <MenuAccount pathname={window.location.pathname}/>
+
+                </Toolbar>
+            </AppBar>
+
+            <Drawer
+                className={classes.drawer}
+                variant="persistent"
+                anchor="left"
+                open={open}
+                classes={{
+                paper: classes.drawerPaper,
+                }}
+            >
+                <div className={classes.drawerHeader}>
+                    <IconButton onClick={handleDrawerClose}>
+                        {theme.direction === 'ltr' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                    </IconButton>
+                </div>
+                <Divider />
+                {drawer}
+            </Drawer>
+            <div
+                className={clsx(classes.content, {
+                [classes.contentShift]: open,
+                })}
+            >
+                {props.children}
+
+            </div>
         </div>
 
     );

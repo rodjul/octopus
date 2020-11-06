@@ -1,0 +1,85 @@
+service: octopussqs-gcp
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "src/model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  apiKeys:
+    - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"    
+
+plugins:
+  - serverless-plugin-log-retention
+  # - serverless-plugin-split-stacks
+
+custom:
+  awsconfig: ${file(../../awsconfig.yml):${self:provider.stage}}
+  logRetentionInDays: ${self:custom.awsconfig.log_retention_in_days}
+  # splitStacks:
+  #   perFunction: true
+  #   perType: false
+  #   perGroupFunction: false
+  sqs_name: "CreateAccount"
+  sqs_compliance_new_check: "ComplianceNewCheck"
+  sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
+
+  
+
+functions:
+
+  sqs_providergcp_get_iam_policy_projects:
+    handler: sqs/lambda_providergcp_get_iam_policy_projects.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 500
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_providergcp_get_iam_policy_projects-${self:provider.stage}
+    package:
+      include:
+        - ../../model/providergcp.py
+        - sqs/lambda_providergcp_get_iam_policy_projects.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events: 
+      - sqs:
+         arn: 
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:ProviderGCPGetIamPolicyProjects"
+        batchSize: 5
+
+
+resources:
+  Resources:           
+    
+    SQSProviderGCPGetIamPolicyProjects:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ProviderGCPGetIamPolicyProjects
+        VisibilityTimeout: 600
+    

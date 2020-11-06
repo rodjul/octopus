@@ -1,0 +1,89 @@
+service: octopuslambda
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "src/model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  apiKeys:
+    - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"    
+
+plugins:
+  - serverless-plugin-log-retention
+  # - serverless-plugin-split-stacks
+
+custom:
+  awsconfig: ${file(../../awsconfig.yml)}
+  # splitStacks:
+  #   perFunction: true
+  #   perType: false
+  #   perGroupFunction: false
+
+  
+
+functions:
+  create_cloudtrail:
+    handler: lambda_create_cloudtrail.lambda_handler
+    environment:
+      id_cloudtrail: 461835337376
+      bucket_cloudtrail: totvs-cloudtrail
+      name_cloudtrail: totvs-cloudtrail
+    runtime: python3.6
+    memorySize: 256
+    timeout: 600 # 10 minutes
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-create_cloudtrail-${self:provider.stage}
+    package:
+      include:
+        - ../model/*.py
+        - lambda_create_cloudtrail.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:2"        
+
+
+
+# resources:
+#   Resources:
+#     SQSCreateAccount:
+#       Type: "AWS::SQS::Queue"
+#       Properties:
+#         QueueName: ${self:custom.sqs_name}
+#         VisibilityTimeout: 500 
+    
+#     SQSComplianceNewCheck:
+#       Type: "AWS::SQS::Queue"
+#       Properties:
+#         QueueName: ${self:custom.sqs_compliance_new_check}
+#         VisibilityTimeout: 500 
+    
+#     SQSComplianceCISNewCheck:
+#       Type: "AWS::SQS::Queue"
+#       Properties:
+#         QueueName: ${self:custom.sqs_compliance_cis_new_check}
+#         VisibilityTimeout: 600                 

@@ -1,0 +1,189 @@
+service: octopussqs-aws
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "src/model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  apiKeys:
+    - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"    
+
+plugins:
+  - serverless-plugin-log-retention
+  # - serverless-plugin-split-stacks
+
+custom:
+  awsconfig: ${file(../../awsconfig.yml):${self:provider.stage}}
+  logRetentionInDays: ${self:custom.awsconfig.log_retention_in_days}
+  # splitStacks:
+  #   perFunction: true
+  #   perType: false
+  #   perGroupFunction: false
+  sqs_name: "CreateAccount"
+  sqs_compliance_new_check: "ComplianceNewCheck"
+  sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
+
+  
+
+functions:
+  create_account:
+    handler: lambda_create_account.lambda_handler
+    environment:
+      URL_SQS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_name}"
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      octopus_resource: "totvs-cloudformation-templates"
+      lambda_create_cloudtrail: "${self:service}-create_cloudtrail-${self:provider.stage}"
+    runtime: python3.8
+    memorySize: 256
+    timeout: 300 # 300 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-create_account-${self:provider.stage}
+    package:
+      include:
+        - lambda_create_account.py
+        - ../../model/*.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - sqs:
+         arn: 
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:CreateAccount"
+          #Fn::GetAtt: [ SQSCreateAccount , Arn ]
+
+  # create_cloudtrail:
+  #   handler: lambda_create_cloudtrail.lambda_handler
+  #   environment:
+  #     id_cloudtrail: 461835337376
+  #     bucket_cloudtrail: totvs-cloudtrail
+  #     name_cloudtrail: totvs-cloudtrail
+  #   runtime: python3.8
+  #   memorySize: 256
+  #   timeout: 600 # 10 minutes
+  #   role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+  #   name: ${self:service}-create_cloudtrail-${self:provider.stage}
+  #   package:
+  #     include:
+  #       - ../../model/*.py
+  #       - lambda_create_cloudtrail.py
+  #   layers:
+  #     - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"        
+  #   events:      
+  #     - sqs:
+  #        arn: 
+  #         "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_cis_new_check}"
+  #       batchSize: 2
+
+  # receive the sqs data and also the requests from api gateway
+  sqs_check_compliance_iam_account:
+    handler: sqs/lambda_check_compliance.lambda_handler
+    environment:
+      octopus_resource: totvs-cloudformation-templates
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-check_compliance_iam-${self:provider.stage}
+    package:
+      include:
+        - ../../model/*.py
+        - sqs/lambda_check_compliance.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events: 
+      - sqs:
+         arn: 
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_new_check}"
+
+
+  # receive the sqs data
+  proccess_data_cis_compliance:
+    handler: sqs/lambda_aws_cis_foundation_benchmark_checklist.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 600 # 10 minutes
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-aws_cis_foundation_benchmark_checklist-${self:provider.stage}
+    package:
+      include:
+        - ../../model/*.py
+        - sqs/lambda_aws_cis_foundation_benchmark_checklist.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:      
+      - sqs:
+         arn: 
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sqs_compliance_cis_new_check}"
+        batchSize: 2
+
+  sqs_provideraws_describe_network_linked_accounts:
+    handler: sqs/describe_network_resources_all_regions.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 500
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-describe_network_resources_all_regions-${self:provider.stage}
+    package:
+      include:
+        - ../model/providergcp.py
+        - sqs/describe_network_resources_all_regions.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events: 
+      - sqs:
+         arn: 
+          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:DescribeNetworkLinkedAccounts"
+        batchSize: 5
+
+
+resources:
+  Resources:
+    SQSCreateAccount:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:custom.sqs_name}
+        VisibilityTimeout: 500 
+    
+    SQSComplianceNewCheck:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:custom.sqs_compliance_new_check}
+        VisibilityTimeout: 500 
+    
+    SQSComplianceCISNewCheck:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:custom.sqs_compliance_cis_new_check}
+        VisibilityTimeout: 600                 
+    
+
+    SQSProviderAWSDescribeNetworkLinkedAccounts:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: DescribeNetworkLinkedAccounts
+        VisibilityTimeout: 600                 

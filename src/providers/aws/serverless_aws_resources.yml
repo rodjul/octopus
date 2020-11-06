@@ -1,0 +1,259 @@
+service: octopus-aws-resources
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "src/model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.8
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  # apiKeys:
+  #   - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"  
+
+plugins:
+  - serverless-plugin-log-retention
+  # - serverless-s3-sync
+  # - serverless-plugin-split-stacks
+
+custom:
+  awsconfig: ${file(../../awsconfig.yml):${self:provider.stage}}
+
+
+resources:
+  Resources:
+
+    #https://www.serverless.com/framework/docs/providers/aws/guide/iam/
+    # RoleOctopusLambda:
+    #   Type: AWS::IAM::Role
+    #   Properties:
+    #     Path: /
+    #     RoleName: octopus_aws_lambda # required if you want to use 'serverless deploy --function' later on
+    #     AssumeRolePolicyDocument:
+    #       Version: '2012-10-17'
+    #       Statement:
+    #         - Effect: Allow
+    #           Principal:
+    #             Service:
+    #               - lambda.amazonaws.com
+    #           Action: sts:AssumeRole
+    #     ManagedPolicyArns:
+    #       - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+    #       - arn:aws:iam::aws:policy/AWSLambdaFullAccess
+    #       - arn:aws:iam::aws:policy/AmazonS3FullAccess
+    #       - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+    #       - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+    #       - arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+    #     Policies:
+    #       - PolicyName: policy-octopus_assumerole
+    #         PolicyDocument:
+    #           Version: '2012-10-17'
+    #           Statement:
+    #             - Effect: Allow
+    #               Action:
+    #                 - sts:AssumeRole
+    #               Resource:
+    #                 - 'arn:aws:iam::*:role/octopusmngt'
+        
+    DynamoDbOctopusAccount:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: UUID
+            AttributeType: S
+          - AttributeName: NameAccount
+            AttributeType: S
+          - AttributeName: EmailAccount
+            AttributeType: S
+        KeySchema:
+          - AttributeName: UUID
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: EmailAccount-NameAccount-index
+            KeySchema:
+            - AttributeName: EmailAccount
+              KeyType: HASH
+            - AttributeName: NameAccount
+              KeyType: RANGE
+            Projection:
+              ProjectionType: ALL     
+            ProvisionedThroughput:
+              ReadCapacityUnits: "2"
+              WriteCapacityUnits: "2"          
+        TableName: octopus_aws_account
+
+    DynamoDbAccountCompliance:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: DateAction
+            AttributeType: S
+          - AttributeName: Account
+            AttributeType: S
+          - AttributeName: TypeRole
+            AttributeType: S
+        KeySchema:
+          - AttributeName: DateAction
+            KeyType: HASH
+          - AttributeName: Account
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: "2"
+          WriteCapacityUnits: "2"
+        GlobalSecondaryIndexes:
+          - IndexName: DateAction-index
+            KeySchema:
+            - AttributeName: DateAction
+              KeyType: HASH
+            Projection:
+              ProjectionType: ALL          
+            ProvisionedThroughput:
+              ReadCapacityUnits: "2"
+              WriteCapacityUnits: "2"
+          - IndexName: DateAction-TypeRole-index
+            KeySchema:
+            - AttributeName: DateAction
+              KeyType: HASH
+            - AttributeName: TypeRole
+              KeyType: RANGE
+            Projection:
+              ProjectionType: ALL     
+            ProvisionedThroughput:
+              ReadCapacityUnits: "2"
+              WriteCapacityUnits: "2"
+        TableName: octopus_aws_account_compliance
+
+    DynamoDbAccountComplianceDates:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: DateAction
+            AttributeType: S
+        KeySchema:
+          - AttributeName: DateAction
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_aws_account_compliance_dates
+
+    DynamoDbAPolicies:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: PolicyName
+            AttributeType: S
+          - AttributeName: Type
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PolicyName
+            KeyType: HASH
+          - AttributeName: Type
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: Type-index
+            KeySchema:
+            - AttributeName: Type
+              KeyType: HASH
+            Projection:
+              ProjectionType: ALL          
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1          
+        TableName: octopus_aws_policy
+
+    DynamoDbRoleType:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: RoleType
+            AttributeType: S
+        KeySchema:
+          - AttributeName: RoleType
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: octopus_aws_role_type
+
+    DynamoDbNetworkLinkedAccounts:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: UUID
+            AttributeType: S
+          - AttributeName: Timestamp
+            AttributeType: S
+          - AttributeName: TypeRequest
+            AttributeType: S
+        KeySchema:
+          - AttributeName: UUID
+            KeyType: HASH
+          # - AttributeName: AccountId
+          #   KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - IndexName: Timestamp-TypeRequest-index
+            KeySchema:
+            - AttributeName: Timestamp
+              KeyType: HASH
+            - AttributeName: TypeRequest
+              KeyType: RANGE
+            Projection:
+              ProjectionType: ALL     
+            ProvisionedThroughput:
+              ReadCapacityUnits: "2"
+              WriteCapacityUnits: "2"          
+        TableName: octopus_aws_network_details_linked_accounts
+
+    DynamoDbNetworkLinkedAccountsHistory:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: Timestamp
+            AttributeType: S
+          - AttributeName: TypeRequest
+            AttributeType: S
+        KeySchema:
+          - AttributeName: Timestamp
+            KeyType: HASH
+          - AttributeName: TypeRequest
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1      
+        TableName: octopus_aws_network_details_linked_accounts_history
+
+
+    

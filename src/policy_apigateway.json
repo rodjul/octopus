@@ -1,0 +1,19 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "execute-api:Invoke",
+            "Resource": [
+                "arn:aws:execute-api:us-east-2:999999999999:o2u171afvl/*",
+                "arn:aws:s3:::octopus-site"
+            ],
+            "Condition": {
+                "IpAddress": {
+                    "aws:SourceIp": "187.94.52.20/32"
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,77 @@
+service: octopuscrontab-gcp
+
+package:
+  individually: true
+  excludeDevDependencies: false
+  exclude:
+    - "**/**"
+  #include:
+  #  - "../model/*.py"
+  
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: ${opt:region, 'us-east-2'}
+  profile: ${opt:profile, 'rodjul_d00009'}
+  stage: ${opt:stage, 'dev'}
+  versionFunctions: false
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - "logs:*"
+      Resource: 
+        Fn::GetAtt: [ SQSCreateAccount, Arn ] 
+  apiKeys:
+    - security_dev #https://lorenstewart.me/2017/10/24/serverless-framework-securing-aws-lambda-endpoints/
+  stackTags:
+    product: "octopus"    
+
+plugins:
+  - serverless-plugin-log-retention
+custom:
+  awsconfig: ${file(../../awsconfig.yml):${self:provider.stage}}
+  logRetentionInDays: ${self:custom.awsconfig.log_retention_in_days}
+  # splitStacks:
+  #   perFunction: true
+  #   perType: false
+  #   perGroupFunction: false
+  sqs_name: "CreateAccount"
+  sqs_compliance_new_check: "ComplianceNewCheck"
+  sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
+  sqs_gcp_iam_policy: "ProviderGCPGetIamPolicyProjects"
+  # s3Sync:
+  #   - bucketName: "octopus-site"
+  #     localDir: public/build/
+
+
+functions:
+  schedule_providergcp_iam_policy: 
+    handler: crontab/schedule_providergcp_iam_policy.lambda_handler
+    environment:
+      URL_SQS_GCP_IAM_POLICY: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_gcp_iam_policy}"
+    runtime: python3.8
+    memorySize: 256
+    timeout: 300
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-schedule_providergcp_iam_policy-${self:provider.stage}
+    package:
+      include:
+        - crontab/schedule_providergcp_iam_policy.py
+        - ../../model/*.py
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - schedule:
+          name: octopusgcpschedule_iam_2_days
+          rate: rate(2 days)
+          enabled: true
+  
