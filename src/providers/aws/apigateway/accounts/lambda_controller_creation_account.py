@@ -6,6 +6,8 @@ from os import environ
 import re
 from utils import logs
 from model.dynamodb import save_account_db
+from model.useracl import UserACL
+
 
 def account_created(name_account,email_account):
     dynamodb = boto3.resource('dynamodb')
@@ -44,9 +46,10 @@ def get_roleinfo_by_name(role_type):
 
 
 def lambda_handler(event,context):
+    username = event.get('requestContext').get('authorizer').get('username')
+    if not UserACL(username).has_acl("aws","create-account"):
+        return {"statusCode":403, "body":"","headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
 
-    # if event['httpMethod'] == "POST" and event['resource'] == "/aws/accounts":
-        #'pathParameters': {'role_type': 'check'},
     try:
         body = loads(event['body'])
         # "name","email":json_data[1].value,"cloudformation":json_data[2].value
@@ -77,13 +80,13 @@ def lambda_handler(event,context):
             "headers":{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}}
     
     if not account_created(name,email):
-        # print("Criando conta", name,email)
+        print("Criando conta", name,email)
         uuid = save_account_db(name, email)
-        # sqs_client = boto3.client("sqs")
-        # sqs_client.send_message(
-        #         QueueUrl=environ['SQS_CREATE_ACCOUNT'],
-        #         MessageBody=dumps({"uuid":uuid, "name": name, "email":email, "cloudformation": account_type })
-        #     )
+        sqs_client = boto3.client("sqs")
+        sqs_client.send_message(
+                QueueUrl=environ['SQS_CREATE_ACCOUNT'],
+                MessageBody=dumps({"uuid":uuid, "name": name, "email":email, "cloudformation": account_type })
+            )
         
         logs.write(event, "AWS", 200, event['body'], "New account", "A new account is being created in AWS" )
 

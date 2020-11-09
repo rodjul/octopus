@@ -25,7 +25,7 @@ export default class ProviderGCP extends React.PureComponent {
 
 
     async componentDidMount(){
-        window.document.title = "Octopus - /";
+        window.document.title = "Octopus";
     }
 
 

@@ -29,3 +29,5 @@ yarn-error.log*
 
 awsconfig.yml
 **/awsconfig.yml/**
+
+.vscode

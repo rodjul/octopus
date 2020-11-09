@@ -1,6 +1,6 @@
 import boto3
-from os import environ
-from datetime import date, datetime
+# from os import environ
+# from datetime import date, datetime
 from json import loads, dumps
 from utils import logs
 from model.useracl import UserACL
@@ -26,7 +26,7 @@ def decimal_default(obj):
 
 def lambda_handler(event, context):
     username = event.get('requestContext').get('authorizer').get('username')
-    if not UserACL(username).has_acl("octopus","update-user"):
+    if not UserACL(username).has_acl("octopus","list-users"):
         return {"statusCode":403, "body":"","headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
     
     users = list_users()
@@ -36,6 +36,8 @@ def lambda_handler(event, context):
     format_data = {
         "users": sort_asc
     }
+
+    logs.write(event, "OCTOPUS", 200, sort_asc, "List Users registered", "")
     
     return {"statusCode":200, "body":dumps({"error":False, "data":format_data}, default=decimal_default),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}

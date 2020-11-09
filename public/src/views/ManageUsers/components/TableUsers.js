@@ -316,7 +316,7 @@ function Table({ columns: userColumns, data, userGroups, blocking, updateMyData}
     )
 }
 
-function TableUsers({ users, blocking, userGroups }) {
+function TableUsers({ users, blocking, userGroups, handleChangeUsers }) {
 
     const [data, setData] = React.useState(users);
 
@@ -327,15 +327,15 @@ function TableUsers({ users, blocking, userGroups }) {
                 accessor: 'Username',
             },
             {
-                Header: 'Name',
+                Header: 'Nome',
                 accessor: 'Name',
             },
             {
-                Header: 'UserGroup',
+                Header: 'Permissão',
                 accessor: 'UserGroup',
             },
             {
-                Header: 'First Login date',
+                Header: 'Logou pela primeira vez',
                 accessor: 'FirstLogin',
                 // filter: 'fuzzyText',
                 Cell: ({cell: {value} }) => (
@@ -365,6 +365,7 @@ function TableUsers({ users, blocking, userGroups }) {
                 return row
             })
         )
+        handleChangeUsers(data);
     }
 
     return (

@@ -20,6 +20,8 @@ export default class CisCompliance extends React.Component {
      * Request the type role available and dates from the checks
      */
     async componentDidMount(){
+        window.document.title = "Octopus - AWS CIS Compliance";
+
         let stateValues = this;
         await fetch(process.env.REACT_APP_ENDPOINT+"/aws/policiescompliance/cis/dates-available", {
             method:"GET", mode:"cors", headers: {"Authorization": getAuthorization()},

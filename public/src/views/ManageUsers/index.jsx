@@ -1,11 +1,14 @@
 import React from "react";
-import BlockUi from 'react-block-ui';
-import LoadingCircularProgress from "../../components/LoadingCircularProgress";
+// import BlockUi from 'react-block-ui';
+// import LoadingCircularProgress from "../../components/LoadingCircularProgress";
 import { getAuthorization } from "../../utils";
 import SnackbarNotification from "../../components/SnackbarNotification";
 import {
     Box, Typography
 } from "@material-ui/core";
+import {
+    Button
+} from 'reactstrap';
 
 // import DialogGetReport from "./components/DialogGetReport";
 import TableUsers from "./components/TableUsers";
@@ -20,11 +23,15 @@ export default class EventHistoryReport extends React.Component{
             blocking: false,
             users: [],
             userGroups: [],
+            usersChanged: [],
 
             requestSuccess: false,
             requestError: false,
             errorMessagePopup: "",
         }
+
+        this.handleChangeUsers = this.handleChangeUsers.bind(this);
+        this.handleSave = this.handleSave.bind(this);
     }
 
     async componentDidMount(){
@@ -41,20 +48,50 @@ export default class EventHistoryReport extends React.Component{
         })
         .catch(e => console.error(e));
 
-        stateValues = this;
-        await fetch(`${process.env.REACT_APP_ENDPOINT}/usergroups`, {
-            method: "GET", mode :"cors", headers: {"Authorization": getAuthorization()},
-        })
-        .then(response => this._handleFetchErrors(response, stateValues))
-        .then(response => {
-            this.setState({userGroups: response.data.groups});
-        })
-        .catch(e => console.error(e));
+        if(this.state.users.length){
+            stateValues = this;
+            await fetch(`${process.env.REACT_APP_ENDPOINT}/usergroups`, {
+                method: "GET", mode :"cors", headers: {"Authorization": getAuthorization()},
+            })
+            .then(response => this._handleFetchErrors(response, stateValues))
+            .then(response => {
+                this.setState({userGroups: response.data.groups});
+            })
+            .catch(e => console.error(e));
+        }
         
         this.setState({blocking: false});
 
 
     }
+
+
+    async handleSave(e){
+        if(this.state.usersChanged.length){
+            this.setState({blocking: true});
+            let stateValues = this;
+            await fetch(`${process.env.REACT_APP_ENDPOINT}/users`, {
+                method: "PUT", mode :"cors", headers: {"Authorization": getAuthorization()},
+                body: JSON.stringify( {
+                    "users": this.state.usersChanged
+                } ),
+            })
+            .then(response => this._handleFetchErrors(response, stateValues))
+            .then(response => {
+                //this.setState({users: response.data.users});
+                this.setState({users: this.state.usersChanged, requestSuccess: true})
+            })
+            .catch(e => console.error(e));
+            
+            this.setState({blocking: false, requestSuccess: false});
+        }
+
+    }
+
+    handleChangeUsers(e){
+        this.setState({usersChanged: e});
+    }
+
 
     async _handleFetchErrors(response, stateValues = {}) {
         if (!response.ok) {
@@ -103,36 +140,33 @@ export default class EventHistoryReport extends React.Component{
             <main className="content">
                 <Typography className="titleHeader" variant="h4" noWrap >
                     Manage Users
-                </Typography>
-                    {this.state.blocking ? (
-                        // <BlockUi tag="div" blocking={this.state.blocking} message="" loader={<LoadingCircularProgress/>} >
-                            <Box boxShadow={3}>
-                                <div className="paper" >
-                                <TableUsers
-                                        users={[]}
-                                        userGroups={[]}
-                                        blocking={true}
-                                    />
-                                </div>
-                            </Box>
-                        // </BlockUi>
-                    ): (
-                        <Box boxShadow={3}>
-                            <div className="paper" >
-                                    {/* <section className="actions"> */}
-                                        {/* <DialogGetReport dateReports={this.state.dateReports} onSubmitGetReport={this.onSubmitGetReport.bind(this)} /> */}
-                                        {/* <DialogCreateProject dataSelected={this.state.dataSelected} onSubmitCreateProject={this.onSubmitCreateProject.bind(this)} />
-                                        <DialogAddUserProject dataSelected={this.state.dataSelected} onSubmitAddUserProject={this.onSubmitAddUserProject.bind(this)} /> */}
-                                    {/* </section> */}
+                </Typography>    
+                <Box boxShadow={3}>
+                    <div className="paper" >
+                        <section className="actions">
+                            <Button color="primary" onClick={this.handleSave}>Salvar alterações</Button>
+                            {/* <DialogGetReport dateReports={this.state.dateReports} onSubmitGetReport={this.onSubmitGetReport.bind(this)} /> */}
+                            {/* <DialogCreateProject dataSelected={this.state.dataSelected} onSubmitCreateProject={this.onSubmitCreateProject.bind(this)} />
+                            <DialogAddUserProject dataSelected={this.state.dataSelected} onSubmitAddUserProject={this.onSubmitAddUserProject.bind(this)} /> */}
+                        </section>
+                        {this.state.blocking ? (
+                            <TableUsers
+                                users={[]}
+                                userGroups={[]}
+                                blocking={true}
+                                handleChangeUsers={this.handleChangeUsers}
+                            />
+                        ): (
+                            <TableUsers
+                                users={this.state.users}
+                                userGroups={this.state.userGroups}
+                                blocking={false}
+                                handleChangeUsers={this.handleChangeUsers}
+                            />
+                        )}
+                    </div>
+                </Box>
 
-                                    <TableUsers
-                                        users={this.state.users}
-                                        userGroups={this.state.userGroups}
-                                        blocking={false}
-                                    />
-                            </div>
-                        </Box>
-                    )}
                 {this.state.requestSuccess && <SnackbarNotification variant="success" message="Success!"/>}
                 {this.state.requestError && <SnackbarNotification variant="error" message={this.state.errorMessagePopup}/>}
 

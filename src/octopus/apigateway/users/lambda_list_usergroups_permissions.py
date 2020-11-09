@@ -1,6 +1,6 @@
 import boto3
-from os import environ
-from datetime import date, datetime
+# from os import environ
+# from datetime import date, datetime
 from json import loads, dumps
 from utils import logs
 from model.useracl import ACL, UserACL
@@ -13,7 +13,9 @@ def lambda_handler(event, context):
     
     acl = ACL()
     groups = list(vars(acl).keys())
-    # if user_group:    
+    
+    logs.write(event, "OCTOPUS", 200, groups, "List User Groups permissions", "")
+
     return {"statusCode":200, "body":dumps({"error":False, "data":{"groups":groups}}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
 

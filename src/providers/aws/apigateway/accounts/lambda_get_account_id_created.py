@@ -1,10 +1,13 @@
 import boto3
 from json import loads, dumps
 from boto3.dynamodb.conditions import Attr
+from model.useracl import UserACL
 
 
 def lambda_handler(event,context):
-    # print("Debug:",event)
+    username = event.get('requestContext').get('authorizer').get('username')
+    if not UserACL(username).has_acl("aws","create-account-status"):
+        return {"statusCode":403, "body":"","headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
 
     try:
         body = event['pathParameters']

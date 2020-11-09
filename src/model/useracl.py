@@ -16,9 +16,11 @@ class ACL:
             ],
             "aws":[
                 "create-account",
+                "create-account-status",
                 "create-cis-compliance",
                 "status-cis-compliance",
-                "get-report-cis-compliance"
+                "get-report-cis-compliance",
+                "status-network-report",
                 "create-iam-compliance",
                 "get-report-iam-compliance",
                 "create-network-report",

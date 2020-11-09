@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 // import MenuIcon from '@material-ui/icons/Menu';
 // import SettingsIcon from '@material-ui/icons/Settings';
 import {
-    Dashboard, Add, Edit, Assessment, ExpandLess, ExpandMore, 
+    Dashboard, Add, Edit, Assessment, ExpandLess, ExpandMore, Settings as SettingsIcon,
     AccountCircle, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
     Menu as MenuIcon
 } from '@material-ui/icons';
@@ -79,7 +79,7 @@ const NavbarApp = (props) => {
                     </NavLink>
                 </ListItem>
                 <ListItem button key="Usuários" className={`${classes.buttonHover} ${isActive("/manage-users")}`}> 
-                    <ListItemIcon><Assessment /></ListItemIcon>
+                    <ListItemIcon><SettingsIcon /></ListItemIcon>
                     <NavLink to="/manage-users" className={classes.links} >
                         <ListItemText primary="Usuários" />
                     </NavLink>

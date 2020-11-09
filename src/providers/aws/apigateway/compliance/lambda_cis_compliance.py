@@ -169,7 +169,7 @@ def lambda_handler(event, context):
         
         elif event['resource'] == "/aws/policiescompliance/cis/status":
             username = event.get('requestContext').get('authorizer').get('username')
-            if not UserACL(username).has_acl("aws","status-network-report"):
+            if not UserACL(username).has_acl("aws","status-cis-compliance"):
                 return {"statusCode":403, "body":"","headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}            
             return get_status_sqs(event)
 

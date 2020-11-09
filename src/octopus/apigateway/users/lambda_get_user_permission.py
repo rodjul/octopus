@@ -28,9 +28,11 @@ def lambda_handler(event, context):
     name = event.get('requestContext').get('authorizer').get('name')
     group = UserACL(username).group
     if not group:
+        logs.write(event, "OCTOPUS", 200, event.get('requestContext').get('authorizer'), "First time login", "")
         group = "READER"
         new_user(username, name, "READER")
     
+    logs.write(event, "OCTOPUS", 200, event.get('requestContext').get('authorizer'), "Get user permissions", "")
     return {"statusCode":200, "body":dumps({"error":False, "data":{"acl":group}}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
 

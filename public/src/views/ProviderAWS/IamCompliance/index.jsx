@@ -21,6 +21,8 @@ export default class AccountsCompliance extends React.Component {
     
     
     async componentDidMount(){
+        window.document.title = "Octopus - AWS IAM Compliance";
+
         let stateValues = this;
         await fetch(process.env.REACT_APP_ENDPOINT+"/aws/roles",{
             headers: {"Authorization": getAuthorization()},

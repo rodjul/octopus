@@ -130,7 +130,7 @@ functions:
               Ref: ApiGatewayAuthorizer
 
   ListEventLogs:
-    handler: providers/aws/apigateway/logs/lambda_list_event_logs.lambda_handler
+    handler: octopus/apigateway/logs/lambda_list_event_logs.lambda_handler
     runtime: python3.8
     memorySize: 256
     timeout: 30 # 30 seconds
@@ -138,7 +138,7 @@ functions:
     name: ${self:service}-lambda_list_event_logs-${self:provider.stage}
     package:
       include:
-        - providers/aws/apigateway/logs/lambda_list_event_logs.py
+        - octopus/apigateway/logs/lambda_list_event_logs.py
         - utils/logs.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
@@ -156,7 +156,7 @@ functions:
               Ref: ApiGatewayAuthorizer
 
   GetUserPermission:
-    handler: providers/aws/apigateway/users/lambda_get_user_permission.lambda_handler
+    handler: octopus/apigateway/users/lambda_get_user_permission.lambda_handler
     runtime: python3.8
     memorySize: 256
     timeout: 30 # 30 seconds
@@ -164,7 +164,7 @@ functions:
     name: ${self:service}-lambda_get_user_permission-${self:provider.stage}
     package:
       include:
-        - providers/aws/apigateway/users/lambda_get_user_permission.py
+        - octopus/apigateway/users/lambda_get_user_permission.py
         - model/useracl.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
@@ -182,7 +182,7 @@ functions:
               Ref: ApiGatewayAuthorizer
 
   ListUsersGroups:
-    handler: providers/aws/apigateway/users/lambda_list_usergroups_permissions.lambda_handler
+    handler: octopus/apigateway/users/lambda_list_usergroups_permissions.lambda_handler
     runtime: python3.8
     memorySize: 256
     timeout: 30 # 30 seconds
@@ -190,7 +190,7 @@ functions:
     name: ${self:service}-lambda_list_usergroups_permissions-${self:provider.stage}
     package:
       include:
-        - providers/aws/apigateway/users/lambda_list_usergroups_permissions.py
+        - octopus/apigateway/users/lambda_list_usergroups_permissions.py
         - model/useracl.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
@@ -208,7 +208,7 @@ functions:
               Ref: ApiGatewayAuthorizer
 
   ListUsers:
-    handler: providers/aws/apigateway/users/lambda_list_users.lambda_handler
+    handler: octopus/apigateway/users/lambda_list_users.lambda_handler
     runtime: python3.8
     memorySize: 256
     timeout: 30 # 30 seconds
@@ -216,7 +216,7 @@ functions:
     name: ${self:service}-lambda_list_users-${self:provider.stage}
     package:
       include:
-        - providers/aws/apigateway/users/lambda_list_users.py
+        - octopus/apigateway/users/lambda_list_users.py
         - model/useracl.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
@@ -225,6 +225,32 @@ functions:
       - http:
           path: /users
           method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            # type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
+
+  UpdateUsers:
+    handler: octopus/apigateway/users/lambda_update_user.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_update_user-${self:provider.stage}
+    package:
+      include:
+        - octopus/apigateway/users/lambda_update_user.py
+        - model/useracl.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"   
+    events:
+      - http:
+          path: /users
+          method: put
           cors: true
           #private: true
           authorizer:
