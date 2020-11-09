@@ -46,6 +46,11 @@ class ACL:
         }
         
         self.READER = {
+            "octopus": [
+                "list-event-logs",
+                "list-users",
+                "list-usergroups",
+            ],            
             "aws":[
                 "get-report-cis-compliance"
                 "get-report-iam-compliance",

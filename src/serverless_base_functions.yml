@@ -139,7 +139,8 @@ functions:
     package:
       include:
         - octopus/apigateway/logs/lambda_list_event_logs.py
-        - utils/logs.py        
+        - utils/logs.py
+        - model/useracl.py
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
@@ -165,7 +166,8 @@ functions:
     package:
       include:
         - octopus/apigateway/users/lambda_get_user_permission.py
-        - model/useracl.py        
+        - utils/logs.py
+        - model/useracl.py
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"   
@@ -191,7 +193,8 @@ functions:
     package:
       include:
         - octopus/apigateway/users/lambda_list_usergroups_permissions.py
-        - model/useracl.py        
+        - utils/logs.py
+        - model/useracl.py
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"   
@@ -217,7 +220,8 @@ functions:
     package:
       include:
         - octopus/apigateway/users/lambda_list_users.py
-        - model/useracl.py        
+        - utils/logs.py
+        - model/useracl.py
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"   
@@ -243,7 +247,8 @@ functions:
     package:
       include:
         - octopus/apigateway/users/lambda_update_user.py
-        - model/useracl.py        
+        - utils/logs.py
+        - model/useracl.py
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"   

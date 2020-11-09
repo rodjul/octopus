@@ -365,8 +365,11 @@ function TableUsers({ users, blocking, userGroups, handleChangeUsers }) {
                 return row
             })
         )
-        handleChangeUsers(data);
     }
+
+    React.useEffect(()=>{
+        handleChangeUsers(data);
+    }, [JSON.stringify(data)]);
 
     return (
         <>
