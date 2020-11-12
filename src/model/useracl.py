@@ -52,7 +52,7 @@ class ACL:
                 "list-usergroups",
             ],            
             "aws":[
-                "get-report-cis-compliance"
+                "get-report-cis-compliance",
                 "get-report-iam-compliance",
                 "get-network-report",
                 "list-iam-policies",

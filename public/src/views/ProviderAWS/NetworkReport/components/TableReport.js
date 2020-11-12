@@ -3,6 +3,9 @@ import {
     useTable, 
     useExpanded,
     usePagination, 
+    useFilters, 
+    useGlobalFilter, 
+    useAsyncDebounce, 
 } from 'react-table'
 import {
     Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink, Row, Col
@@ -10,16 +13,52 @@ import {
 import {
     Paper
 } from "@material-ui/core";
-
+import BlockUi from 'react-block-ui';
+import LoadingCircularProgress from "../../../../components/LoadingCircularProgress";
 import TableAcls from './TableAcls';
 
 
 const DEFAULT_PAGE_SIZE = 80;
 
+
+function GlobalFilter({
+    preGlobalFilteredRows,
+    globalFilter,
+    setGlobalFilter,
+}) {
+    const count = preGlobalFilteredRows.length
+    const [value, setValue] = React.useState(globalFilter)
+    const onChange = useAsyncDebounce(value => {
+        setGlobalFilter(value || undefined)
+    }, 200)
+    
+    // console.log( preGlobalFilteredRows, globalFilter, setGlobalFilter, flatRows)
+        
+    return (
+        <span>
+            Search:{' '}
+            <input
+                value={value || ""}
+                onChange={e => {
+                    setValue(e.target.value);
+                    onChange(e.target.value);
+                }}
+                placeholder={`${count} records...`}
+                style={{
+                    fontSize: '1.1rem',
+                    border: '0',
+                }}
+            />
+        </span>
+    )
+}
+
+
+
 // A simple way to support a renderRowSubComponent is to make a render prop
 // This is NOT part of the React Table API, it's merely a rendering
 // option we are creating for ourselves in our table renderer
-function Table({ columns: userColumns, data, renderRowSubComponent }) {
+function Table({ columns: userColumns, data, renderRowSubComponent, blocking }) {
     const {
         getTableProps,
         getTableBodyProps,
@@ -36,7 +75,11 @@ function Table({ columns: userColumns, data, renderRowSubComponent }) {
         setPageSize,
 
         prepareRow,
+
+        // filter
         visibleColumns,
+        preGlobalFilteredRows,
+        setGlobalFilter,
         
         state: { expanded, pageIndex, pageSize, selectedRowIds, globalFilter },
         
@@ -46,20 +89,35 @@ function Table({ columns: userColumns, data, renderRowSubComponent }) {
             data,
             initialState: { pageSize: DEFAULT_PAGE_SIZE, resizable: false },
         },
+        useFilters, // useFilters!
+        useGlobalFilter, // useGlobalFilter!
         useExpanded,
         usePagination, 
     )
 
     return (
         <>
-            {/* <pre>
-                <code>{JSON.stringify({ expanded: expanded }, null, 2)}</code>
-            </pre> */}
             <Paper elevation={1} variant="outlined" square 
                 // style={{ height:"30vw", overflow: "auto", padding: "0vw" }} 
             >
+                <BlockUi tag="div" blocking={blocking} message="" loader={<LoadingCircularProgress/>}>
+
                 <TableStrap hover size="sm" {...getTableProps()}>
                     <thead>
+                        <tr>
+                            <th
+                                colSpan={visibleColumns.length}
+                                style={{
+                                    textAlign: 'left',
+                                }}
+                            >
+                                <GlobalFilter
+                                    preGlobalFilteredRows={preGlobalFilteredRows}
+                                    globalFilter={globalFilter}
+                                    setGlobalFilter={setGlobalFilter}
+                                />
+                            </th>
+                        </tr>
                         {headerGroups.map(headerGroup => (
                             <tr {...headerGroup.getHeaderGroupProps()}>
                                 {headerGroup.headers.map(column => (
@@ -106,6 +164,8 @@ function Table({ columns: userColumns, data, renderRowSubComponent }) {
                     </tbody>
                 </TableStrap>
                 <br />
+
+                </BlockUi>
             </Paper>
 
             <Pagination>
@@ -162,7 +222,7 @@ function Table({ columns: userColumns, data, renderRowSubComponent }) {
     )
 }
 
-function TableReport({ network_data }) {
+function TableReport({ network_data, blocking }) {
 
     const [data, setData] = React.useState(network_data);
 
@@ -177,7 +237,7 @@ function TableReport({ network_data }) {
                     // We can use the getToggleRowExpandedProps prop-getter
                     // to build the expander.
                     <span {...row.getToggleRowExpandedProps()}>
-                        {row.isExpanded ? '👇' : '👉'}
+                        {row.isExpanded ? '▼' : '▶'}
                     </span>
                 ),
             },
@@ -247,13 +307,14 @@ function TableReport({ network_data }) {
         []
     )
 
-    console.log(data);
+    // console.log(data);
 
     return (
         <>
             <Table
                 columns={columns}
                 data={data}
+                blocking={blocking}
                 // We added this as a prop for our table component
                 // Remember, this is not part of the React Table API,
                 // it's merely a rendering option we created for

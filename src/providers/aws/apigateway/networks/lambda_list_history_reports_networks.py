@@ -20,6 +20,9 @@ def lambda_handler(event, context):
             
     history = list_history()
 
+    if history:
+        history = sorted(history, key = lambda i : i['Timestamp'])
+
     # logs.write(event, "AWS",  200, "", "All dates available of Network Report was requested" )
     logs.write(event, "AWS", 200, event['body'], "Get dates of Network Report", "")
 

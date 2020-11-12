@@ -164,12 +164,12 @@ const ProviderAWS = ({pathname}) => {
                                         <ListItemText primary="CIS Compliance" />
                                     </NavLink>
                                 </ListItem>
-                                {/* <ListItem button key="Network Report" className={`${classes.nested} ${isActive("/aws-network-report")}`} >
-                                    <ListItemIcon><Edit /></ListItemIcon>
+                                <ListItem button key="Network Report" className={`${classes.nested} ${isActive("/aws-network-report")}`} >
+                                    <ListItemIcon><Assessment /></ListItemIcon>
                                     <NavLink to="/aws-network-report" className={classes.links}>
                                         <ListItemText primary="Network Report" />
                                     </NavLink>
-                                </ListItem> */}
+                                </ListItem>
                                 {/* <ListItem button key="Histórico de Eventos" className={`${classes.buttonHover} ${isActive("/aws-event-history")}`}>  */}
                             </List>
                         </Collapse>

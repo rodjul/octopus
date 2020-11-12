@@ -6,26 +6,29 @@ import {
     Input, Table as TableStrap, Button, Pagination, PaginationItem, PaginationLink, FormGroup, Label
 } from 'reactstrap';
 
+import {formatDateTimezone} from "../../../../utils";
 
 
 const DialogCreateFolder = ({dateReports, onSubmitGetReport}) => {
     const [openModalCreateFolder, setOpenModalCreateFolder] = React.useState(false);
     const [newFolderName, setNewFolderName] = React.useState("");
-    const [date, setDate] = React.useState("");
+    const [inputValue, setInputValue] = React.useState("");
 
     const handleCloseModalCreateFolder = () => setOpenModalCreateFolder(false);
     const handleClickModalCreateFolder = () => setOpenModalCreateFolder(true);
 
-    const handleDateReport = (e) => setDate(e.target.value);
+    const handleDateReport = (e) => setInputValue(e.target.value);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         
         let data = {
-            "dateReport": date,
+            "dateReport": inputValue.split("#")[0],
+            "typeReport": inputValue.split("#")[1],
             // "motive": motive,
         }
-        onSubmitGetReport(data);
+        if(data.typeReport === "ec2" || data.typeReport === "rds")
+            onSubmitGetReport(data);
 
         handleCloseModalCreateFolder();
     }
@@ -53,7 +56,7 @@ const DialogCreateFolder = ({dateReports, onSubmitGetReport}) => {
                                 <Input type="select" name="selectPermission" id="selectPermission" onChange={(e) => handleDateReport(e)}>
                                     <option value=""></option>
                                     {dateReports.map(value => {
-                                        return <option value={`${value['Timestamp']}`}>{value['Timestamp']}</option>
+                                        return <option value={`${value['Timestamp']}#${value['TypeRequest']}`}>{`${formatDateTimezone(value['Timestamp'],"America/Sao_Paulo")} - ${value['TypeRequest']}`}</option>
                                     })}
                                 </Input>
                             </FormGroup>
