@@ -25,7 +25,7 @@ export const refreshToken = () => {
 
         try{
             adalGetToken(authContext, adalConfig.clientId);
-            console.log("renewd");
+            // console.log("renewd");
             resolve(getToken());
         }catch{
             reject(Error('promise failed'))

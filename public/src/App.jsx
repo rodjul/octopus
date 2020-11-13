@@ -144,9 +144,10 @@ class App extends React.Component {
         try {
             if(process.env.REACT_APP_ENABLE_SSO==="true"){
                 let timestamp = parseInt(( new Date().getTime() / 1000).toFixed(0));
-                if(isAuthenticated() && ( timestamp > authContext._user.profile.exp)){
+                // if(isAuthenticated() && ( timestamp > authContext._user.profile.exp)){
+                if(authContext && authContext._user && ( timestamp > authContext._user.profile.exp)){
                     try{
-                        refreshToken();
+                        await refreshToken();
                     }catch(e){
                         console.error(e);
                     }
