@@ -202,7 +202,7 @@ export default class NetworkReport extends React.Component {
 
     }
 
-    async onSubmitRequestNewReport(e){
+    async onSubmitRequestNewReport(){
         this.setState({blocking: true});
         let stateValues = this;
         await fetch(`${process.env.REACT_APP_ENDPOINT}/aws/networks/reports`, {

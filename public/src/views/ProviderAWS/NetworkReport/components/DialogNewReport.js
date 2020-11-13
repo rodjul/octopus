@@ -14,9 +14,9 @@ const DialogNewReport = ({onSubmitRequestNewReport}) => {
     const handleClickModalNewReport = () => setopenModalNewReport(true);
 
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onSubmitRequestNewReport(e);
+    const handleSubmit = () => {
+        // e.preventDefault();
+        onSubmitRequestNewReport();
         handleCloseModalNewReport();
     }
 

@@ -79,7 +79,7 @@ export default class ProviderGCP extends React.PureComponent {
         return (
             <main className="content">
                 <Typography className="titleHeader" variant="h4" noWrap >
-                    Logged~
+                    Logged
                 </Typography>
 
             </main>
