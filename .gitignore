@@ -7,3 +7,4 @@ node_modules/*
 node_modules
 awsconfig.yml
 **/awsconfig.yml/**
+public/package-lock.json
