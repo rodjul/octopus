@@ -8,7 +8,7 @@ import {
     useAsyncDebounce, 
 } from 'react-table'
 import {
-    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink, Row, Col
+    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink
 } from 'reactstrap';
 import Select from "react-select";
 import {
@@ -16,7 +16,7 @@ import {
 } from "@material-ui/core";
 
 // A great library for fuzzy filtering/sorting items
-import matchSorter from 'match-sorter'
+// import matchSorter from 'match-sorter'
 import {formatDateTimezone} from "../../../utils";
 import BlockUi from 'react-block-ui';
 import LoadingCircularProgress from "../../../components/LoadingCircularProgress";
@@ -32,7 +32,7 @@ function GlobalFilter({
     globalFilter,
     setGlobalFilter,
 }) {
-    const count = preGlobalFilteredRows.length
+    // const count = preGlobalFilteredRows.length
     const [value, setValue] = React.useState(globalFilter)
     const onChange = useAsyncDebounce(value => {
         setGlobalFilter(value || undefined)
@@ -174,7 +174,7 @@ function Table({ columns: userColumns, data, userGroups, blocking, updateMyData}
         visibleColumns,
         preGlobalFilteredRows,
         setGlobalFilter,
-        state: { expanded, pageIndex, pageSize, selectedRowIds, globalFilter },
+        state: { pageIndex, pageSize, globalFilter },
         
     } = useTable(
         {

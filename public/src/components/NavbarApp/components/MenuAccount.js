@@ -8,13 +8,11 @@ import {
 } from "@material-ui/core";
 import { NavLink} from "react-router-dom";
 
-import styles from "./styles.js";
+// import styles from "./styles.js";
 
 
 
 const MenuAccount = ({pathname}) => {
-    const classes = styles();
-
     const [anchorEl, setAnchorEl] = React.useState(null);
   
     const handleProfileMenuOpen = (event) => {

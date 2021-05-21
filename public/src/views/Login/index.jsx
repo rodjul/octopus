@@ -2,8 +2,7 @@ import React from "react";
 import SnackbarNotification from "../../components/SnackbarNotification";
 import LoadingCircularProgress from "../../components/LoadingCircularProgress";
 import { authContext } from '../../adalConfig';
-import { Paper, Button, Typography, Grid, Card, CardHeader, CardContent, Avatar, List, ListItem, ListItemText, IconButton } from "@material-ui/core";
-import { CardBody, CardGroup, Col, Container, Form, Row } from 'reactstrap';
+import { Paper, Button, Grid } from "@material-ui/core";
 import TextField from '@material-ui/core/TextField';
 import BlockUi from 'react-block-ui';
 
@@ -31,10 +30,6 @@ export default class Login extends React.Component {
 
         }
     }
-    // const [isLoading, setLoading] = React.useState(false);
-    // const [openAlert, setOpenAlert] = React.useState(false);
-    // const [typeMessage, setTypeMessage] = React.useState("");
-    // const [messageAlert, setMessageAlert] = React.useState("");
 
     componentDidMount(){
         document.title = "Octopus - Login";
@@ -147,7 +142,7 @@ export default class Login extends React.Component {
                                     {process.env.REACT_APP_ENABLE_SSO==="true"  ? 
                                         <form id="loginAzureSSO" onSubmit={this.handleSubmitSSO.bind(this)} className="formLoginSSO" style={{margin: "1em 1em 0em 2em"}} >
                                             <Button type="submit">
-                                                <img src="images/ms-symbollockup_signin_dark.svg" />
+                                                <img alt="logo" src="images/ms-symbollockup_signin_dark.svg" />
                                             </Button>
                                         </form>
                                     : null}
@@ -169,4 +164,3 @@ export default class Login extends React.Component {
     }
     
 }
-  

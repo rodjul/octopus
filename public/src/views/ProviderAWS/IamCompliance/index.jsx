@@ -18,8 +18,8 @@ export default class AccountsCompliance extends React.Component {
         showModal: false,
       }
     }
-    
-    
+
+
     async componentDidMount(){
         window.document.title = "Octopus - AWS IAM Compliance";
 
@@ -30,7 +30,7 @@ export default class AccountsCompliance extends React.Component {
         .then(resp => this._handleFetchErrors(resp, stateValues))
         .then(response => {
             if(response.data.roles && response.data.roles.length){
-                this.setState({ 
+                this.setState({
                     type_roles: response.data.roles,
                     type_role_selected: response.data.roles[0]
                 });
@@ -44,7 +44,7 @@ export default class AccountsCompliance extends React.Component {
                 this.setState( {dates_available: response.data['dates_available']} );
             })
             .catch(error => console.error(error));
-            
+
         }).catch(error => console.error(error));
     }
 
@@ -56,7 +56,7 @@ export default class AccountsCompliance extends React.Component {
 
     /**
      * When change the date of check compliance, request the data from this specfic date and account type.
-     * @param {Object} e 
+     * @param {Object} e
      */
     async getCompliance(e){
         this.setState({accounts:[]});
@@ -68,10 +68,10 @@ export default class AccountsCompliance extends React.Component {
         .then(data => {
             this.setState( {accounts:data['content'],
                             dates_available: data['dates_available'],
-                            // loading:false 
+                            // loading:false
                         } );
             return {"error":false, "message":"Executado com sucesso"};
-        })   
+        })
         .catch(e => console.error(e));
     }
 
@@ -105,7 +105,7 @@ export default class AccountsCompliance extends React.Component {
                 })
 
                 return {"error":false, "message":"Executado com sucesso"};
-            }            
+            }
         })
         .catch(e => console.error(e));
     }
@@ -126,7 +126,7 @@ export default class AccountsCompliance extends React.Component {
                 } else if (response.status === 500 || response.status === 502) {
                     message = "Server error. Contact administrator!";
                 }
-                
+
                 // let hasJsonData = false;
                 // await response.json().then(e => {
                 //     hasJsonData = true;
@@ -154,27 +154,27 @@ export default class AccountsCompliance extends React.Component {
         }
         return response.json();
     }
-    
+
     render(){
         const { accounts, dates_available, type_roles} = this.state;
-                
+
         let roles = [];
         let policy= [];
         let compliance = [];
         let status = [];
         let policies_adicionais = [];
         // let total_rows = 0;
-        
+
         //console.log();
         if(accounts && !(accounts.length === 0) ){
             accounts.map((elem,index) =>{
                 // console.log(elem);
                 JSON.parse(elem['DataCompliance']).map(elem => {
                     roles.push(elem['name']);
-                    
+
                     if(elem['policy'].length === 0) policy.push("(empty)");
                     else policy.push(elem['policy'].toString());
-                    
+
                     compliance.push(elem['compliance']);
 
                     if(elem['status'].length === 0 || elem['status'] === "") status.push("(empty)");
@@ -183,23 +183,23 @@ export default class AccountsCompliance extends React.Component {
                     if(elem['policies_adicionais'] !== undefined){
                         // console.log(elem['policies_adicionais'] );
                         policies_adicionais.push( elem['policies_adicionais'].length === 0 ? "(empty)" : elem['policies_adicionais'].toString());
-                    
+
                     }else policies_adicionais.push("(empty)");
                 });
             });
 
             // total_rows = policy.length;
-            roles = [... new Set(roles)]; // removing duplicates
-            policy = [... new Set(policy)];
-            compliance = [... new Set(compliance)];
-            status = [... new Set(status)];
-            policies_adicionais = [... new Set(policies_adicionais)];
+            roles = [...new Set(roles)]; // removing duplicates
+            policy = [...new Set(policy)];
+            compliance = [...new Set(compliance)];
+            status = [...new Set(status)];
+            policies_adicionais = [...new Set(policies_adicionais)];
             // moving to the lastest position
             policies_adicionais.shift(); policies_adicionais.push("(empty)");
         }
-        
+
         return (
-            <AccountsTable 
+            <AccountsTable
                 accounts={accounts}
                 type_roles={type_roles}
                 dates_available={dates_available}
@@ -210,7 +210,7 @@ export default class AccountsCompliance extends React.Component {
                 onChangeDataCheck={this.onChangeDataCheck.bind(this)}
 
             />
-            
+
         );
     }
 

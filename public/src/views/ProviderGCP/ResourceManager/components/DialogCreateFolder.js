@@ -9,13 +9,13 @@ import {
 const DialogCreateFolder = ({dataSelected, onSubmitCreateFolder}) => {
     const [openModalCreateFolder, setOpenModalCreateFolder] = React.useState(false);
     const [newFolderName, setNewFolderName] = React.useState("");
-    const [motive, setMotive] = React.useState("");
+    // const [motive, setMotive] = React.useState("");
 
     const handleCloseModalCreateFolder = () => setOpenModalCreateFolder(false);
     const handleClickModalCreateFolder = () => setOpenModalCreateFolder(true);
 
     const handleNewFolderName = (e) => setNewFolderName(e.target.value);
-    const handleMotive = (e) => setMotive(e.target.value);
+    // const handleMotive = (e) => setMotive(e.target.value);
 
     const handleSubmit = (e) => {
         e.preventDefault();

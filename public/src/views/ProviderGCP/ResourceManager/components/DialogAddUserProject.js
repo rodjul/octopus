@@ -3,7 +3,7 @@ import {
     TextField, DialogTitle, DialogContentText, DialogContent, DialogActions, Dialog
 } from "@material-ui/core";
 import {
-    Input, Table as TableStrap, Button, Pagination, PaginationItem, PaginationLink, FormGroup, Label
+    Input, Button, FormGroup, Label
 } from 'reactstrap';
 
 import ChipInput from 'material-ui-chip-input'

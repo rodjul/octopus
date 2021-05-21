@@ -1,23 +1,18 @@
 import React from "react";
-import BlockUi from 'react-block-ui';
+// import BlockUi from 'react-block-ui';
 import { getAuthorization } from "../../../utils";
-import LoadingCircularProgress from "../../../components/LoadingCircularProgress";
+// import LoadingCircularProgress from "../../../components/LoadingCircularProgress";
 import Oganizations from "./components/organizations";
 import SnackbarNotification from "../../../components/SnackbarNotification";
 import "./styles.css";
 import cloneDeep from 'lodash/cloneDeep';
 
 
-// import {
-//     Input, Table as TableStrap, Button, Pagination, PaginationItem, PaginationLink, FormGroup, Label
-// } from 'reactstrap';
+
 import {
-    // TextField, Grid, Select, InputLabel, MenuItem, FormControl,
-    // DialogTitle, DialogContentText, DialogContent, DialogActions, Dialog,
-    // TableBody, TableCell, TableContainer, CircularProgress, 
     Box, Typography
 } from "@material-ui/core";
-import { Add as AddIcon, Save as SaveIcon, Delete as DeleteIcon, Info as InfoIcon, TramOutlined } from '@material-ui/icons';
+
 
 import DialogAddUserProject from "./components/DialogAddUserProject";
 import DialogCreateFolder from "./components/DialogCreateFolder";
@@ -212,11 +207,7 @@ export default class ProviderGCP extends React.PureComponent {
                 "parent": this.state.dataSelected[0].name,
                 "project_name": projectName,
                 "motive": motive,
-            } ),
-            headers: {
-                "Content-Type":"application/json",
-                "Authorization": getAuthorization()
-            },
+            } )
         })
         .then((response => this._handleFetchErrors(response, stateValues)))
         .then(response => {
@@ -257,16 +248,12 @@ export default class ProviderGCP extends React.PureComponent {
         }
 
         await fetch(`${process.env.REACT_APP_ENDPOINT}/gcp/iam/projects/${encodeURIComponent(resourceName)}`,{
-            method: "POST", mode:"cors", headers: {"Authorization": getAuthorization()},
+            method: "POST", mode:"cors", headers: {"Content-Type":"application/json","Authorization": getAuthorization()},
             body: JSON.stringify( {
                 "users": users, 
                 "role_id": roleId,
                 "motive": motive,
             } ),
-            headers: {
-                "Content-Type":"application/json",
-                "Authorization": getAuthorization()
-            },
         })
         .then((response => this._handleFetchErrors(response, stateValues)))
         .then(response => {
@@ -318,7 +305,7 @@ export default class ProviderGCP extends React.PureComponent {
             let dataToUpdate = [...this.state.organizations];
 
             let indexes = this.state.dataSelected[0].index.split(".");
-            let editIndex = {... dataToUpdate[indexes[0]] };
+            let editIndex = {...dataToUpdate[indexes[0]]};
             
             let editedIndex = this._updateOrganizationIndex(editIndex, newData, indexes, 1);
             editIndex = editedIndex;

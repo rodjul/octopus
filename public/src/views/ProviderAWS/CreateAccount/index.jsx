@@ -7,7 +7,7 @@ import LoadingCircularProgress from "../../../components/LoadingCircularProgress
 import {
     TextField, Grid, Select, InputLabel,  MenuItem, FormControl,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Button, CircularProgress, Box, Typography
+    Button, Box, Typography
 } from "@material-ui/core";
 import Add from '@material-ui/icons/Add';
 
@@ -139,7 +139,7 @@ export default class CreateAccount extends Component {
         this.setState({blocking: true});
 
         //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
-        const self = this;
+        // const self = this;
         let stateValues = this;
         await fetch(process.env.REACT_APP_ENDPOINT + '/aws/accounts', {
             method: 'POST',
@@ -160,7 +160,7 @@ export default class CreateAccount extends Component {
             //this.props.history.push('/');
             //console.log(res.json().then( body => console.log(body) ));
             document.getElementById("output_text").textContent = "Criando a conta...";
-            let name = stateValues.state.name;
+            // let name = stateValues.state.name;
 
             // definimos um intervalo a cada 2 segundos para obter o resultado 
             // var interval = setInterval(async function () {
@@ -266,7 +266,7 @@ export default class CreateAccount extends Component {
     }
 
     render() {
-        const {typeRoles, load_table} = this.state;
+        // const {typeRoles, load_table} = this.state;
         // let load_table = true;
 
 
@@ -396,4 +396,3 @@ export default class CreateAccount extends Component {
         );
     }
 }
-

@@ -4,21 +4,18 @@ import {
     useExpanded,
     usePagination, 
     useFilters,
-    useGlobalFilter,
 } from 'react-table'
 import {
-    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink, Row, Col
+    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink
 } from 'reactstrap';
 import {
     Paper
 } from "@material-ui/core";
 
-// A great library for fuzzy filtering/sorting items
 import matchSorter from 'match-sorter'
 import {formatDateTimezone} from "../../../utils";
 import BlockUi from 'react-block-ui';
 import LoadingCircularProgress from "../../../components/LoadingCircularProgress";
-// import TableAcls from './TableAcls';
 
 
 const DEFAULT_PAGE_SIZE = 80;
@@ -30,11 +27,11 @@ function SelectColumnFilter({
     // Calculate the options for filtering
     // using the preFilteredRows
     const options = React.useMemo(() => {
-        const options = new Set()
+        const options2 = new Set()
         preFilteredRows.forEach(row => {
-            options.add(row.values[id])
+            options2.add(row.values[id])
         })
-        return [...options.values()]
+        return [...options2.values()]
     }, [id, preFilteredRows])
 
     // Render a multi-select box
@@ -59,7 +56,7 @@ function SelectColumnFilter({
 function DefaultColumnFilter({
     column: { filterValue, preFilteredRows, setFilter },
 }) {
-    const count = preFilteredRows.length
+    // const count = preFilteredRows.length
 
     return (
         <Input
@@ -127,9 +124,7 @@ function Table({ columns: userColumns, data, blocking, renderRowSubComponent }) 
 
         prepareRow,
         visibleColumns,
-        preGlobalFilteredRows,
-        setGlobalFilter,
-        state: { expanded, pageIndex, pageSize, selectedRowIds, globalFilter },
+        state: { pageIndex, pageSize },
         
     } = useTable(
         {

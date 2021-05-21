@@ -1,7 +1,7 @@
 import React from 'react'
 import { useTable } from 'react-table'
 import {
-    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink, Row, Col
+    Table as TableStrap
 } from 'reactstrap';
 
 
@@ -86,7 +86,9 @@ function TableAcls({acls_data}) {
     React.useEffect(() => {
         let format = [];
         for(let row in acls_data){
-            acls_data[row].map(value => {
+            for(let index in acls_data[row]){
+                let value = acls_data[row][index];
+            
                 if(value['from_port'] === -1)
                     value['from_port'] = "ALL";
 
@@ -103,7 +105,7 @@ function TableAcls({acls_data}) {
                     console.error(value);
                 }
                 format.push(value);
-            });
+            };
         }
 
         setData(format);
