@@ -134,7 +134,7 @@ def publish_sns_data_compliance(event):
     try:
         body = loads(event['body'])
         # "name","email":json_data[1].value,"cloudformation":json_data[2].value
-        date_action = str(datetime.utcnow().isoformat())
+        date_action = datetime.datetime.utcnow().isoformat()
         type_role = body['type_role']
     except KeyError:
         return {"statusCode":400,"body":dumps({"error":True, "message":"Invalid parameters"}),
