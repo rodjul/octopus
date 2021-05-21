@@ -6,6 +6,9 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
+// import Moment from 'react-moment';
+import moment from 'moment';
+import 'moment-timezone';
 
 import { getAuthorization } from "../../../../utils";
 import AlertMessage from "../../../../components/AlertMessage";
@@ -15,6 +18,13 @@ import useStyles from "./styles";
 const AccountsTable = (props) => {
     const accounts = props.accounts;
     const dates_available = props.dates_available;
+
+    // if(dates_available){
+    //     console.log("1", dates_available);
+    //     // dates_available.sort();
+    //     let sortedArray = dates_available.sort((a,b) => moment(a).diff( moment(b) ))
+    //     console.log("2", sortedArray);
+    // }
 
     const classes = useStyles();
     const [openRefresh, setOpenRefresh] = React.useState(false);
@@ -220,12 +230,12 @@ const AccountsTable = (props) => {
                                 props.onChangeDataCheck(e);
                             }}
                             >   
-                                {accounts && accounts.slice(0,1).map((elem,index) =>{
-                                    return <MenuItem selected className="filter_selected" key='selected'>{elem['DateAction']}</MenuItem>;
-                                })}
-                                {/* available values */}
+                                {/* {accounts && accounts.slice(0,1).map((elem,index) =>{
+                                    return <MenuItem selected className="filter_selected" key='selected'>{elem['DateAction']} 2321</MenuItem>;
+                                })} */}
+                                {/* showing dates */}
                                 {dates_available && dates_available.map((elem,index) =>{
-                                    return <MenuItem key={elem} value={elem}>{elem}</MenuItem>;
+                                    return <MenuItem key={elem} value={elem}>{ moment(elem).format("DD/MM/YYYY hh:mm:ss") }</MenuItem>;
                                 })}
                             </Select>
                         </FormControl>
