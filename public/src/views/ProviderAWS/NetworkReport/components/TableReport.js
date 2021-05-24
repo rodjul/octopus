@@ -8,7 +8,7 @@ import {
     useAsyncDebounce, 
 } from 'react-table'
 import {
-    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink, Row, Col
+    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink
 } from 'reactstrap';
 import {
     Paper
@@ -81,7 +81,7 @@ function Table({ columns: userColumns, data, renderRowSubComponent, blocking }) 
         preGlobalFilteredRows,
         setGlobalFilter,
         
-        state: { expanded, pageIndex, pageSize, selectedRowIds, globalFilter },
+        state: { pageIndex, pageSize, globalFilter },
         
     } = useTable(
         {

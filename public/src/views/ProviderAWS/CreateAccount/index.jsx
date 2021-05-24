@@ -6,7 +6,7 @@ import SnackbarNotification from "../../../components/SnackbarNotification";
 import {
     TextField, Grid, Select, InputLabel,  MenuItem, FormControl,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Button, CircularProgress, Box, Typography
+    Button, Box, Typography
 } from "@material-ui/core";
 import Add from '@material-ui/icons/Add';
 import DialogListAccounts from "./components/DialogListAccounts";
@@ -158,7 +158,7 @@ export default class CreateAccount extends Component {
         this.setState({blocking: true});
 
         //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
-        const self = this;
+        // const self = this;
         let stateValues = this;
         let uuid = null;
         await fetch(process.env.REACT_APP_ENDPOINT + '/aws/accounts', {
@@ -176,6 +176,7 @@ export default class CreateAccount extends Component {
             }
         })
         .then(response => this._handleFetchErrors(response, stateValues))
+<<<<<<< HEAD
         .then(response => {
             this.setState({requestSuccess: true, loadTableStatusAccount: true}, () => this.setState({requestSuccess: false}));
                         
@@ -193,6 +194,14 @@ export default class CreateAccount extends Component {
             let prv = [...self.state.lists, format];
             this.setState({lists: prv});
 
+=======
+        .then(res => {
+            console.log(res);
+            //this.props.history.push('/');
+            //console.log(res.json().then( body => console.log(body) ));
+            document.getElementById("output_text").textContent = "Criando a conta...";
+            // let name = stateValues.state.name;
+>>>>>>> d0f7616913dc2726f81cc6ebb4c8c5f267bb7adb
 
             // definimos um intervalo a cada 2 segundos para obter o resultado 
             var interval = setInterval(async function () {
@@ -295,6 +304,13 @@ export default class CreateAccount extends Component {
     }
 
     render() {
+<<<<<<< HEAD
+=======
+        // const {typeRoles, load_table} = this.state;
+        // let load_table = true;
+
+
+>>>>>>> d0f7616913dc2726f81cc6ebb4c8c5f267bb7adb
         return (
             <main className="content">
                 <Typography className="titleHeader" variant="h4" noWrap >
@@ -433,4 +449,3 @@ export default class CreateAccount extends Component {
         );
     }
 }
-

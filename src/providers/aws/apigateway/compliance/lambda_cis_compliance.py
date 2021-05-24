@@ -44,6 +44,7 @@ def get_date_actions():
 
 def get_dates_available(event):
     dates = get_date_actions()
+    dates.sort(reverse=True)
     format_data = {
         "dates_available":dates
     }
@@ -186,4 +187,3 @@ def lambda_handler(event, context):
     
 
     return {"statusCode":404, "body":"","headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
-        

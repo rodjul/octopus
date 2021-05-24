@@ -1,4 +1,4 @@
-import React from "react"
+// import React from "react"
 import { makeStyles } from '@material-ui/core/styles';
 
 const drawerWidth = 240;
@@ -11,6 +11,8 @@ const styles = makeStyles(theme => ({
         flexGrow: 1,
     },
     drawer: {
+        width: drawerWidth,
+        flexShrink: 0,
         [theme.breakpoints.up('sm')]: {
             width: drawerWidth,
             flexShrink: 0,
@@ -39,10 +41,6 @@ const styles = makeStyles(theme => ({
     },
     hide: {
         display: 'none',
-    },
-    drawer: {
-        width: drawerWidth,
-        flexShrink: 0,
     },
     //   drawerPaper: {
     //     width: drawerWidth,

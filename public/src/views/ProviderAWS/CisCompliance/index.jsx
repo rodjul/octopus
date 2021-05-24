@@ -71,11 +71,11 @@ export default class CisCompliance extends React.Component {
      * Request a new check from a specfic account/role type. Pass as parameters the date and account type
      */
     async requestNewCompliance(){
-        let today = new Date();
-        let dd = String(today.getDate()).padStart(2, '0');
-        let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-        let yyyy = today.getFullYear();
-        let date_format = dd + mm + yyyy;
+        // let today = new Date();
+        // let dd = String(today.getDate()).padStart(2, '0');
+        // let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+        // let yyyy = today.getFullYear();
+        // let date_format = dd + mm + yyyy;
         let stateValues = this;
 
         return await fetch(process.env.REACT_APP_ENDPOINT+"/aws/policiescompliance/cis",{

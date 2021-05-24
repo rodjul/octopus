@@ -1,6 +1,6 @@
 import React from "react";
-import BlockUi from 'react-block-ui';
-import LoadingCircularProgress from "../../components/LoadingCircularProgress";
+// import BlockUi from 'react-block-ui';
+// import LoadingCircularProgress from "../../components/LoadingCircularProgress";
 import { getAuthorization } from "../../utils";
 import SnackbarNotification from "../../components/SnackbarNotification";
 import {

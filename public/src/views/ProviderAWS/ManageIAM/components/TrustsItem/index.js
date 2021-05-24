@@ -3,7 +3,7 @@ import JSONInput from 'react-json-editor-ajrm';
 import locale    from 'react-json-editor-ajrm/locale/en';
 import { FormGroup, FormLabel, Tab, Tabs} from "react-bootstrap";
 import { Button, DialogTitle, DialogContentText, DialogContent, DialogActions, Dialog } from "@material-ui/core";
-import { Add as AddIcon, Save as SaveIcon, Delete as DeleteIcon, Info as InfoIcon } from '@material-ui/icons';
+import { Delete as DeleteIcon} from '@material-ui/icons';
 
 const TrustItem = ({trustData, index, callbackDeleteIndex, callbackSaveData}) =>{
     const [trustName, setTrustName] = React.useState(trustData.trust_name);

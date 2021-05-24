@@ -2,10 +2,8 @@ import React, {Suspense, lazy} from 'react';
 import {
     BrowserRouter as Router, 
     // Router, 
-    Link,
     Route,
     Redirect,
-    withRouter,
     Switch,
   } from 'react-router-dom'
   

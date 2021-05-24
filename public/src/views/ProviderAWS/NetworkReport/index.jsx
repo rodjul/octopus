@@ -132,7 +132,9 @@ export default class NetworkReport extends React.Component {
                         let vpcId = resource['Instances'][0]['VpcId'];
     
                         
-                        securityGroup[location].map(sgs => {
+                        for(let index in securityGroup[location]){
+                            let sgs = securityGroup[location][index];
+
                             if(sgs['GroupId'] === securityGroupId){
                                 acls.push(
                                     sgs['IpPermissions'].map(inbound => {
@@ -161,7 +163,7 @@ export default class NetworkReport extends React.Component {
                                     })
                                 )
                             }
-                        })
+                        }
     
                         return {
                             "account_id":accountId,

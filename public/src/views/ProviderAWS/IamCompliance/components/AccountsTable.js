@@ -105,6 +105,14 @@ const AccountsTable = (props) => {
                 setMessageAlert(data.message);
                 
             }
+        })
+        .catch(error => {
+            console.error("Ocorreu um erro: ", error);
+            setLoading(false);
+    
+            setOpenAlert(true);
+            setTypeMessage("error");
+            setMessageAlert("Ocorreu um erro interno. Erro: ", JSON.stringify(error));
         });
     }
 
@@ -258,6 +266,7 @@ const AccountsTable = (props) => {
                             }}
                             >   
                                 {accounts && accounts.slice(0,1).map((elem,index) =>{
+                                    console.log("DATA: ", elem);
                                     return <MenuItem selected className="filter_selected" key='selected'>{elem['DateAction'].split("-")[0]}</MenuItem>;
                                 })}
                                 {/* available values */}
@@ -276,7 +285,7 @@ const AccountsTable = (props) => {
                             }}
                             >   
                                 {type_roles && type_roles.map((elem,index) =>{
-                                    return <MenuItem key={elem} value={elem}>{elem}</MenuItem>;
+                                    return <MenuItem key={elem.role_type} value={elem.role_type}>{elem.role_type}</MenuItem>;
                                 })}
                             </Select>
                         </FormControl>
@@ -325,7 +334,7 @@ const AccountsTable = (props) => {
                     aria-labelledby="alert-dialog-title"
                     aria-describedby="alert-dialog-description"
                 >
-                    <DialogTitle id="alert-dialog-title2">{"Novo check"}</DialogTitle>
+                    <DialogTitle id="alert-dialog-title2">Gerar um novo relatório</DialogTitle>
                     <DialogContent>
                     <DialogContentText id="alert-dialog-description">
                         Essa ação irá acessar as contas do Organizations e fazer a partir das roles do tipo "
@@ -336,9 +345,10 @@ const AccountsTable = (props) => {
                                 setAccountSelect(e.target.value);
                                 onChangeTypeRole(e);
                             }}
+                            style={{textAlign:"center"}}
                             >   
                                 {type_roles && type_roles.map((elem,index) =>{
-                                    return <MenuItem key={elem} value={elem}>{elem}</MenuItem>;
+                                    return <MenuItem key={elem.role_type} value={elem.role_type}>{elem.role_type}</MenuItem>;
                                 })}
                             </Select>
                         </FormControl>

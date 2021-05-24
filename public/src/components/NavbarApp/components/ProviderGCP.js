@@ -1,33 +1,19 @@
 import React from "react"
 
-// import PropTypes from 'prop-types';
-// import AppBar from '@material-ui/core/AppBar';
-// import CssBaseline from '@material-ui/core/CssBaseline';
-// import Divider from '@material-ui/core/Divider';
-// import Drawer from '@material-ui/core/Drawer';
-// import Hidden from '@material-ui/core/Hidden';
-// import IconButton from '@material-ui/core/IconButton';
+
 import Collapse from '@material-ui/core/Collapse';
-// import InboxIcon from '@material-ui/icons/MoveToInbox';
-// import MailIcon from '@material-ui/icons/Mail';
-// import MenuIcon from '@material-ui/icons/Menu';
 import SettingsIcon from '@material-ui/icons/Settings';
 import {
-    Dashboard, Add, Edit, Assessment, ExpandLess, ExpandMore
+    ExpandLess, ExpandMore
 } from '@material-ui/icons';
-import Typography from '@material-ui/core/Typography';
 
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import { useTheme } from '@material-ui/core/styles';
-// import Toolbar from '@material-ui/core/Toolbar';
+// import { useTheme } from '@material-ui/core/styles';
 
-// import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-// import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import { NavLink} from "react-router-dom";
-// import clsx from 'clsx';
 
 import styles from "./styles.js";
 
@@ -35,7 +21,7 @@ import styles from "./styles.js";
 
 const ProviderGCP = ({pathname}) => {
     const classes = styles();
-    const theme = useTheme();
+    // const theme = useTheme();
     // const [open, setOpen] = React.useState(false);
     
     const [openCollapse, setOpenCollapse] = React.useState(false);

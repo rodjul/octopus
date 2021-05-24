@@ -7,26 +7,21 @@ import {
     useFilters, 
     useGlobalFilter, 
     useAsyncDebounce, 
-    useFlexLayout,
-    useResizeColumns,
 } from 'react-table'
 import {
-    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink, Row, Col
+    Input, Table as TableStrap, Pagination, PaginationItem, PaginationLink, Row
 } from 'reactstrap';
 
 import {
     Paper
 } from "@material-ui/core";
-// A great library for fuzzy filtering/sorting items
-// import matchSorter from 'match-sorter'
 
 import BlockUi from 'react-block-ui';
 import LoadingCircularProgress from "../../../../components/LoadingCircularProgress";
 
-import useStyles from "./styles";
+// import useStyles from "./styles";
 
 import ProjetInfo from "./ProjectInfo";
-// import makeData from './data'
 
 
 const DEFAULT_PAGE_SIZE = 80;
@@ -43,18 +38,7 @@ const getStyles = (props, depth = 0) => [
       },
     },
   ]
-// const getStyles = (props, align = 'left') => [
-//     props,
-//     {
-//       style: {
-//         justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
-//         alignItems: 'flex-start',
-//         display: 'flex',
-//         backgroundColor:"red",
-//         wordWrap: "anywhere"
-//       },
-//     },
-//   ]
+
 
 
 const IndeterminateCheckbox = React.forwardRef(
@@ -75,40 +59,6 @@ const IndeterminateCheckbox = React.forwardRef(
 )
 
 
-// Define a default UI for filtering
-function GlobalFilter({
-    preGlobalFilteredRows,
-    globalFilter,
-    setGlobalFilter,
-    flatRows
-}) {
-    const count = preGlobalFilteredRows.length
-    const [value, setValue] = React.useState(globalFilter)
-    const onChange = useAsyncDebounce(value => {
-        setGlobalFilter(value || undefined)
-    }, 200)
-    
-    // console.log( preGlobalFilteredRows, globalFilter, setGlobalFilter, flatRows)
-        
-    return (
-        <span>
-            Search:{' '}
-            <input
-                value={value || ""}
-                onChange={e => {
-                    setValue(e.target.value);
-                    onChange(e.target.value);
-                }}
-                placeholder={`${count} records...`}
-                style={{
-                    fontSize: '1.1rem',
-                    border: '0',
-                }}
-            />
-        </span>
-    )
-}
-
 function GlobalFilterCustom({
     preGlobalFilteredRows,
     globalFilter,
@@ -116,7 +66,7 @@ function GlobalFilterCustom({
     // flatRows
     callbackFilter,
 }) {
-    const count = preGlobalFilteredRows.length
+    // const count = preGlobalFilteredRows.length
     const [value, setValue] = React.useState(globalFilter)
     const onChange = useAsyncDebounce(value => {
         // calling index.jsx filter function because of hierarchy Data handling
@@ -147,9 +97,9 @@ function GlobalFilterCustom({
 
 
 function Table({ columns: userColumns, data, dataSelected, blocking, callbackSelect, callbackFilter }) {
-    const classes = useStyles();
+    // const classes = useStyles();
 
-    const [project, setProject] = React.useState([]);
+    // const [project, setProject] = React.useState([]);
 
 
     const {
@@ -169,17 +119,17 @@ function Table({ columns: userColumns, data, dataSelected, blocking, callbackSel
         previousPage,
         setPageSize,
 
-        flatRows,
+        // flatRows,
 
         // select
-        selectedFlatRows,
+        // selectedFlatRows,
 
         // filter
         visibleColumns,
         preGlobalFilteredRows,
         setGlobalFilter,
         
-        state: { expanded, pageIndex, pageSize, selectedRowIds, globalFilter },
+        state: {pageIndex, pageSize, selectedRowIds, globalFilter },
 
     } = useTable(
         {
@@ -390,7 +340,7 @@ function Table({ columns: userColumns, data, dataSelected, blocking, callbackSel
 
 
 function Organizations({data, blocking, callbackSetDataSelected, callbackFilter}) {
-    const classes = useStyles();
+    // const classes = useStyles();
 
     const columns = React.useMemo(
         () => [

@@ -1,26 +1,17 @@
-﻿import React from "react"
-// import { NavLink } from 'react-router-dom';
+import React from "react"
 
 import PropTypes from 'prop-types';
-// import Hidden from '@material-ui/core/Hidden';
-// import Collapse from '@material-ui/core/Collapse';
-// import InboxIcon from '@material-ui/icons/MoveToInbox';
-// import MailIcon from '@material-ui/icons/Mail';
-// import MenuIcon from '@material-ui/icons/Menu';
-// import SettingsIcon from '@material-ui/icons/Settings';
 import {
-    Dashboard, Add, Edit, Assessment, ExpandLess, ExpandMore, Settings as SettingsIcon,
-    AccountCircle, ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
+    Assessment, Settings as SettingsIcon,
+    ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon,
     Menu as MenuIcon
 } from '@material-ui/icons';
 import {
-    AppBar, Toolbar, Typography, List, ListItem, ListItemIcon, ListItemText, Menu, MenuItem, IconButton, Drawer, Divider, CssBaseline
+    AppBar, Toolbar, Typography, List, ListItem, ListItemIcon, ListItemText, IconButton, Drawer, Divider, CssBaseline
 } from "@material-ui/core";
 
 
-// import ListItem from '@material-ui/core/ListItem';
-// import ListItemIcon from '@material-ui/core/ListItemIcon';
-// import ListItemText from '@material-ui/core/ListItemText';
+
 import { useTheme } from '@material-ui/core/styles';
 
 import { NavLink} from "react-router-dom";
@@ -34,20 +25,20 @@ import ProviderGCP from "./components/ProviderGCP";
 
 
 const NavbarApp = (props) => {
-    const { container } = props;
+    // const { container } = props;
     const classes = styles();
     const theme = useTheme();
     const [open, setOpen] = React.useState(false);
     
-    const [openCollapse, setOpenCollapse] = React.useState(false);
-    const handleClick = () => {
-        setOpenCollapse(!openCollapse);
-    };
+    // const [openCollapse, setOpenCollapse] = React.useState(false);
+    // const handleClick = () => {
+    //     setOpenCollapse(!openCollapse);
+    // };
     
-    const [openCollapse2, setOpenCollapse2] = React.useState(false);
-    const handleClick2 = () => {
-        setOpenCollapse2(!openCollapse2);
-    };
+    // const [openCollapse2, setOpenCollapse2] = React.useState(false);
+    // const handleClick2 = () => {
+    //     setOpenCollapse2(!openCollapse2);
+    // };
     
 
     const handleDrawerOpen = () => {

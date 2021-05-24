@@ -1,9 +1,9 @@
 import React from "react";
 import {
-    TextField, DialogTitle, DialogContentText, DialogContent, DialogActions, Dialog
+     DialogTitle, DialogContentText, DialogContent, DialogActions, Dialog
 } from "@material-ui/core";
 import {
-    Input, Table as TableStrap, Button, Pagination, PaginationItem, PaginationLink, FormGroup, Label
+    Input, Button, FormGroup, Label
 } from 'reactstrap';
 
 import {formatDateTimezone} from "../../../../utils";
@@ -11,7 +11,7 @@ import {formatDateTimezone} from "../../../../utils";
 
 const DialogCreateFolder = ({dateReports, onSubmitGetReport}) => {
     const [openModalCreateFolder, setOpenModalCreateFolder] = React.useState(false);
-    const [newFolderName, setNewFolderName] = React.useState("");
+    // const [newFolderName, setNewFolderName] = React.useState("");
     const [inputValue, setInputValue] = React.useState("");
 
     const handleCloseModalCreateFolder = () => setOpenModalCreateFolder(false);
