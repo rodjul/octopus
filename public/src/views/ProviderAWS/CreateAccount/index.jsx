@@ -176,32 +176,23 @@ export default class CreateAccount extends Component {
             }
         })
         .then(response => this._handleFetchErrors(response, stateValues))
-<<<<<<< HEAD
         .then(response => {
             this.setState({requestSuccess: true, loadTableStatusAccount: true}, () => this.setState({requestSuccess: false}));
                         
             uuid = response.data.uuid;
 
             let format = { 
-                name: self.state.name, 
-                email: self.state.email, 
+                name: this.state.name, 
+                email: this.state.email, 
                 "account_id": null, 
-                "accountType":self.state.accountType,
+                "accountType": this.state.accountType,
                 "status": "NOT_CREATED",
                 loading: true,
             };
 
-            let prv = [...self.state.lists, format];
+            let prv = [...this.state.lists, format];
             this.setState({lists: prv});
 
-=======
-        .then(res => {
-            console.log(res);
-            //this.props.history.push('/');
-            //console.log(res.json().then( body => console.log(body) ));
-            document.getElementById("output_text").textContent = "Criando a conta...";
-            // let name = stateValues.state.name;
->>>>>>> d0f7616913dc2726f81cc6ebb4c8c5f267bb7adb
 
             // definimos um intervalo a cada 2 segundos para obter o resultado 
             var interval = setInterval(async function () {
@@ -212,13 +203,13 @@ export default class CreateAccount extends Component {
                         "Authorization": getAuthorization(),
                     },
                 })
-                .then(response => self._handleFetchErrors(response, stateValues))
+                .then(response => this._handleFetchErrors(response, stateValues))
                 .then(async response => {
-                    let tryCount = self.state.fetch_vars.tryCount;
-                    let retryLimit = self.state.fetch_vars.retryLimit;
+                    let tryCount = this.state.fetch_vars.tryCount;
+                    let retryLimit = this.state.fetch_vars.retryLimit;
 
                     // console.log(data);
-                    let currentList = self.state.lists;
+                    let currentList = this.state.lists;
                     let index = currentList.length - 1;
 
                     currentList[index].status = response.status;
@@ -231,23 +222,23 @@ export default class CreateAccount extends Component {
                                 "Authorization": getAuthorization(),
                             },
                         })
-                        .then(response => self._handleFetchErrors(response, stateValues))
+                        .then(response => this._handleFetchErrors(response, stateValues))
                         .then(response => currentList[index].account_id = response.account_id)
                         .catch(e => console.error(e));
                     }
                     
                     if (response.status.toUpperCase() !== "SUCCESSFULY_CREATED" && !response.status.toUpperCase().startsWith("ERROR") ){
-                        self.setState({lists: currentList});
+                        this.setState({lists: currentList});
                         if (tryCount <= retryLimit) {
                             let p1 = tryCount + 1;
-                            self.setState({ fetch_vars: { tryCount: p1, retryLimit: retryLimit } })
+                            this.setState({ fetch_vars: { tryCount: p1, retryLimit: retryLimit } })
                             fetch(this);
                             return;
                         }
                     }
                     
                     currentList[index].loading = false;
-                    self.setState({lists: currentList});
+                    this.setState({lists: currentList});
 
                     clearInterval(interval);
                 })
@@ -304,13 +295,6 @@ export default class CreateAccount extends Component {
     }
 
     render() {
-<<<<<<< HEAD
-=======
-        // const {typeRoles, load_table} = this.state;
-        // let load_table = true;
-
-
->>>>>>> d0f7616913dc2726f81cc6ebb4c8c5f267bb7adb
         return (
             <main className="content">
                 <Typography className="titleHeader" variant="h4" noWrap >
@@ -359,19 +343,12 @@ export default class CreateAccount extends Component {
                                             >   
                                                 <MenuItem key="Brasileira" value="Brasileira">Brasileira</MenuItem>
                                                 <MenuItem key="Americana" value="Americana">Americana</MenuItem>
-                                                {/* {this.state.typeRoles && this.state.typeRoles.map((elem, index) => {
-                                                    return <MenuItem key={`${elem+'-'+index}`} value={elem}>{elem}</MenuItem>
-                                                })} */}
                                             </Select>
                                         </FormControl>
 
                                         <FormControl>
                                             <InputLabel id="controlled-open-select-label-tipo-da-conta">Tipo da conta</InputLabel>
                                             <Select labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"
-                                            // open={open}
-                                            // onClose={handleClose}
-                                            // onOpen={handleOpen}
-                                            // value={age}
                                             onChange={this.handleSelectAccountType.bind(this)}
                                             >   
                                                 {/* <MenuItem key="Cloud" value="Cloud">Cloud</MenuItem> */}

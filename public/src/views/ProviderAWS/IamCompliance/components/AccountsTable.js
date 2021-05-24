@@ -10,6 +10,8 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import moment from 'moment';
+import 'moment-timezone';
 
 import AlertMessage from "../../../../components/AlertMessage";
 
@@ -265,13 +267,8 @@ const AccountsTable = (props) => {
                                 props.onChangeDataCheck(e)
                             }}
                             >   
-                                {accounts && accounts.slice(0,1).map((elem,index) =>{
-                                    console.log("DATA: ", elem);
-                                    return <MenuItem selected className="filter_selected" key='selected'>{elem['DateAction'].split("-")[0]}</MenuItem>;
-                                })}
-                                {/* available values */}
                                 {dates_available && dates_available.map((elem,index) =>{
-                                    return <MenuItem key={elem} value={elem}>{elem}</MenuItem>;
+                                    return <MenuItem key={elem} value={elem}>{moment(elem).format("DD/MM/YYYY hh:mm:ss")}</MenuItem>;
                                 })}
                             </Select>
                         </FormControl>

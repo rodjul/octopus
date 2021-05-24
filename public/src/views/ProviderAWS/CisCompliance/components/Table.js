@@ -19,18 +19,17 @@ const AccountsTable = (props) => {
     const accounts = props.accounts;
     const dates_available = props.dates_available;
 
-    // if(dates_available){
-    //     console.log("1", dates_available);
-    //     // dates_available.sort();
-    //     let sortedArray = dates_available.sort((a,b) => moment(a).diff( moment(b) ))
-    //     console.log("2", sortedArray);
-    // }
-
     const classes = useStyles();
     const [openRefresh, setOpenRefresh] = React.useState(false);
     const [openAddNewCheck, setOpenAddNewCheck] = React.useState(false);
     const [openRenderModalTableOffender, setRenderModalTableOffender] = React.useState(false);
     const [contentRenderModalTableOffender, setContentRenderModalTableOffender] = React.useState("");
+    
+    // variables modal Status Report
+    const [openStatusReportModal, setOpenStatusReportModal] = React.useState(false);
+    const [statusReportData, setStatusReportData] = React.useState({});
+
+
     // const [disabledButtonRequestCompliance, setDisabledButtonRequestCompliance] = React.useState(true);
 
     // handle values of selct
@@ -59,11 +58,20 @@ const AccountsTable = (props) => {
 
     const handleCloseRenderModalTableOffender = () => {
         setRenderModalTableOffender(false);
-        // setContentRenderModalTableOffender("");
-    } 
+    }
+    
+    // open modal status
+    const handleClickOpenStatusReportModal = (content) => {
+        setContentRenderModalTableOffender(content);
+        setOpenStatusReportModal(true);
+    }
+
+    const closeModalOpenStatusReport = () => {
+        setOpenStatusReportModal(false);
+    }
+    
     
     const handleCloseAddNewCheck = () => {
-        // setDisabledButtonRequestCompliance(true);
         setOpenAddNewCheck(false);
     }
 
@@ -149,14 +157,30 @@ const AccountsTable = (props) => {
     }
 
     const getStatus = async () => {
+        setLoading(true);
+
         fetch(process.env.REACT_APP_ENDPOINT+"/aws/policiescompliance/cis/status", {
             method:"GET", mode:"cors", headers: {"Authorization": getAuthorization()},
         })
         .then(resp => resp.json())
         .then(response => {
             // this.setState( {dates_available: data['dates_available']} );
-            alert(JSON.stringify(response.data));
+            // alert(JSON.stringify(response.data));
+
+            setStatusReportData(response.data);
+            setOpenStatusReportModal(true);
+
+            setLoading(false);
         })
+        .catch(error => {
+            console.error(error);
+            
+            setLoading(false);
+            setOpenAlert(true);
+            
+            setTypeMessage("error");
+            setMessageAlert("Ocorreu um erro. Erro: ",error);
+        });
     }
     
 
@@ -218,11 +242,13 @@ const AccountsTable = (props) => {
                     onClose={() => handleCloseRefresh()}
                     aria-labelledby="alert-dialog-title"
                     aria-describedby="alert-dialog-description"
+                    // fullWidth="true"
+                    // maxWidth="sm"
                 >
-                    <DialogTitle id="alert-dialog-title">{"Selecionar o dia do relatório por conta"}</DialogTitle>
+                    <DialogTitle id="alert-dialog-title">Selecione o dia do reporte</DialogTitle>
                     <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        <FormControl style={{width:"10em", marginRight:"1em"}}>
+                        <FormControl style={{width:"15em"}}>
                             <InputLabel id="controlled-open-select-label-tipo-da-conta">Data da ação</InputLabel>
                             <Select required labelId="controlled-open-select-label-tipo-da-conta" id="demo-controlled-open-select"
                             onChange={e => {
@@ -230,10 +256,6 @@ const AccountsTable = (props) => {
                                 props.onChangeDataCheck(e);
                             }}
                             >   
-                                {/* {accounts && accounts.slice(0,1).map((elem,index) =>{
-                                    return <MenuItem selected className="filter_selected" key='selected'>{elem['DateAction']} 2321</MenuItem>;
-                                })} */}
-                                {/* showing dates */}
                                 {dates_available && dates_available.map((elem,index) =>{
                                     return <MenuItem key={elem} value={elem}>{ moment(elem).format("DD/MM/YYYY hh:mm:ss") }</MenuItem>;
                                 })}
@@ -279,10 +301,10 @@ const AccountsTable = (props) => {
                     aria-labelledby="alert-dialog-title"
                     aria-describedby="alert-dialog-description"
                 >
-                    <DialogTitle id="alert-dialog-title2">{"Novo check"}</DialogTitle>
+                    <DialogTitle id="alert-dialog-title2">Gerar um novo relatório de CIS Compliance</DialogTitle>
                     <DialogContent>
                     <DialogContentText id="alert-dialog-description">
-                        Essa ação irá acessar as contas do Organizations e fazer os checks do CIS para gerar um novo relatório de compliance. 
+                        Essa ação irá acessar as contas do Organizations e fazer as validações com base no documento do CIS. 
                         Poderá demorar alguns minutos, deseja continuar?
                     </DialogContentText>
                     </DialogContent>
@@ -314,6 +336,28 @@ const AccountsTable = (props) => {
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => handleCloseRenderModalTableOffender()} variant="contained" color="primary" autoFocus>
+                            Fechar
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog
+                    open={openStatusReportModal}
+                    onClose={() => handleClickOpenStatusReportModal()}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                >
+                    <DialogTitle id="alert-dialog-title2">Status de geração do relatório</DialogTitle>
+                    <DialogContent>
+                        <DialogContentText id="alert-dialog-description">
+                            <p>O status atual da geração do relatório é:</p>
+                            <p>Em processamento na fila: <b>{statusReportData.total_processing}</b></p>
+                            <p>Em espera na fila: <b>{statusReportData.total_available}</b></p>
+
+                        </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => closeModalOpenStatusReport()} variant="contained" color="primary" autoFocus>
                             Fechar
                         </Button>
                     </DialogActions>
