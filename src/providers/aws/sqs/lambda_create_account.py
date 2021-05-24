@@ -4,11 +4,39 @@ from json import loads
 from json import dumps
 from ast import literal_eval
 from model.octopus import get_creds, list_linked_accounts, json_serial, set_iam_password_policy, get_file_from_s3
-from model.dynamodb import save_account_db, insert_account_id_db, update_account_id_status
+# from model.dynamodb import insert_account_id_db, update_account_id_status
 from model.iam_control import IamControl
 from os import environ
 from time import sleep
 import uuid
+import traceback
+
+
+def insert_account_id_db(uuid, account_id_generated):
+    '''
+    After create the index of the name account, update to insert the aws_account_id generated
+    '''
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_aws_account")
+    table.update_item(
+        Key={"UUID":uuid},
+        UpdateExpression="set AccountId=:ai",
+        ExpressionAttributeValues={":ai":account_id_generated}
+        )
+
+def update_account_id_status(uuid, status):
+    '''
+    After create the index of the name account, update to insert the aws_account_id generated
+    '''
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_aws_account")
+    table.update_item(
+        Key={"UUID":uuid},
+        UpdateExpression="set AccountStatus=:as",
+        ExpressionAttributeValues={":as":status.upper()}
+    )
+
+
 
 
 def create_account(orgs_client,payer_id,email,name,payer_role):
@@ -129,11 +157,28 @@ def setup_roles_account(account_id, account_type):
     iamcontrol.setup_iam_account(account_type)
 
 
+def get_info_account(uuid):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_aws_account")
+    resp = table.get_item(Key={"UUID": uuid})
+    if "Item" in resp:
+        return resp['Item']
+    return ""
+
+
 def main_function(event):
 
-    payer_id = environ['PAYER_ID']
+    account_payer = event['account_payer'].upper()
+    payer_id = environ['PAYER_ID' + "_"+ account_payer ]
+    if not payer_id:
+        raise Exception("Payer_id not found: "+account_payer)
     
     uuid_account = event['uuid']
+    info_account = get_info_account(uuid_account)
+    if info_account and info_account['AccountStatus'] != "NOT_CREATED":
+        print("Already created")
+        print("Event: ",event)
+        return 200
 
     # the role to do cross account when creating the account in the aws console
     payer_role = "security"
@@ -180,27 +225,24 @@ def main_function(event):
         
         # adding sleep because after create the role, the AWS didn't update the status that the role
         # was created and it can be used as sts
-        print("Wainting 15 seconds to AWS updates the role")
-        sleep(15)
-        iam_client = get_creds("iam",Id=new_account_id)
+        # print("Wainting 15 seconds to AWS updates the role")
+        # sleep(15)
 
-        set_alias(iam_client,event["name"])
-
-        set_iam_password_policy(iam_client)
-
-        create_adfs(iam_client)
-        
-        # given a cloudformation file, this cloudformation will create the necessay roles for the account
-        account_type = event['account_type'].lower()
-        setup_roles_account(new_account_id, account_type)
-
-        create_cloudtrail(new_account_id)
-
-        update_account_id_status(uuid_account, "SUCCESSFULY CREATED")
+        sqs_client = boto3.client("sqs")
+        sqs_client.send_message(
+            QueueUrl=environ['SQS_SETUP_NEW_ACCOUNT'],
+            MessageBody=dumps({
+                "uuid":uuid_account, 
+                "name": event['name'], 
+                "email":event['email'], 
+                "account_type": event['account_type'],
+                "new_account_id": new_account_id,
+            })
+        )
 
     else:
         print("Error on Account Creation: {}".format(status))
-        update_account_id_status(uuid_account, "ERROR")
+        update_account_id_status(uuid_account, "ERROR IN CREATING ACCOUNT")
         return status
 
 
@@ -214,18 +256,23 @@ def lambda_handler(event,context):
         print("{} messages for batch job".format(len(event["Records"])))
         for record in event["Records"]:
             print("Working on message: {}".format(record))
-            main_function(literal_eval(record["body"]))
+            event = literal_eval(record["body"])
+            try:
+                main_function(event)
+            except Exception as e:
+                print(traceback.format_exc(e))
+                update_account_id_status(event['uuid'], "ERROR")
 
     # This happens when function is triggered directly by another lambda or api
-    else:
-        print("Single message in event. Trigger directly by api request")
-        print("Working on message: {}".format(event))
+    # else:
+    #     print("Single message in event. Trigger directly by api request")
+    #     print("Working on message: {}".format(event))
         
-        return {
-            "statusCode":200,
-            "body":dumps(main_function(event), default=json_serial),
-            "headers":{
-                "Content-Type":"application/json",
-                "Access-Control-Allow-Origin":"*"
-            }
-        }
+    #     return {
+    #         "statusCode":200,
+    #         "body":dumps(main_function(event), default=json_serial),
+    #         "headers":{
+    #             "Content-Type":"application/json",
+    #             "Access-Control-Allow-Origin":"*"
+    #         }
+    #     }

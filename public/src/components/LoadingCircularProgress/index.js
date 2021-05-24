@@ -14,12 +14,13 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 // export default function CircularIndeterminate() {
-export default function LoadingCircularProgress() {
+export default function LoadingCircularProgress(props) {
   const classes = useStyles();
+  const classname = props.className || "";
 
   return (
-    <div className={classes.root}>
-      <CircularProgress />
+    <div className={`${classes.root} ${classname}`}>
+      <CircularProgress size={props.size || 40}/>
     </div>
   );
 }

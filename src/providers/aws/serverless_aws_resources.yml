@@ -84,9 +84,9 @@ resources:
         AttributeDefinitions:
           - AttributeName: UUID
             AttributeType: S
-          - AttributeName: NameAccount
+          - AttributeName: AccountName
             AttributeType: S
-          - AttributeName: EmailAccount
+          - AttributeName: AccountEmail
             AttributeType: S
         KeySchema:
           - AttributeName: UUID
@@ -95,11 +95,11 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         GlobalSecondaryIndexes:
-          - IndexName: EmailAccount-NameAccount-index
+          - IndexName: AccountEmail-AccountName-index
             KeySchema:
-            - AttributeName: EmailAccount
+            - AttributeName: AccountEmail
               KeyType: HASH
-            - AttributeName: NameAccount
+            - AttributeName: AccountName
               KeyType: RANGE
             Projection:
               ProjectionType: ALL     

@@ -34,6 +34,9 @@ class ACL:
                 "delete-role-type",
                 "get-role-type",
                 "list-role-type",
+                "list-accounts-created",
+                "get-account-status",
+                "list-account-info",
             ],
             "gcp":[
                 "update-account-api",
@@ -42,6 +45,8 @@ class ACL:
                 "create-folder-resource-manager",
                 "create-project-resource-manager",
                 "list-organization-resource-manager",
+                "list-history-actions-logs",
+
             ]
         }
         
@@ -57,10 +62,14 @@ class ACL:
                 "get-network-report",
                 "list-iam-policies",
                 "list-role-type",
+                "list-accounts-created",
+                "get-account-status",
+                "list-account-info",
             ],
             "gcp":[
                 "list-iam-policy-project",
                 "list-organization-resource-manager",
+                "list-history-actions-logs",
             ]
             
         }

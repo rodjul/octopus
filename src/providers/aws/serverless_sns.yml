@@ -1,4 +1,4 @@
-service: octopussqs-gcp
+service: octopussns-aws
 
 package:
   individually: true
@@ -45,41 +45,40 @@ custom:
   #   perFunction: true
   #   perType: false
   #   perGroupFunction: false
-  sqs_name: "CreateAccount"
-  sqs_compliance_new_check: "ComplianceNewCheck"
-  sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
+  sns_send_email: OctopusEmailNotify${self:provider.stage}
 
   
 
 functions:
-
-  sqs_providergcp_get_iam_policy_projects:
-    handler: sqs/lambda_providergcp_get_iam_policy_projects.lambda_handler
+  SendEmailNotification:
+    handler: sns/send_email.lambda_handler
+    environment:
+      ARN_SNS_EMAIL: !Ref SNSSendEmail
+      # PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
     runtime: python3.8
     memorySize: 256
-    timeout: 500
+    timeout: 300 # 300 seconds
     role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
-    name: ${self:service}-lambda_providergcp_get_iam_policy_projects-${self:provider.stage}
+    name: ${self:service}-send_email-${self:provider.stage}
     package:
       include:
-        - ../../model/providergcp.py
-        - sqs/lambda_providergcp_get_iam_policy_projects.py
-    layers:
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
-    events: 
-      - sqs:
-         arn: 
-          "arn:aws:sqs:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:ProviderGCPGetIamPolicyProjects"
-        batchSize: 5
+        - sns/send_email.py
+        # - ../../model/*.py
+    # layers:
+    #   - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:${self:custom.awsconfig.aws_account_id}:${self:custom.sns_send_email}
+
 
 
 resources:
-  Resources:           
-    
-    SQSProviderGCPGetIamPolicyProjects:
-      Type: "AWS::SQS::Queue"
+  Resources:
+    SNSSendEmail:
+      Type: AWS::SNS::Topic
       Properties:
-        QueueName: ProviderGCPGetIamPolicyProjects
-        VisibilityTimeout: 600
-    
+        TopicName: ${self:custom.sns_send_email}
+        DisplayName: "octopus-seginfo-notification"
+        # DisplayName: "Envia email notificando o status do processo"
+        Subscription:
+          - Endpoint: "rodrigo.juliano@totvs.com.br"
+            Protocol: "email"             

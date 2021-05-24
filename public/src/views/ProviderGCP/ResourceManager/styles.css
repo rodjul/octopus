@@ -66,3 +66,13 @@ https://material-ui.com/pt/customization/palette/
 }
 
 
+#alert-dialog-title{
+    width: 35em;
+}
+
+.icon-loading-position-history{
+    position: relative;
+    right: 1em;
+    bottom: 1.3em;
+    margin-bottom: -1em;
+}

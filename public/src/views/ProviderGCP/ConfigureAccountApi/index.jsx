@@ -33,7 +33,7 @@ export default class ProviderGCP extends React.PureComponent {
     async componentDidMount(){
         window.document.title = "Octopus - GCP - Account API";
         
-        console.log(this.state.organizations);
+        // console.log(this.state.organizations);
         this.setState({blocking: false});
 
     }

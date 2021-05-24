@@ -5,18 +5,43 @@ from urllib.parse import unquote
 from os import environ
 import re
 from utils import logs
-from model.dynamodb import save_account_db
+# from model.dynamodb import save_account_db
+import uuid
 from model.useracl import UserACL
+from datetime import datetime
 
 
-def account_created(name_account,email_account):
+def save_account_db(account_name, account_email, motive, account_type, account_payer):
+    '''
+    Insert the name account create to make the index
+    '''
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table("octopus_aws_account")
-    # response = table.scan( FilterExpression = Attr("NameAccount").eq(name_account) & Attr("EmailAccount").eq(email_account) )
-    # response = table.query( KeyConditionExpression = Attr("NameAccount").eq(name_account) & Attr("EmailAccount").eq(email_account) )
+    
+    uuid_set = str(uuid.uuid4())
+
+    item = {
+        "UUID": uuid_set,
+        "AccountName": account_name,
+        "AccountEmail": account_email,
+        "AccountType": account_type,
+        "AccountPayer": account_payer,
+        "Motive": motive,
+        "AccountStatus": "NOT_CREATED",
+        "Timestamp": datetime.utcnow().isoformat()
+    }
+
+    table.put_item( Item=item )
+
+    return uuid_set
+
+
+def account_created(account_name,account_email):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table("octopus_aws_account")
     response = table.query(
-        IndexName="EmailAccount-NameAccount-index", 
-        KeyConditionExpression=Key("NameAccount").eq(name_account) & Key("EmailAccount").eq(email_account) 
+        IndexName="AccountEmail-AccountName-index", 
+        KeyConditionExpression=Key("NameAccount").eq(account_name) & Key("EmailAccount").eq(account_email) 
     )
     
     status = False
@@ -49,7 +74,8 @@ def lambda_handler(event,context):
     username = event.get('requestContext').get('authorizer').get('username')
     if not UserACL(username).has_acl("aws","create-account"):
         return {"statusCode":403, "body":"","headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
-
+    return {"statusCode":200, "body":dumps({"error":False, "data":{"uuid":"542e1dca-d31c-4112-9ead-20afa310a31a"}, "message":"Creating account"}),
+        "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
     try:
         body = loads(event['body'])
         # "name","email":json_data[1].value,"cloudformation":json_data[2].value
@@ -57,6 +83,8 @@ def lambda_handler(event,context):
         email = body['email']
         account_type = body['account_type']
         motive = body['motive']
+        #account_payer = body['account_payer']
+        account_payer = "brasileira"
 
         # check email regex
         if not re.match("[^@]+@[^@]+\.[^@]+", email):
@@ -74,6 +102,11 @@ def lambda_handler(event,context):
             logs.write(event, "AWS", 400, event['body'], "New account with invalid parameters", "Empty values informed" )
             return {"statusCode":400,"body":dumps({"error":True, "message":"Empty values are not allowed"}),
             "headers":{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}}
+        
+        if not (account_payer.lower() == "brasileira" or account_payer.lower() == "americana"):
+            logs.write(event, "AWS", 400, event['body'], "New account with invalid parameters", "Empty values informed" )
+            return {"statusCode":400,"body":dumps({"error":True, "message":"Empty values are not allowed"}),
+            "headers":{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}}
 
     except KeyError:
         return {"statusCode":400,"body":dumps({"error":True, "message":"Invalid parameters"}),
@@ -81,11 +114,17 @@ def lambda_handler(event,context):
     
     if not account_created(name,email):
         print("Criando conta", name,email)
-        uuid = save_account_db(name, email)
+        uuid = save_account_db(name, email, motive, account_type, account_payer)
         sqs_client = boto3.client("sqs")
         sqs_client.send_message(
                 QueueUrl=environ['SQS_CREATE_ACCOUNT'],
-                MessageBody=dumps({"uuid":uuid, "name": name, "email":email, "cloudformation": account_type })
+                MessageBody=dumps({
+                    "uuid":uuid, 
+                    "name": name, 
+                    "email":email,
+                    "account_type": account_type, 
+                    "account_payer": account_payer 
+                })
             )
         
         logs.write(event, "AWS", 200, event['body'], "New account", "A new account is being created in AWS" )

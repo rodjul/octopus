@@ -89,31 +89,75 @@ functions:
             type: CUSTOM
             authorizerId:
               ${self:custom.apiGatewayAuthorizerID}
-          # authorizer: 
-          #   arn: arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev
-      # - http:
-      #     path: /accounts/{account_uid}/status
-      #     method: get
-      #     cors: true
-      #     #private: true
-  
-  request_account_id_created:
-    handler: apigateway/accounts/lambda_get_account_id_created.lambda_handler
+          
+  request_account_status_creation:
+    handler: apigateway/accounts/lambda_account_status_creation.lambda_handler
     runtime: python3.8
     memorySize: 256
     timeout: 30 # 30 seconds
     role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
-    name: ${self:service}-get_account_id_created-${self:provider.stage}
+    name: ${self:service}-lambda_account_status_creation-${self:provider.stage}
     package:
       include:
-        - apigateway/accounts/lambda_get_account_id_created.py
+        - apigateway/accounts/lambda_account_status_creation.py
         - ../../utils/logs.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
     events:
       - http:
-          path: /aws/accounts/{name_account}
+          path: /aws/accounts/{account_uid}/status
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+  
+          
+  request_get_info_account_id:
+    handler: apigateway/accounts/lambda_account_info_get_accountid.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_account_info_get_accountid-${self:provider.stage}
+    package:
+      include:
+        - apigateway/accounts/lambda_account_info_get_accountid.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/accounts/{account_uid}/accountid
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}
+  
+  request_list_accounts_created:
+    handler: apigateway/accounts/lambda_list_accounts_created.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-list_accounts_created-${self:provider.stage}
+    package:
+      include:
+        - apigateway/accounts/lambda_list_accounts_created.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /aws/accounts
           method: get
           cors: true
           #private: true
@@ -127,7 +171,8 @@ functions:
   request_get_account_organizations:
     handler: apigateway/accounts/lambda_get_accounts_organizations.lambda_handler
     environment:
-      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      PAYER_ID_BRASILEIRA: ${self:custom.awsconfig.aws_account_payer_id_brasileira}
+      PAYER_ID_AMERICANA: ${self:custom.awsconfig.aws_account_payer_id_americana}
     runtime: python3.8
     memorySize: 256
     timeout: 30 # 30 seconds
@@ -141,16 +186,16 @@ functions:
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"      
-    events:
-      - http:
-          path: /aws/accounts/organizations
-          method: get
-          cors: true
-          #private: true  
-          authorizer:
-            type: CUSTOM
-            authorizerId:
-              ${self:custom.apiGatewayAuthorizerID}          
+    # events:
+      # - http:
+      #     path: /aws/accounts/organizations
+      #     method: get
+      #     cors: true
+      #     #private: true  
+      #     authorizer:
+      #       type: CUSTOM
+      #       authorizerId:
+      #         ${self:custom.apiGatewayAuthorizerID}          
           # authorizer:
           #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-dev" 
       
@@ -158,7 +203,7 @@ functions:
     handler: apigateway/compliance/lambda_iam_compliance.lambda_handler
     environment:
       URL_SQS_IAM: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_new_check}"
-      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id_brasileira}
       LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
       octopus_resource: totvs-cloudformation-templates 
     runtime: python3.8
@@ -224,7 +269,7 @@ functions:
     handler: apigateway/compliance/lambda_cis_compliance.lambda_handler
     environment:
       URL_SQS_CIS: "https://sqs.${self:provider.region}.amazonaws.com/${self:custom.awsconfig.aws_account_id}/${self:custom.sqs_compliance_cis_new_check}"
-      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
+      PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id_brasileira}
       LAMBDA_ORGANIZATION: ${self:service}-get_accounts_organizations-${self:provider.stage}
     runtime: python3.8
     memorySize: 256

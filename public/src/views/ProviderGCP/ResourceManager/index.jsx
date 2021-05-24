@@ -22,6 +22,7 @@ import { Add as AddIcon, Save as SaveIcon, Delete as DeleteIcon, Info as InfoIco
 import DialogAddUserProject from "./components/DialogAddUserProject";
 import DialogCreateFolder from "./components/DialogCreateFolder";
 import DialogCreateProject from "./components/DialogCreateProject";
+import DialogListHistoryActions from "./components/DialogListHistoryActions";
 
 
 export default class ProviderGCP extends React.PureComponent {
@@ -29,6 +30,7 @@ export default class ProviderGCP extends React.PureComponent {
         super();
         this.state = {
             blocking: true,
+            loadingIcon: false,
             requestSuccess: false,
             errorMessagePopup : "",
             requestError: false,
@@ -38,6 +40,7 @@ export default class ProviderGCP extends React.PureComponent {
             originalOrganizations: [],
             projectsIamPolicy: [],
             dataSelected: [],
+            historyActions: [],
         };
     }
 
@@ -47,17 +50,6 @@ export default class ProviderGCP extends React.PureComponent {
         
         
         this.setState({blocking: true });
-        // let organizations = makeData();
-        // let policy = iamPolicy();
-        // this.setState({projectsIamPolicy : policy}, ()=>{
-        //     organizations = this._renameKeyChild(organizations);
-        //     organizations = this._addIamUsersInProject(organizations);
-        //     // let originalBkp = JSON.parse(JSON.stringify(organizations));
-        //     let originalBkp = cloneDeep(organizations);
-        
-        //     this.setState({organizations: organizations, originalOrganizations: originalBkp}, () => console.log(this.state.organizations));
-            
-        // });
 
         let stateValues = this;
         await fetch(`${process.env.REACT_APP_ENDPOINT}/gcp/iam/projects `, {
@@ -270,13 +262,42 @@ export default class ProviderGCP extends React.PureComponent {
         })
         .then((response => this._handleFetchErrors(response, stateValues)))
         .then(response => {
-            console.log(response);
-            // updateOrganizationIndex(this.state.dataSelected);
-            this.setState({requestSuccess: true})
+            // console.log(response);
+            // try{
+            //     this.updateOrganizationIndex(this.state.dataSelected);
+            // }catch(e){
+            //     console.error(e);
+            // }
+            if(response.message === "success"){
+                this.setState({requestSuccess: true})
+            }else{
+                this.setState({requestError: true, errorMessagePopup: response.message});
+            }
         })
         .catch(e => console.error(e));
 
         this.setState({blocking: false, requestSuccess: false, requestError: false});
+    }
+
+
+    async onClickGetHistoryActions(){
+        let stateValues = this;
+        this.setState({loadingIcon: true});
+        await fetch(`${process.env.REACT_APP_ENDPOINT}/gcp/organizations/logs`,{
+            method: "GET", mode:"cors", headers: {"Authorization": getAuthorization()},
+            headers: {
+                "Content-Type":"application/json",
+                "Authorization": getAuthorization()
+            },
+        })
+        .then((response => this._handleFetchErrors(response, stateValues)))
+        .then(response => {
+            this.setState({historyActions: response.logs});
+        })
+        .catch(e => console.error(e));
+
+        this.setState({loadingIcon: false, requestSuccess: false, requestError: false});
+        
     }
 
 
@@ -436,6 +457,7 @@ export default class ProviderGCP extends React.PureComponent {
                             <DialogCreateFolder dataSelected={this.state.dataSelected} onSubmitCreateFolder={this.onSubmitCreateFolder.bind(this)} />
                             <DialogCreateProject dataSelected={this.state.dataSelected} onSubmitCreateProject={this.onSubmitCreateProject.bind(this)} />
                             <DialogAddUserProject dataSelected={this.state.dataSelected} onSubmitAddUserProject={this.onSubmitAddUserProject.bind(this)} />
+                            <DialogListHistoryActions blocking={this.state.loadingIcon} historyActions={this.state.historyActions} onClickGetHistoryActions={this.onClickGetHistoryActions.bind(this)} />
                         </section>
 
                         {this.state.blocking ? (

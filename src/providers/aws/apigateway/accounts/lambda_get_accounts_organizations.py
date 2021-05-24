@@ -4,10 +4,8 @@ from model.octopus import get_creds
 from ast import literal_eval
 from os import environ
 
-def lambda_handler(event, context):
-    print('message received on function trigger: %s' % event)
-    orgs_client = get_creds("organizations",Id=environ['PAYER_ID'])
 
+def get_linked_accounts(orgs_client):
     linked_accounts = orgs_client.list_accounts()
     print("linked_accounts:",linked_accounts)
     print()
@@ -36,7 +34,15 @@ def lambda_handler(event, context):
         if account['Status'] == "ACTIVE":
             #account.popitem()
             active_accounts.append(account)
-    accounts = active_accounts
+    return active_accounts
+
+def lambda_handler(event, context):
+    print('message received on function trigger: %s' % event)
+    orgs_client = get_creds("organizations",Id=environ['PAYER_ID_BRASILEIRA'])
+    accounts = get_linked_accounts(orgs_client)
+    
+    orgs_client = get_creds("organizations",Id=environ['PAYER_ID_AMERICANA'])
+    accounts.extend( get_linked_accounts(orgs_client) )
     
     print('Showing Accounts...')
     print()

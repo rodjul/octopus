@@ -76,6 +76,10 @@ def get_compliance(event):
         print("Error in get param: ",e)
         return {"statusCode":400, "body":dumps({"error":True, "message":"Invalid parameters"}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
+    except Exception as e:
+        print("Error in get param: ",e)
+        return {"statusCode":400, "body":dumps({"error":True, "message":"Invalid parameters"}),
+    "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
         
     
     dates = get_date_actions()
@@ -134,7 +138,7 @@ def publish_sns_data_compliance(event):
     try:
         body = loads(event['body'])
         # "name","email":json_data[1].value,"cloudformation":json_data[2].value
-        date_action = str(datetime.utcnow().isoformat())
+        date_action = str(datetime.datetime.utcnow().isoformat())
         type_role = body['type_role']
     except KeyError:
         return {"statusCode":400,"body":dumps({"error":True, "message":"Invalid parameters"}),

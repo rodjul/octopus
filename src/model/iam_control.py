@@ -120,8 +120,8 @@ class IamControl:
         table = dynamodb.Table("octopus_aws_role_type")
         results = table.scan()
         for row in results['Items']:
-            if row['RoleType'].lower() == account_type.lower():
-                roles_from_type_account = json.loads(row['Roles'])
+            if row['RoleType'] == account_type:
+                roles_from_type_account = row['Roles']
                 break
         
         table = dynamodb.Table("octopus_aws_policy")
@@ -131,7 +131,7 @@ class IamControl:
         for policy in policies:
             for roledb in roles_from_type_account:
                 if policy['Type'] == "ROLE" and policy['PolicyName'] == roledb:
-                    roles_json.append(json.loads(policy['Data']))
+                    roles_json.append(policy['Data'])
         
         for policy in policies:
             if policy['Type'] == "POLICY":
@@ -155,24 +155,26 @@ class IamControl:
             #Policies - Name, Description, Path, PolicyDocument
             #Roles  - Name, Policies[], PolicyArnAWS[] , TrustRelationship
             #TrustRelationships - Name, AssumeRolePolicyDocument
-            role_name = role['role_name']
+            role = json.loads(role)
+            role_name = role['Name']
             
             for trust_relationship in trusts_json:
                 trust_relationship = json.loads(trust_relationship['Data'])
 
                 # after we find the trust, we create the role
                 # if the role exists or is created, and also exists policies it will create and attach to this role
-                if trust_relationship['Name'] == role['trust_relationship']:
+                if trust_relationship['Name'] == role['TrustRelationship']:
                     # doing replace in the SAML ADFS
-                    if "Federated" in trust_relationship['AssumeRolePolicyDocument']['Statement'][0]['Principal'] \
-                        and "ACCOUNT_ID" in trust_relationship['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated']:
-                        trust_relationship['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'] = \
-                            trust_relationship['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'].replace("ACCOUNT_ID",self.account_id)
+                    trust_relationship_assume_role = trust_relationship['AssumeRolePolicyDocument']
+                    if "Federated" in trust_relationship_assume_role['AssumeRolePolicyDocument']['Statement'][0]['Principal'] \
+                        and "ACCOUNT_ID" in trust_relationship_assume_role['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated']:
+                        trust_relationship_assume_role['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'] = \
+                            trust_relationship_assume_role['AssumeRolePolicyDocument']['Statement'][0]['Principal']['Federated'].replace("ACCOUNT_ID",self.account_id)
                     
                     try:
                         self.iam_client.create_role(
                             RoleName=role_name,
-                            AssumeRolePolicyDocument=json.dumps(trust_relationship['AssumeRolePolicyDocument'])
+                            AssumeRolePolicyDocument=json.dumps(trust_relationship_assume_role['AssumeRolePolicyDocument'])
                         )
                         print("Role created: ",role_name)
                     except botocore.exceptions.ClientError as e:
@@ -181,8 +183,8 @@ class IamControl:
                     #role_arn = response['Role']['Arn'] #arn:aws:iam::1234567890:role/accessmngt
                     
                     # if there are policies associated with the role, we find and create
-                    if role['policies']:
-                        for role_policy in role['policies']:
+                    if role['Policies']:
+                        for role_policy in role['Policies']:
                             for policy in policy_json:
                                 policy = json.loads( policy['Data'] )
 
@@ -203,7 +205,7 @@ class IamControl:
                                             self.iam_client.attach_role_policy(PolicyArn=arn_already_created, RoleName=role_name)
                     
                     # if there are standard policies from aws associated with the role, we create
-                    policy_arn_aws = role['policy_arn_aws'].split(",")
+                    policy_arn_aws = role['PolicyArnAWS'].split(",")
                     if policy_arn_aws and policy_arn_aws[0] != "":
                         for policy_arn in policy_arn_aws:
                             self.iam_client.attach_role_policy(PolicyArn=policy_arn, RoleName=role_name)

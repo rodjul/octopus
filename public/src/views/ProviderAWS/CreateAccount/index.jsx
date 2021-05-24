@@ -2,14 +2,14 @@ import React, { Component} from 'react';
 import { getAuthorization } from "../../../utils";
 import BlockUi from 'react-block-ui';
 import LoadingCircularProgress from "../../../components/LoadingCircularProgress";
-// import "./CreateAccount.css";
-// import CreateAccountForm from "./components/CreateAccountForm";
+import SnackbarNotification from "../../../components/SnackbarNotification";
 import {
     TextField, Grid, Select, InputLabel,  MenuItem, FormControl,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     Button, CircularProgress, Box, Typography
 } from "@material-ui/core";
 import Add from '@material-ui/icons/Add';
+import DialogListAccounts from "./components/DialogListAccounts";
 
 import "./styles.css";
 
@@ -22,16 +22,23 @@ export default class CreateAccount extends Component {
             name: '',
             motive: "",
             accountType: "",
+            accountPayer: "",
             typeRoles: [],
             lists: [],
             createdAccounts: [],
+
+            accounts: [],
 
             // view handlers
             invalidEmail: false,
             disableCreateButton: true,
             blocking: false,
-            loadTable: false,
+            loadingIcon: false,
+            loadTableStatusAccount: false,
             loading: false,
+            requestSuccess: false,
+            requestError: false,
+            errorMessagePopup: "",
             // load_table: false,
             fetch_vars: { tryCount: 0, retryLimit: 30, }, // not the best solution to do fetch retry
         };
@@ -64,7 +71,8 @@ export default class CreateAccount extends Component {
     validateForm() {
         // console.log(1);
         return this.state.email.length > 0 && this.state.name.length > 0 
-            && this.state.accountType.length > 0 && this.state.motive.length > 0;
+            && this.state.accountType.length > 0 && this.state.motive.length > 0
+            && this.state.accountPayer.length > 0;
     }
 
     handleInputChange = (event) => {
@@ -106,41 +114,53 @@ export default class CreateAccount extends Component {
             }
         });
     }
-
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    
+    handleSelectAccountPayer = event => {
+        this.setState({ accountPayer:  event.target.value }, 
+        () => {
+            if(this.validateForm()){
+                this.setState({disableCreateButton: false});
+            }else{
+                if(!this.state.disableCreateButton)
+                    this.setState({disableCreateButton: true});
+            }
+        });
     }
+
+    async getAccountsCreated(){
+        this.setState({loadingIcon: true});
+        await fetch(process.env.REACT_APP_ENDPOINT + '/aws/accounts', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                "Authorization": getAuthorization(),
+            }
+        })
+        .then(response => this._handleFetchErrors(response, this))
+        .then(response => {
+            this.setState({accounts: response.accounts});
+        }).catch(e => console.error(e));
+        this.setState({loadingIcon: false, requestError: false});
+    }
+
+    // sleep(ms) {
+    //     return new Promise(resolve => setTimeout(resolve, ms));
+    // }
 
     async onSubmit(event){
         event.preventDefault();
-        // console.log(event, event.target);
-        // console.log(this.state);
 
         if(!this.validateForm()){
             return JSON.stringify( {"error":true, "message":"Os campos precisam ser preenchidos"} );
         }
         
-        // return JSON.stringify( {"error":false, 
-        //     "accounts":[ 
-        //         { 
-        //             name: this.state.name, 
-        //             email: this.state.email, 
-        //             "account_id":"0123456789",
-        //             "accountType": this.state.accountType,
-        //         }, 
-        //         { 
-        //             name: "seginfo-products.aws", 
-        //             email: "seginfo-products.aws@email.com.br", 
-        //             "account_id":"9876543210",
-        //             "accountType": "Siem",
-        //         } 
-        //     ]} );
 
         this.setState({blocking: true});
 
         //https://stackoverflow.com/questions/49684217/how-to-use-fetch-api-in-react-to-setstate
         const self = this;
         let stateValues = this;
+        let uuid = null;
         await fetch(process.env.REACT_APP_ENDPOINT + '/aws/accounts', {
             method: 'POST',
             body: JSON.stringify({
@@ -148,6 +168,7 @@ export default class CreateAccount extends Component {
                 "email": this.state.email,
                 "account_type": this.state.accountType,
                 "motive": this.state.motive,
+                "account_payer": this.state.accountPayer,
             }),
             headers: {
                 'Content-Type': 'application/json',
@@ -155,72 +176,80 @@ export default class CreateAccount extends Component {
             }
         })
         .then(response => this._handleFetchErrors(response, stateValues))
-        .then(res => {
-            console.log(res);
-            //this.props.history.push('/');
-            //console.log(res.json().then( body => console.log(body) ));
-            document.getElementById("output_text").textContent = "Criando a conta...";
-            let name = stateValues.state.name;
+        .then(response => {
+            this.setState({requestSuccess: true, loadTableStatusAccount: true}, () => this.setState({requestSuccess: false}));
+                        
+            uuid = response.data.uuid;
+
+            let format = { 
+                name: self.state.name, 
+                email: self.state.email, 
+                "account_id": null, 
+                "accountType":self.state.accountType,
+                "status": "NOT_CREATED",
+                loading: true,
+            };
+
+            let prv = [...self.state.lists, format];
+            this.setState({lists: prv});
+
 
             // definimos um intervalo a cada 2 segundos para obter o resultado 
-            // var interval = setInterval(async function () {
-            //     await fetch(`${process.env.REACT_APP_ENDPOINT}/aws/accounts/${encodeURIComponent(name)}`, {
-            //         method: "GET",
-            //         headers: { 
-            //             "Content-Type": "application/json",
-            //             "Authorization": getAuthorization(),
-            //         },
-            //     })
-            //     .then(response => this._handleFetchErrors(response, stateValues))
-            //     .then(data => {
-            //         let tryCount = self.state.fetch_vars.tryCount;
-            //         let retryLimit = self.state.fetch_vars.retryLimit;
+            var interval = setInterval(async function () {
+                await fetch(`${process.env.REACT_APP_ENDPOINT}/aws/accounts/${encodeURIComponent(uuid)}/status`, {
+                    method: "GET",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": getAuthorization(),
+                    },
+                })
+                .then(response => self._handleFetchErrors(response, stateValues))
+                .then(async response => {
+                    let tryCount = self.state.fetch_vars.tryCount;
+                    let retryLimit = self.state.fetch_vars.retryLimit;
 
-            //         // console.log(data);
+                    // console.log(data);
+                    let currentList = self.state.lists;
+                    let index = currentList.length - 1;
 
-            //         if (!(data.message.startsWith("AccountId: "))) {
-            //             if (tryCount <= retryLimit) {
-            //                 let p1 = tryCount + 1;
-            //                 self.setState({ fetch_vars: { tryCount: p1, retryLimit: retryLimit } })
-            //                 fetch(this);
-            //                 return;
-            //             }
-            //         }
+                    currentList[index].status = response.status;
 
-            //         clearInterval(interval);
-            //         document.getElementById("temporary").remove();
-
-            //         let format = "";
-            //         if (tryCount > retryLimit) {
-            //             format = { name: self.state.name, email: self.state.email, "account_id": "ERRO EM OBTER ACCOUNTID", "accountType":self.state.accountType };
-            //         } else {
-            //             let accountid = data.message.split("AccountId: ")[1];
-            //             format = { name: self.state.name, email: self.state.email, "account_id":accountid, "accountType":self.state.accountType  };
-            //         }
-
-            //         let prv = [...self.state.lists, format];
-            //         // colocando o valor da nova conta
-            //         self.setState({ lists: prv });
+                    if(!currentList[index].account_id){
+                        await fetch(`${process.env.REACT_APP_ENDPOINT}/aws/accounts/${encodeURIComponent(uuid)}/accountid`, {
+                            method: "GET",
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Authorization": getAuthorization(),
+                            },
+                        })
+                        .then(response => self._handleFetchErrors(response, stateValues))
+                        .then(response => currentList[index].account_id = response.account_id)
+                        .catch(e => console.error(e));
+                    }
                     
-            //         return JSON.stringify( {"error":false, "accounts": this.state.lists} );
-            //         //document.getElementById("output").innerHTML += "<p style='font-size:1.5em'>Conta: "+name+" - "+data.message+"</p>";
-            //     })
-            //     .catch(err => {
-            //         console.error(err);
-            //         //alert('Error logging in please try again');
-            //         // document.getElementById("output").innerHTML = "<p>Erro em obter account id da conta:" + name + "</p>";
-            //         return JSON.stringify( {"error":true} );
-            //     });
+                    if (response.status.toUpperCase() !== "SUCCESSFULY_CREATED" && !response.status.toUpperCase().startsWith("ERROR") ){
+                        self.setState({lists: currentList});
+                        if (tryCount <= retryLimit) {
+                            let p1 = tryCount + 1;
+                            self.setState({ fetch_vars: { tryCount: p1, retryLimit: retryLimit } })
+                            fetch(this);
+                            return;
+                        }
+                    }
+                    
+                    currentList[index].loading = false;
+                    self.setState({lists: currentList});
 
-            // }, 2000); // usando setInterval para executar a cada 2 segundos
+                    clearInterval(interval);
+                })
+                .catch(err => console.error(err));
 
+            }, 3000); // usando setInterval para executar a cada 2 segundos
 
             // loop end
 
-        })
-        .catch(err => {
-            console.error(err);
-        });
+
+        }).catch(err => console.error(err));
 
         this.setState({blocking: false});
     }
@@ -266,22 +295,25 @@ export default class CreateAccount extends Component {
     }
 
     render() {
-        const {typeRoles, load_table} = this.state;
-        // let load_table = true;
-
-
         return (
-            <>
-                <main className="content">
-                    <Typography className="titleHeader" variant="h4" noWrap >
-                        Criar conta
-                    </Typography>
-                    <Box boxShadow={3}>
-                        <div className="paper" >
-                            <BlockUi tag="div" blocking={this.state.blocking} message="" loader={<LoadingCircularProgress/>}>
-                                <Grid container direction="column" alignItems="center" justify="center">
-
-
+            <main className="content">
+                <Typography className="titleHeader" variant="h4" noWrap >
+                    Criar conta
+                </Typography>
+                <Box boxShadow={3}>
+                    <div className="paper" >
+                        <section className="actions">
+                            <DialogListAccounts
+                                blocking={this.state.loadingIcon}
+                                accounts={this.state.accounts}
+                                getAccounts={this.getAccountsCreated.bind(this)}
+                                // dataSelected={this.state.dataSelected} 
+                                // onSubmitCreateProject={this.onSubmitCreateProject.bind(this)} 
+                            />
+                        </section>
+                        <BlockUi tag="section" blocking={this.state.blocking} message="" loader={<LoadingCircularProgress/>}>
+                            <Grid container direction="column" alignItems="center" justify="center">
+                                <form>
                                     <FormControl className="formStyle" noValidate autoComplete="off">
 
                                         <TextField id="standard-basic" type="text" label="Nome da conta" style={{ marginTop: 12 }} placeholder="Nome da conta" 
@@ -303,6 +335,19 @@ export default class CreateAccount extends Component {
                                             fullWidth margin="normal" name="motive"
                                             onBlur={this.handleInputChange.bind(this)}
                                         />
+
+                                        <FormControl>
+                                            <InputLabel id="controlled-open-select-label-tipo-da-conta">Selecione conta pagadora</InputLabel>
+                                            <Select labelId="controlled-open-select-label-account-payer-organization" id="account-payer-organizatio"
+                                            onChange={this.handleSelectAccountPayer.bind(this)}
+                                            >   
+                                                <MenuItem key="Brasileira" value="Brasileira">Brasileira</MenuItem>
+                                                <MenuItem key="Americana" value="Americana">Americana</MenuItem>
+                                                {/* {this.state.typeRoles && this.state.typeRoles.map((elem, index) => {
+                                                    return <MenuItem key={`${elem+'-'+index}`} value={elem}>{elem}</MenuItem>
+                                                })} */}
+                                            </Select>
+                                        </FormControl>
 
                                         <FormControl>
                                             <InputLabel id="controlled-open-select-label-tipo-da-conta">Tipo da conta</InputLabel>
@@ -344,55 +389,47 @@ export default class CreateAccount extends Component {
 
 
                                     </FormControl>
+                                </form>
+                            </Grid>
+                        </BlockUi>
+                    </div>
+                </Box>
 
-                                </Grid>
-                            </BlockUi>
-                        </div>
-                    </Box>
-
-                    {this.state.loadTable ? (
-                        <Box boxShadow={3}>
-                            <TableContainer style={{marginTop:"2em"}}>
-                                <Table className={"table"} aria-label="caption table">
-                                    <TableHead>
+                {this.state.loadTableStatusAccount ? (
+                    <Box boxShadow={3}>
+                        <TableContainer style={{marginTop:"2em"}}>
+                            <Table aria-label="caption table" id="tableAccountCreation">
+                                <TableHead>
                                     <TableRow>
-                                        <TableCell>Nome da conta</TableCell>
+                                        <TableCell align="center">Nome da conta</TableCell>
                                         <TableCell align="center">Email da conta</TableCell>
                                         <TableCell align="center">Account ID</TableCell>
                                         <TableCell align="center">Tipo da conta</TableCell>
+                                        <TableCell align="center">STATUS</TableCell>
                                     </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                    {this.state.createdAccounts.map(account => (
-                                        <TableRow key={`${account['name']+'-'+account['account_id']}`}>
-                                            <TableCell>{account['name']}</TableCell>
-                                            <TableCell align="center">{account['email']}</TableCell>
-                                            <TableCell align="center">{account['account_id']}</TableCell>
-                                            <TableCell align="center">{account['account_type']}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Box>
-                        ) 
-                        : null
-                    }
+                                </TableHead>
+                                <TableBody>
+                                {this.state.lists.map(account => (
+                                    <TableRow key={`${account['name']+'-'+account['account_id']}`}>
+                                        <TableCell align="center">{account['name']}</TableCell>
+                                        <TableCell align="center">{account['email']}</TableCell>
+                                        <TableCell align="center">{account['account_id']}</TableCell>
+                                        <TableCell align="center">{account['accountType']}</TableCell>
+                                        <TableCell align="center">{account['status']}{account['loading'] ? <LoadingCircularProgress className="icon-loading-status-account" size={25}/> : null}</TableCell>
+                                    </TableRow>
+                                ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Box>
+                    ) 
+                    : null
+                }
 
-                {/* <AlertMessage open={openAlert} typeMessage={typeMessage} message={messageAlert} openAlertCallback={handleOpenAlert}/> */}
-                {/* {this.state.requestError && <SnackbarNotification variant="error" message="Error!"/>} */}
-                
+                {this.state.requestSuccess && <SnackbarNotification variant="success" message="Success!"/>}
+                {this.state.requestError && <SnackbarNotification variant="error" message={this.state.errorMessagePopup}/>}
+
             </main>
-                {/* <CreateAccountForm 
-                typeRoles={typeRoles}
-                onSubmit={this.onSubmit.bind(this)}
-                handleSelectAccountType={this.handleSelectAccountType.bind(this)}
-                handleForm={this.handleInputChange.bind(this)}
-                validateForm={this.validateForm.bind(this)}
-                // load_table={true}
-                
-                /> */}
-            </>
         );
     }
 }

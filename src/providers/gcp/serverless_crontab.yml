@@ -67,7 +67,7 @@ functions:
         - crontab/schedule_providergcp_iam_policy.py
         - ../../model/*.py
     layers:
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
     events:
       - schedule:

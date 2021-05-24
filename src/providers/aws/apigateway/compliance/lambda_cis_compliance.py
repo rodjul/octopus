@@ -61,6 +61,10 @@ def get_compliance(event):
         print("Error in get param: ",e)
         return {"statusCode":400, "body":dumps({"error":True, "message":"Invalid parameters"}),
     "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
+    except Exception as e:
+        print("Error in get param: ",e)
+        return {"statusCode":400, "body":dumps({"error":True, "message":"Invalid parameters"}),
+    "headers":{ "Content-Type":"application/json", "Access-Control-Allow-Origin":"*"}}
         
     dates = get_date_actions()
     # if the value is null, get the lastest date available

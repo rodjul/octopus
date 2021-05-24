@@ -33,13 +33,22 @@ https://material-ui.com/pt/customization/palette/
     }
 }
 
-.table {
+#tableAccountCreation {
     min-width: 650px;
     background-color: white;
     /* "& th":{
         fontWeight: "bold",
     }, */
 }
+#tableAccountCreation th{
+    font-weight: bold;
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+#tableAccountCreation tr:nth-child(even){
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
 
 .formStyle {
     padding: 2vw;
@@ -78,3 +87,21 @@ https://material-ui.com/pt/customization/palette/
 }
 
 
+.icon-loading-status-account{
+    display: inline-flex;
+    text-align: center;
+    margin-left: 1em;
+    padding-bottom: 1em;
+    position: relative;
+    top: 0.4em;
+}
+
+#alert-dialog-title{
+    width: 40em;
+}
+.icon-loading-position-history{
+    position: relative;
+    /* right: 2em; */
+    bottom: 1.3em;
+    margin-bottom: -1em;
+}

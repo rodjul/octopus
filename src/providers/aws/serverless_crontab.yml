@@ -43,13 +43,9 @@ custom:
   #   perFunction: true
   #   perType: false
   #   perGroupFunction: false
-  sqs_name: "CreateAccount"
+  # sqs_name: "CreateAccount"
   sqs_compliance_new_check: "ComplianceNewCheck"
   sqs_compliance_cis_new_check: "ComplianceCISNewCheck"
-  sqs_gcp_iam_policy: "ProviderGCPGetIamPolicyProjects"
-  # s3Sync:
-  #   - bucketName: "octopus-site"
-  #     localDir: public/build/
 
 
 functions:
@@ -62,7 +58,7 @@ functions:
       PAYER_ID: ${self:custom.awsconfig.aws_account_payer_id}
       LAMBDA_ORGANIZATION: octopus-aws-api-get_accounts_organizations-${self:provider.stage}
       # octopus_resource: "totvs-cloudformation-templates"
-    runtime: python3.6
+    runtime: python3.8
     memorySize: 256
     timeout: 30 # 30 seconds
     role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
@@ -76,6 +72,28 @@ functions:
     events:
       - schedule:
           name: octopusschedule_7_days
+          rate: rate(7 days)
+          enabled: true
+  
+  schedule_check_basic_resources_creation: 
+    handler: crontab/checks_accounts_basic_resources.lambda_handler
+    environment:
+      LAMBDA_SEND_EMAIL: octopussns-aws-send_email-${self:provider.stage}
+      # octopus_resource: "totvs-cloudformation-templates"
+    runtime: python3.8
+    memorySize: 256
+    timeout: 300 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-checks_accounts_basic_resources-${self:provider.stage}
+    package:
+      include:
+        - crontab/checks_accounts_basic_resources.py
+        # - ../../model/*.py
+    # layers:
+    #   - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:requests:1"
+    events:
+      - schedule:
+          name: octopusschedule_checkresources_7_days
           rate: rate(7 days)
           enabled: true
   

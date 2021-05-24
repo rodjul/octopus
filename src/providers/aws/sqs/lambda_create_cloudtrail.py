@@ -2,6 +2,7 @@ from os import environ,popen
 from json import loads, dumps
 from model.octopus import get_creds
 import botocore
+from time import sleep
 
 '''
 Description: Adds in the specified bucket the policy to allow the account that we are creating the trail to store logs in the bucket.
@@ -109,8 +110,15 @@ def create_trail(new_account_id):
 
 
 def lambda_handler(event, context):
-    acc_id_new = loads(event)['Id'] #the var that we received when creating a new account 
+    print("Event received: ",event)
+    try:
+        acc_id_new = loads(event)['Id'] #the var that we received when creating a new account 
+    except Exception as e:
+        print(e)
+        acc_id_new = event['Id']
     
     update_policy_bucket(acc_id_new)
     
+    sleep(1)
+
     create_trail(acc_id_new)

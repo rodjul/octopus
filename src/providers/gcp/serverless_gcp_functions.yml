@@ -69,7 +69,7 @@ functions:
         - ../../utils/logs.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
     events:
       - http:
@@ -98,7 +98,7 @@ functions:
         - ../../utils/logs.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
     events:
       - http:
@@ -127,7 +127,7 @@ functions:
         - ../../utils/logs.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
     events:
       - http:
@@ -157,7 +157,7 @@ functions:
         - ../../utils/logs.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
     events:
       - http:
@@ -186,7 +186,7 @@ functions:
         - ../../utils/logs.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
     events:
       - http:
@@ -215,7 +215,7 @@ functions:
         - ../../utils/logs.py        
     layers:
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
-      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:pythonjose:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
       - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
     events:
       - http:
@@ -227,5 +227,30 @@ functions:
             type: CUSTOM
             authorizerId:
               ${self:custom.apiGatewayAuthorizerID}
-          # authorizer:
-          #   arn: "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:function:octopus-api-cognito_check_token-${self:provider.stage}" 
+
+  provider_gcp_get_history_actions:
+    handler: apigateway/resourcemanager/lambda_gcp_get_history_actions.lambda_handler
+    runtime: python3.8
+    memorySize: 256
+    timeout: 30 # 30 seconds
+    role: arn:aws:iam::${self:custom.awsconfig.aws_account_id}:role/${self:custom.awsconfig.aws_role_lambda}
+    name: ${self:service}-lambda_gcp_get_history_actions-${self:provider.stage}
+    package:
+      include:
+        - apigateway/resourcemanager/lambda_gcp_get_history_actions.py
+        - ../../model/providergcp.py
+        - ../../utils/logs.py        
+    layers:
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:utils:${self:custom.awsconfig.layer_utils_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:libgcp:${self:custom.awsconfig.layer_libgcp_version}"
+      - "arn:aws:lambda:us-east-2:${self:custom.awsconfig.aws_account_id}:layer:model_octopus:${self:custom.awsconfig.layer_model_octopus_version}"
+    events:
+      - http:
+          path: /gcp/organizations/logs
+          method: get
+          cors: true
+          #private: true
+          authorizer:
+            type: CUSTOM
+            authorizerId:
+              ${self:custom.apiGatewayAuthorizerID}

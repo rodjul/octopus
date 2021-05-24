@@ -110,7 +110,7 @@ function TableAcls({acls_data}) {
         setAdjusted(true);
     }, [JSON.stringify(acls_data)])
 
-    console.log(data);
+    // console.log(data);
     return (
         <>
             {adjusted ? <Table columns={columns} data={data} /> : null}
