@@ -354,8 +354,8 @@ const AccountsTable = (props) => {
                     <DialogContent>
                         <DialogContentText id="alert-dialog-description">
                             <p>O status atual da geração do relatório é:</p>
-                            <p>Em processamento na fila: <b>{statusReportData.total_processing}</b></p>
-                            <p>Em espera na fila: <b>{statusReportData.total_available}</b></p>
+                            <p>Em espera na fila: <b>{statusReportData.total_processing}</b></p>
+                            <p>Em processamento na fila: <b>{statusReportData.total_available}</b></p>
 
                         </DialogContentText>
                     </DialogContent>
