@@ -209,7 +209,10 @@ const AccountsTable = (props) => {
                     data={rows}
                     isLoading={isLoading}
                     options={{
-                        exportButton: true,
+                        exportButton: {
+                            csv: true,
+                            pdf: false,
+                        },
                         pageSize: 25,
                         pageSizeOptions: [25, 50, 100, 200],
                         // filtering: true,
@@ -257,7 +260,7 @@ const AccountsTable = (props) => {
                             }}
                             >   
                                 {dates_available && dates_available.map((elem,index) =>{
-                                    return <MenuItem key={elem} value={elem}>{ moment(elem).format("DD/MM/YYYY hh:mm:ss") }</MenuItem>;
+                                    return <MenuItem key={elem} value={elem}>{ moment(elem).format("DD/MM/YYYY HH:mm:ss") }</MenuItem>;
                                 })}
                             </Select>
                         </FormControl>
