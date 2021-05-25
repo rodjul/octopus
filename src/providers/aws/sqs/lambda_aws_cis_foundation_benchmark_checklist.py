@@ -28,6 +28,7 @@ import time
 from datetime import datetime
 import botocore
 import boto3
+import traceback
 
 # --- Script controls ---
 
@@ -2466,14 +2467,21 @@ def lambda_handler(event, context):
 
             try:
                 IAM_CLIENT = get_creds("iam",Id=ACCOUNT_ID)
-                S3_CLIENT = get_creds("s3",Id=ACCOUNT_ID)
             except Exception as e:
+                print("Exception IAM_CLIENT: ", e)
+                print(traceback.print_exc())
                 lista_compliance = [[
                     {"ControlId": "0", "Description": "Falha ao acessar a conta", "Result": False, "Offenders": "", "failReason": "STS"}
                 ]]
                 insert_data(ACCOUNT_ID, account_name, lista_compliance, date_action)
                 continue
-
+            
+            try:
+                S3_CLIENT = get_creds("s3",Id=ACCOUNT_ID)
+            except Exception as e:
+                print("Exception S3_CLIENT: ", e)
+                print(traceback.print_exc())
+                S3_CLIENT = None
 
             # try:
             #     if event['configRuleId']:
