@@ -6,6 +6,12 @@ import re
 '''
 References: https://docs.bridgecrew.io/docs/monitoring_1
 
+Permissions:
+Logs
+Cloudtrail
+IAM
+Cloudwatch
+
 CIS_Amazon_Web_Services_Foundations_Benchmark_v1.2.0
 
 2.4 Ensure CloudTrail trails are integrated with CloudWatch Logs (Scored) (level 1)
@@ -95,7 +101,7 @@ def create_sns_topic(account_id=None, region_name="us-east-2", topic_name="CISCl
     if not topic_arn:
         response = sns.create_topic(Name=topic_name)
         topic_arn = response['TopicArn']
-    
+
     #TODO: ver novamente esse caso
     response = sns.subscribe(
         TopicArn=topic_arn,
@@ -119,26 +125,51 @@ def configure_cloudtrail_2_4(account_id=None, cloudtrail_name="totvs-cloudtrail"
     '''
     if not account_id:
         account_id = boto3.client('sts').get_caller_identity().get('Account')
-    
+
     # get trail arn and home region
     cloudtrail = get_creds("cloudtrail", Id=account_id)
-    # cloudtrail_arn = ""
+    cloudtrail_arn = ""
     cloudtrail_homeregion = ""
     for trail in cloudtrail.list_trails()['Trails']:
         if trail['Name'] == cloudtrail_name:
-            # cloudtrail_arn = trail['TrailARN']
+            cloudtrail_arn = trail['TrailARN']
             cloudtrail_homeregion = trail['HomeRegion']
             break
 
     # create cloudwatch logs
-    logs = get_creds('logs', Id=account_id)
-    
+    logs = get_creds('logs', Id=account_id, region=cloudtrail_homeregion)
+
     log_group_name = f"aws-cloudtrail-logs-{account_id}-cc45e322"
     log_group_arn = f"arn:aws:logs:{cloudtrail_homeregion}:{account_id}:log-group:{log_group_name}:*"
     log_stream_name = f"{account_id}_CloudTrail_{cloudtrail_homeregion}"
 
-    response = logs.create_log_group(logGroupName=log_group_name)
-    response = logs.create_log_stream(logGroupName=log_group_name,logStreamName=log_stream_name)
+    try:
+        response = logs.create_log_group(logGroupName=log_group_name)
+        print("Response group: ", response)
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == 'EntityAlreadyExists':
+            print("Log group already created: ", log_group_name)
+        elif e.response['Error']['Code'] == 'ResourceAlreadyExistsException':
+            print("Log group already created: ", log_group_name)
+        else:
+            raise e
+    
+    # the number of days to retain the log events in the specified log group. Possible values are: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, and 3653
+    logs.put_retention_policy(
+        logGroupName=log_group_name,
+        retentionInDays=30
+    )
+
+    try:
+        response = logs.create_log_stream(logGroupName=log_group_name,logStreamName=log_stream_name)
+        print("Response stream: ", response)
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == 'EntityAlreadyExists':
+            print("Log stream already created: ", log_stream_name)
+        elif e.response['Error']['Code'] == 'ResourceAlreadyExistsException':
+            print("Log stream already created: ", log_stream_name)
+        else:
+            raise e
 
     # create iam role
     iam = get_creds("iam", Id=account_id)
@@ -156,57 +187,73 @@ def configure_cloudtrail_2_4(account_id=None, cloudtrail_name="totvs-cloudtrail"
     })
 
     role_arn = ""
+    role_name = f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}"
     try:
         response = iam.create_role(
-            RoleName=f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}",
+            RoleName=role_name,
             AssumeRolePolicyDocument=assume_role_policy_document,
             Description="2.4 Ensure CloudTrail trails are integrated with CloudWatch Logs (Scored) (level 1)"
         )
         role_arn = response['Role']['Arn']
-    except Exception as e:
-        print("E: ", e)
-        response = iam.get_role(RoleName=f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}")
-        role_arn = response['Role']['Arn']
-    
-    response = iam.put_role_policy(
-        RoleName=f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}",
-        PolicyName=f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}",
-        PolicyDocument=json.dumps({
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Sid": "AWSCloudTrailCreateLogStream2014110",
-                    "Effect": "Allow",
-                    "Action": [
-                        "logs:CreateLogStream"
-                    ],
-                    "Resource": [
-                        f"arn:aws:logs:{cloudtrail_homeregion}:{account_id}:log-group:{log_group_name}:log-stream:{log_stream_name}*"
-                    ]
-                },
-                {
-                    "Sid": "AWSCloudTrailPutLogEvents20141101",
-                    "Effect": "Allow",
-                    "Action": [
-                        "logs:PutLogEvents"
-                    ],
-                    "Resource": [
-                        f"arn:aws:logs:{cloudtrail_homeregion}:{account_id}:log-group:{log_group_name}:log-stream:{log_stream_name}*"
-                    ]
-                }
-            ]
-        })
-    )
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == 'EntityAlreadyExists':
+            print(f"IAM Role already created: {role_name}")
+            response = iam.get_role(RoleName=role_name)
+            role_arn = response['Role']['Arn']
+        else:
+            raise e
+
+    try:
+        response = iam.put_role_policy(
+            RoleName=role_name,
+            PolicyName=role_name,
+            PolicyDocument=json.dumps({
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Sid": "AWSCloudTrailCreateLogStream2014110",
+                        "Effect": "Allow",
+                        "Action": [
+                            "logs:CreateLogStream"
+                        ],
+                        "Resource": [
+                            f"arn:aws:logs:{cloudtrail_homeregion}:{account_id}:log-group:{log_group_name}:log-stream:{log_stream_name}*"
+                        ]
+                    },
+                    {
+                        "Sid": "AWSCloudTrailPutLogEvents20141101",
+                        "Effect": "Allow",
+                        "Action": [
+                            "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                            f"arn:aws:logs:{cloudtrail_homeregion}:{account_id}:log-group:{log_group_name}:log-stream:{log_stream_name}*"
+                        ]
+                    }
+                ]
+            })
+        )
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == 'EntityAlreadyExists':
+            print(f"IAM Role already created: {role_name}")
+            response = iam.get_role(RoleName=role_name)
+            role_arn = response['Role']['Arn']
+        else:
+            raise e
 
     # update cloudtrail cloudwatch logs
-    response = cloudtrail.update_trail(
-        Name=cloudtrail_name,
-        CloudWatchLogsLogGroupArn=log_group_arn,
-        CloudWatchLogsRoleArn=role_arn,
-    )
-    
+    cloudtrail = get_creds("cloudtrail", Id=account_id, region=cloudtrail_homeregion)
+    try:
+        response = cloudtrail.update_trail(
+            Name=cloudtrail_arn,
+            CloudWatchLogsLogGroupArn=log_group_arn,
+            CloudWatchLogsRoleArn=role_arn,
+        )
+    except Exception as e:
+        raise e
 
-def configure_log_3_1(account_id=None, region_name="us-east-2", topic_arn=None, 
+
+def configure_log_3_1(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_unauthorized_api_calls_metric",
     filter_name="cis_unauthorized_api_calls_metric",
     metric_name="cis_unauthorized_api_calls_metric"):
@@ -248,7 +295,7 @@ def configure_log_3_1(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_2(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_2(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_no_mfa_console_signin_metric",
     filter_name="cis_no_mfa_console_signin_metric",
     metric_name="cis_no_mfa_console_signin_metric"):
@@ -290,7 +337,7 @@ def configure_log_3_2(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_3(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_3(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_root_usage_metric",
     filter_name="cis_root_usage_metric",
     metric_name="cis_root_usage_metric"):
@@ -332,7 +379,7 @@ def configure_log_3_3(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_4(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_4(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_iam_changes_metric",
     filter_name="cis_iam_changes_metric",
     metric_name="cis_iam_changes_metric"):
@@ -374,7 +421,7 @@ def configure_log_3_4(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_5(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_5(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_cloudtrail_cfg_changes_metric",
     filter_name="cis_cloudtrail_cfg_changes_metric",
     metric_name="cis_cloudtrail_cfg_changes_metric"):
@@ -416,7 +463,7 @@ def configure_log_3_5(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_6(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_6(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_console_signin_failure_metric",
     filter_name="cis_console_signin_failure_metric",
     metric_name="cis_console_signin_failure_metric"):
@@ -458,7 +505,7 @@ def configure_log_3_6(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_7(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_7(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_disable_or_delete_cmk_changes_metric",
     filter_name="cis_disable_or_delete_cmk_changes_metric",
     metric_name="cis_disable_or_delete_cmk_changes_metric"):
@@ -500,7 +547,7 @@ def configure_log_3_7(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_8(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_8(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_s3_bucket_policy_changes_metric",
     filter_name="cis_s3_bucket_policy_changes_metric",
     metric_name="cis_s3_bucket_policy_changes_metric"):
@@ -542,7 +589,7 @@ def configure_log_3_8(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_9(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_9(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_aws_config_changes_metric",
     filter_name="cis_aws_config_changes_metric",
     metric_name="cis_aws_config_changes_metric"):
@@ -584,7 +631,7 @@ def configure_log_3_9(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_10(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_10(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_security_group_changes_metric",
     filter_name="cis_security_group_changes_metric",
     metric_name="cis_aws_config_changes_metric"):
@@ -626,7 +673,7 @@ def configure_log_3_10(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_11(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_11(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_nacl_changes_metric",
     filter_name="cis_nacl_changes_metric",
     metric_name="cis_nacl_changes_metric"):
@@ -668,7 +715,7 @@ def configure_log_3_11(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_12(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_12(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_network_gw_changes_metric",
     filter_name="cis_network_gw_changes_metric",
     metric_name="cis_network_gw_changes_metric"):
@@ -710,7 +757,7 @@ def configure_log_3_12(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_13(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_13(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_route_table_changes_metric",
     filter_name="cis_route_table_changes_metric",
     metric_name="cis_route_table_changes_metric"):
@@ -752,7 +799,7 @@ def configure_log_3_13(account_id=None, region_name="us-east-2", topic_arn=None,
         ComparisonOperator='GreaterThanOrEqualToThreshold'
     )
 
-def configure_log_3_14(account_id=None, region_name="us-east-2", topic_arn=None, 
+def configure_log_3_14(account_id=None, region_name="us-east-2", topic_arn=None,
     log_group_name="cis_vpc_changes_metric",
     filter_name="cis_vpc_changes_metric",
     metric_name="cis_vpc_changes_metric"):
@@ -799,22 +846,22 @@ def configure_log_3_14(account_id=None, region_name="us-east-2", topic_arn=None,
 def lambda_handler(event, context):
 
 
-    response = create_sns_topic()
+    # response = create_sns_topic()
 
-    topic_arn = response['topic_arn']
+    # topic_arn = response['topic_arn']
 
     configure_cloudtrail_2_4()
-    configure_log_3_1(topic_arn=topic_arn)
-    configure_log_3_2(topic_arn=topic_arn)
-    configure_log_3_3(topic_arn=topic_arn)
-    configure_log_3_4(topic_arn=topic_arn)
-    configure_log_3_5(topic_arn=topic_arn)
-    configure_log_3_6(topic_arn=topic_arn)
-    configure_log_3_7(topic_arn=topic_arn)
-    configure_log_3_8(topic_arn=topic_arn)
-    configure_log_3_9(topic_arn=topic_arn)
-    configure_log_3_10(topic_arn=topic_arn)
-    configure_log_3_11(topic_arn=topic_arn)
-    configure_log_3_12(topic_arn=topic_arn)
-    configure_log_3_13(topic_arn=topic_arn)
-    configure_log_3_14(topic_arn=topic_arn)
+    # configure_log_3_1(topic_arn=topic_arn)
+    # configure_log_3_2(topic_arn=topic_arn)
+    # configure_log_3_3(topic_arn=topic_arn)
+    # configure_log_3_4(topic_arn=topic_arn)
+    # configure_log_3_5(topic_arn=topic_arn)
+    # configure_log_3_6(topic_arn=topic_arn)
+    # configure_log_3_7(topic_arn=topic_arn)
+    # configure_log_3_8(topic_arn=topic_arn)
+    # configure_log_3_9(topic_arn=topic_arn)
+    # configure_log_3_10(topic_arn=topic_arn)
+    # configure_log_3_11(topic_arn=topic_arn)
+    # configure_log_3_12(topic_arn=topic_arn)
+    # configure_log_3_13(topic_arn=topic_arn)
+    # configure_log_3_14(topic_arn=topic_arn)
