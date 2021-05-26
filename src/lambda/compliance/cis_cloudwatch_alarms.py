@@ -8,6 +8,7 @@ References: https://docs.bridgecrew.io/docs/monitoring_1
 
 CIS_Amazon_Web_Services_Foundations_Benchmark_v1.2.0
 
+2.4 Ensure CloudTrail trails are integrated with CloudWatch Logs (Scored) (level 1)
 3.1 Ensure log metric filter unauthorized api calls (Scored) (level 1)
 3.2 Ensure a log metric filter and alarm exist for Management Console sign-in without MFA (Scored) (level 1)
 3.3 Ensure a log metric filter and alarm exist for root usage (Scored) (level 1)
@@ -111,6 +112,99 @@ def create_sns_topic(account_id=None, region_name="us-east-2", topic_name="CISCl
         "topic_arn": topic_arn,
         "subscription_arn": subscription_arn
     }
+
+def configure_cloudtrail_2_4(account_id=None, cloudtrail_name="totvs-cloudtrail"):
+    '''
+    2.4 Ensure CloudTrail trails are integrated with CloudWatch Logs (Scored) (level 1)
+    '''
+    if not account_id:
+        account_id = boto3.client('sts').get_caller_identity().get('Account')
+    
+    # get trail arn and home region
+    cloudtrail = get_creds("cloudtrail", Id=account_id)
+    # cloudtrail_arn = ""
+    cloudtrail_homeregion = ""
+    for trail in cloudtrail.list_trails()['Trails']:
+        if trail['Name'] == cloudtrail_name:
+            # cloudtrail_arn = trail['TrailARN']
+            cloudtrail_homeregion = trail['HomeRegion']
+            break
+
+    # create cloudwatch logs
+    logs = get_creds('logs', Id=account_id)
+    
+    log_group_name = f"aws-cloudtrail-logs-{account_id}-cc45e322"
+    log_group_arn = f"arn:aws:logs:{cloudtrail_homeregion}:{account_id}:log-group:{log_group_name}:*"
+    log_stream_name = f"{account_id}_CloudTrail_{cloudtrail_homeregion}"
+
+    response = logs.create_log_group(logGroupName=log_group_name)
+    response = logs.create_log_stream(logGroupName=log_group_name,logStreamName=log_stream_name)
+
+    # create iam role
+    iam = get_creds("iam", Id=account_id)
+    assume_role_policy_document = json.dumps({
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+            }
+        ]
+    })
+
+    role_arn = ""
+    try:
+        response = iam.create_role(
+            RoleName=f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}",
+            AssumeRolePolicyDocument=assume_role_policy_document,
+            Description="2.4 Ensure CloudTrail trails are integrated with CloudWatch Logs (Scored) (level 1)"
+        )
+        role_arn = response['Role']['Arn']
+    except Exception as e:
+        print("E: ", e)
+        response = iam.get_role(RoleName=f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}")
+        role_arn = response['Role']['Arn']
+    
+    response = iam.put_role_policy(
+        RoleName=f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}",
+        PolicyName=f"CloudTrailRoleForCloudWatchLogs_{cloudtrail_name}",
+        PolicyDocument=json.dumps({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "AWSCloudTrailCreateLogStream2014110",
+                    "Effect": "Allow",
+                    "Action": [
+                        "logs:CreateLogStream"
+                    ],
+                    "Resource": [
+                        f"arn:aws:logs:{cloudtrail_homeregion}:{account_id}:log-group:{log_group_name}:log-stream:{log_stream_name}*"
+                    ]
+                },
+                {
+                    "Sid": "AWSCloudTrailPutLogEvents20141101",
+                    "Effect": "Allow",
+                    "Action": [
+                        "logs:PutLogEvents"
+                    ],
+                    "Resource": [
+                        f"arn:aws:logs:{cloudtrail_homeregion}:{account_id}:log-group:{log_group_name}:log-stream:{log_stream_name}*"
+                    ]
+                }
+            ]
+        })
+    )
+
+    # update cloudtrail cloudwatch logs
+    response = cloudtrail.update_trail(
+        Name=cloudtrail_name,
+        CloudWatchLogsLogGroupArn=log_group_arn,
+        CloudWatchLogsRoleArn=role_arn,
+    )
+    
 
 def configure_log_3_1(account_id=None, region_name="us-east-2", topic_arn=None, 
     log_group_name="cis_unauthorized_api_calls_metric",
@@ -709,6 +803,7 @@ def lambda_handler(event, context):
 
     topic_arn = response['topic_arn']
 
+    configure_cloudtrail_2_4()
     configure_log_3_1(topic_arn=topic_arn)
     configure_log_3_2(topic_arn=topic_arn)
     configure_log_3_3(topic_arn=topic_arn)
